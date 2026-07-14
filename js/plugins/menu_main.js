@@ -53,6 +53,9 @@ PluginRegistry.register({
     }.bind(this));
 
     document.getElementById('menuModelTest').addEventListener('click', function() {
+      this.hide();
+      PluginRegistry.emit('menu:model_test');
+    }.bind(this));
 
     document.getElementById('menuPlugins').addEventListener('click', function() {
       document.getElementById('pluginPanel').classList.add('open');
