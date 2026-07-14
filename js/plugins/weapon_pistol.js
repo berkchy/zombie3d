@@ -4,6 +4,7 @@ PluginRegistry.register({
   version: '1.0',
   type: 'weapon',
   weaponType: 'ranged',
+  modelId: 'model_pistol',
   description: 'Standart mermi silahı + weapon:fire, ammo:change',
 
   cooldown: 0,

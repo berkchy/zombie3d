@@ -23,11 +23,16 @@ PluginRegistry.register({
   container: null,
   _onClick: null,
   _keyHandler: null,
+  _iconCache: null,
+  _previewRenderer: null,
+  _previewScene: null,
+  _previewCam: null,
 
   init(game) {
     var self = this;
     this.slots = [];
     this.slotEls = [];
+    this._iconCache = {};
 
     var container = document.createElement('div');
     container.id = 'hotbar';
@@ -94,8 +99,12 @@ PluginRegistry.register({
   setSlot(index, itemId) {
     if (index < 0 || index >= 5) return null;
     this.slots[index].id = itemId || null;
-    if (!itemId) this.slots[index].icon = null;
-    this._renderSlot(index);
+    if (itemId) {
+      this._renderWeaponIcon(index, itemId);
+    } else {
+      this.slots[index].icon = null;
+      this._renderSlot(index);
+    }
     return this.slots[index];
   },
 
@@ -108,14 +117,12 @@ PluginRegistry.register({
     if (index < 0 || index >= 5) return;
     if (this.selectedIndex === index) return;
 
-    // Eski secimi kaldir
     if (this.selectedIndex >= 0 && this.slotEls[this.selectedIndex]) {
       this.slotEls[this.selectedIndex].classList.remove('active');
     }
 
     this.selectedIndex = index;
 
-    // Yeni secimi isaretle
     var el = this.slotEls[index];
     if (el) el.classList.add('active');
 
@@ -167,7 +174,92 @@ PluginRegistry.register({
     }
   },
 
+  _renderWeaponIcon(index, weaponId) {
+    // Cache kontrol
+    if (this._iconCache && this._iconCache[weaponId]) {
+      this.slots[index].icon = this._iconCache[weaponId];
+      this._renderSlot(index);
+      return;
+    }
+
+    var wp = PluginRegistry.get(weaponId);
+    if (!wp || !wp.modelId) return;
+
+    var modelP = PluginRegistry.get(wp.modelId);
+    if (!modelP || !modelP.enabled || typeof modelP.createModel !== 'function') return;
+
+    // Offscreen renderer (tembel baslatma)
+    if (!this._previewRenderer) {
+      var canvas = document.createElement('canvas');
+      canvas.width = 72;
+      canvas.height = 72;
+      this._previewRenderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+      this._previewRenderer.setSize(72, 72);
+      this._previewRenderer.setPixelRatio(1);
+      this._previewRenderer.setClearColor(0x000000, 0);
+
+      this._previewScene = new THREE.Scene();
+      this._previewScene.background = null;
+      this._previewScene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      var dl = new THREE.DirectionalLight(0xffffff, 0.9);
+      dl.position.set(3, 5, 4);
+      this._previewScene.add(dl);
+      var bl = new THREE.DirectionalLight(0x8888ff, 0.3);
+      bl.position.set(-2, 3, -3);
+      this._previewScene.add(bl);
+
+      this._previewCam = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
+    }
+
+    // Modeli olustur
+    var mesh;
+    try { mesh = modelP.createModel(); } catch (e) { return; }
+    if (!mesh) return;
+
+    // Ortala ve olceklendir
+    var box = new THREE.Box3().setFromObject(mesh);
+    var size = box.getSize(new THREE.Vector3());
+    var maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 0) {
+      var scale = 1.2 / maxDim;
+      mesh.scale.set(scale, scale, scale);
+    }
+    var center = box.getCenter(new THREE.Vector3());
+    mesh.position.sub(center);
+
+    // Kamerayi modele gore konumlandir
+    this._previewCam.position.set(1.5, 0.8, 1.5);
+    this._previewCam.lookAt(0, 0, 0);
+
+    this._previewScene.add(mesh);
+    this._previewRenderer.render(this._previewScene, this._previewCam);
+    this._previewScene.remove(mesh);
+
+    // Dispose
+    mesh.traverse(function(child) {
+      if (child.isMesh) {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) child.material.forEach(function(mat) { mat.dispose(); });
+          else child.material.dispose();
+        }
+      }
+    });
+
+    var dataUrl = this._previewRenderer.domElement.toDataURL();
+    this._iconCache[weaponId] = dataUrl;
+    this.slots[index].icon = dataUrl;
+    this._renderSlot(index);
+  },
+
   destroy() {
+    if (this._previewRenderer) {
+      this._previewRenderer.dispose();
+      this._previewRenderer = null;
+      this._previewScene = null;
+      this._previewCam = null;
+    }
+    this._iconCache = null;
     if (this.container) this.container.remove();
     if (this._keyHandler) document.removeEventListener('keydown', this._keyHandler);
     PluginRegistry.off('game:start', this.id);
