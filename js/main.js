@@ -363,10 +363,15 @@ function startGame() {
   // Poligon modu ayarlari
   if (game.poligonMode) {
     document.getElementById('waveLabel').textContent = 'POLIGON';
-    // Tabancayi slot 0'a yerlestir ve sec
+    // Tum silah eklentilerini otomatik slotlara yerlestir (max 5)
     if (game.hotbar) {
-      game.hotbar.setSlot(0, 'weapon_pistol');
-      game.hotbar.selectSlot(0);
+      game.hotbar.clearAll();
+      var weapons = PluginRegistry.getByType('weapon');
+      var count = Math.min(weapons.length, 5);
+      for (var wi = 0; wi < count; wi++) {
+        game.hotbar.setSlot(wi, weapons[wi].id);
+      }
+      if (count > 0) game.hotbar.selectSlot(0);
     }
   } else {
     document.getElementById('waveLabel').textContent = 'Dalga <span id="waveVal">1</span>';
