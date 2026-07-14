@@ -16,7 +16,9 @@ PluginRegistry.register({
     '.menu-overlay button{display:block;width:200px;margin:5px 0;padding:12px 0;font-family:inherit;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;border:1px solid rgba(255,255,255,.1);border-radius:4px;background:transparent;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;}' +
     '.menu-overlay button:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.2);}' +
     '.menu-overlay button.primary{border-color:#c62828;color:#fff;background:#c62828;}' +
-    '.menu-overlay button.primary:hover{background:#b71c1c;}',
+    '.menu-overlay button.primary:hover{background:#b71c1c;}' +
+    '.menu-overlay button#menuPoligon{border-color:rgba(79,195,247,0.3);color:rgba(79,195,247,0.6);}' +
+    '.menu-overlay button#menuPoligon:hover{background:rgba(79,195,247,0.06);color:#4fc3f7;border-color:rgba(79,195,247,0.4);}',
 
   game: null,
   container: null,
@@ -33,6 +35,7 @@ PluginRegistry.register({
         '<div class="sub">ölülerin gecesi</div>' +
         '<hr>' +
         '<button class="primary" id="menuPlay">Oyunu Başlat</button>' +
+        '<button id="menuPoligon">Poligon</button>' +
         '<button id="menuModelTest">Model Test Odası</button>' +
         '<button id="menuPlugins">Eklentiler</button>' +
       '</div>';
@@ -44,10 +47,12 @@ PluginRegistry.register({
       PluginRegistry.emit('menu:play');
     }.bind(this));
 
-    document.getElementById('menuModelTest').addEventListener('click', function() {
+    document.getElementById('menuPoligon').addEventListener('click', function() {
       this.hide();
-      PluginRegistry.emit('menu:model_test');
+      PluginRegistry.emit('menu:poligon');
     }.bind(this));
+
+    document.getElementById('menuModelTest').addEventListener('click', function() {
 
     document.getElementById('menuPlugins').addEventListener('click', function() {
       document.getElementById('pluginPanel').classList.add('open');

@@ -141,6 +141,7 @@ function init() {
         paused: false,
         plugins: [],
         started: false,
+        poligonMode: false,
         overlayCtx: overlayCtx,
 
         shoot: function(owner) {
@@ -172,7 +173,7 @@ function init() {
           this.paused = false;
           gameStarted = false;
           document.getElementById('finalScore').textContent = this.score;
-          document.getElementById('finalWave').textContent = document.getElementById('waveVal').textContent;
+          document.getElementById('finalWave').textContent = this.poligonMode ? 'POLIGON' : document.getElementById('waveVal').textContent;
           document.getElementById('gameOver').classList.add('show');
 
           PluginRegistry.emit('game:over');
@@ -188,6 +189,7 @@ function init() {
           this._lastScore = 0;
           document.getElementById('scoreVal').textContent = '0';
           document.getElementById('waveVal').textContent = '1';
+          document.getElementById('waveLabel').innerHTML = 'Dalga <span id="waveVal">1</span>';
           document.getElementById('hpFill').style.width = '100%';
 
           this.plugins.forEach(function(p) {
@@ -202,6 +204,7 @@ function init() {
             scene.remove(scene.children[0]);
           }
 
+          this.poligonMode = false;
           this.plugins = [];
           this.player = null;
           this.playerMesh = null;
@@ -249,6 +252,12 @@ function init() {
 
       // ---------- Hook yönlendirmeleri ----------
     PluginRegistry.on('menu:play', '__engine__', function() {
+      game.poligonMode = false;
+      startGame();
+    });
+
+    PluginRegistry.on('menu:poligon', '__engine__', function() {
+      game.poligonMode = true;
       startGame();
     });
 
@@ -349,6 +358,18 @@ function startGame() {
     game.player.mesh.position.set(0, 0, 0);
     game.player.hp = game.player.maxHp || 100;
     document.getElementById('hpFill').style.width = '100%';
+  }
+
+  // Poligon modu ayarlari
+  if (game.poligonMode) {
+    document.getElementById('waveLabel').textContent = 'POLIGON';
+    // Tabancayi slot 0'a yerlestir ve sec
+    if (game.hotbar) {
+      game.hotbar.setSlot(0, 'weapon_pistol');
+      game.hotbar.selectSlot(0);
+    }
+  } else {
+    document.getElementById('waveLabel').textContent = 'Dalga <span id="waveVal">1</span>';
   }
 
   game.score = 0;

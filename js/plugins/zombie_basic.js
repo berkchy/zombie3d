@@ -30,6 +30,29 @@ PluginRegistry.register({
   update(dt) {
     if (!this.game || !this.game.player || !this.game.player.mesh) return;
 
+    if (this.game.poligonMode) {
+      // Poligon modu: sabit zombiler, dalga yok
+      this.spawnTimer -= dt;
+      if (this.spawnTimer <= 0 && this.zombies.length < 10) {
+        this.spawnTimer = 2.0;
+        this.spawnZombie();
+      }
+
+      // Olu zombileri kaldir
+      var toRemove = [];
+      for (var i = 0; i < this.zombies.length; i++) {
+        if (!this.zombies[i].alive) toRemove.push(i);
+      }
+      for (var i = toRemove.length - 1; i >= 0; i--) {
+        var idx = toRemove[i];
+        if (this.zombies[idx] && this.zombies[idx].mesh) {
+          this.game.scene.remove(this.zombies[idx].mesh);
+        }
+        this.zombies.splice(idx, 1);
+      }
+      return;
+    }
+
     // Dalga kontrolü
     var newWave = Math.floor(this.game.elapsed / 30) + 1;
     if (newWave !== this.wave) {
