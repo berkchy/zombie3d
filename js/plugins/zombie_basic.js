@@ -147,13 +147,14 @@ PluginRegistry.register({
     });
   },
 
-  hitTest(bulletPos, radius) {
+  hitTest(bulletPos, radius, damage) {
+    damage = damage || 25;
     for (var i = 0; i < this.zombies.length; i++) {
       var z = this.zombies[i];
       if (!z.alive) continue;
       var dist = bulletPos.distanceTo(z.mesh.position);
       if (dist < radius + 0.4) {
-        z.hp -= 25;
+        z.hp -= damage;
         PluginRegistry.emit('zombie:hit', {
           zombie: z,
           damage: 25,
