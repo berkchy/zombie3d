@@ -35,13 +35,13 @@ PluginRegistry.register({
     pos.y = 0.4;
 
     for (var p = 0; p < this.pelletsPerShot; p++) {
+      // Hedef yonu (player rotation)
       var dir = new THREE.Vector3(0, 0, 1);
       dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), owner.mesh.rotation.y);
 
-      // Saçılma: yatay ve dikey rastgele sapma
-      dir.x += (Math.random() - 0.5) * this.spreadAngle;
-      dir.z += (Math.random() - 0.5) * this.spreadAngle * 0.3;
-      dir.y += (Math.random() - 0.5) * this.spreadAngle * 0.3;
+      // Saçılma: yatay eksende rotasyon (mermiler ayni Y seviyesinde kalir)
+      var spread = (Math.random() - 0.5) * this.spreadAngle * 2;
+      dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), spread);
       dir.normalize();
 
       var geo = new THREE.SphereGeometry(0.04, 5, 5);
@@ -90,12 +90,11 @@ PluginRegistry.register({
 
       b.mesh.position.x += b.dir.x * this.bulletSpeed * dt;
       b.mesh.position.z += b.dir.z * this.bulletSpeed * dt;
-      b.mesh.position.y += b.dir.y * this.bulletSpeed * dt;
       if (b.light) b.light.position.copy(b.mesh.position);
 
       // Her saçma ayri hitTest
       if (zombiePlugin && zombiePlugin.enabled) {
-        if (zombiePlugin.hitTest(b.mesh.position, 0.05, b.damage)) {
+        if (zombiePlugin.hitTest(b.mesh.position, 0.1, b.damage)) {
           PluginRegistry.emit('bullet:hit', { position: b.mesh.position.clone(), bullet: b });
           toRemove.push(i);
           continue;
