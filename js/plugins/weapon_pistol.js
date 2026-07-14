@@ -3,6 +3,7 @@ PluginRegistry.register({
   name: 'Tabanca',
   version: '1.0',
   type: 'weapon',
+  weaponType: 'ranged',
   description: 'Standart mermi silahı + weapon:fire, ammo:change',
 
   cooldown: 0,

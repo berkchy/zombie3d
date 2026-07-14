@@ -144,6 +144,21 @@ function init() {
         overlayCtx: overlayCtx,
 
         shoot: function(owner) {
+          // Hotbar kontrolu — sadece secili slot'taki silah ates eder
+          if (game.hotbar) {
+            var sel = game.hotbar.getSelected();
+            if (sel && sel.slot && sel.slot.id) {
+              var weapons = PluginRegistry.getByType('weapon');
+              for (var i = 0; i < weapons.length; i++) {
+                if (weapons[i].id === sel.slot.id) {
+                  if (weapons[i].shoot) weapons[i].shoot(owner);
+                  break;
+                }
+              }
+            }
+            return;
+          }
+          // Hotbar yoksa eski davranis (tum weapon pluginleri)
           var weapons = PluginRegistry.getByType('weapon');
           weapons.forEach(function(wp) {
             if (wp.shoot) wp.shoot(owner);
