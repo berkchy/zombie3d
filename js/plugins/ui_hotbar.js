@@ -216,10 +216,6 @@ PluginRegistry.register({
     try { mesh = modelP.createModel(); } catch (e) { return; }
     if (!mesh) return;
 
-    // Silahi yan profil gosterecek sekilde cevir (barrel sola baksin)
-    mesh.rotation.y = Math.PI / 2;
-    mesh.updateMatrixWorld();
-
     // Ortala ve olceklendir
     var box = new THREE.Box3().setFromObject(mesh);
     var size = box.getSize(new THREE.Vector3());
@@ -231,8 +227,8 @@ PluginRegistry.register({
     var center = box.getCenter(new THREE.Vector3());
     mesh.position.sub(center);
 
-    // Kamerayi yan profil icin konumlandir
-    this._previewCam.position.set(0, 0.2, 2.5);
+    // Kamerayi 3/4 perspektif icin konumlandir
+    this._previewCam.position.set(1.5, 0.8, 1.5);
     this._previewCam.lookAt(0, 0, 0);
 
     this._previewScene.add(mesh);
