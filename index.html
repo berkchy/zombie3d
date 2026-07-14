@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Zombie Survivor 3D</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="gameContainer">
+  <div id="canvas2d">
+    <canvas id="overlay"></canvas>
+  </div>
+  <div id="panelToggle" title="Plugin Yönetimi">⚙</div>
+  <div id="modelTestToggle" title="Model Listesi">◈</div>
+  <div id="hud">
+    <div id="hpBar"><div id="hpFill"></div></div>
+    <div id="scoreLabel">Puan: <span id="scoreVal">0</span></div>
+    <div id="waveLabel">Dalga <span id="waveVal">1</span></div>
+  </div>
+  <div id="crosshair">+</div>
+  <div id="gameOver">
+    <div class="go-content">
+      <div class="go-icon">☠</div>
+      <h1>ÖLDÜN</h1>
+      <div class="go-stats">
+        <div class="go-stat"><span class="go-label">Puan</span><span class="go-value" id="finalScore">0</span></div>
+        <div class="go-divider"></div>
+        <div class="go-stat"><span class="go-label">Dalga</span><span class="go-value" id="finalWave">1</span></div>
+      </div>
+      <button id="menuBtn">ANA MENÜ</button>
+    </div>
+  </div>
+</div>
+
+<div id="loadingScreen">
+  <div class="loader-text">EKLENTİLER YÜKLENİYOR</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-status" id="loadStatus">0 / 0</div>
+  <div class="loader-plugin" id="loadPlugin"></div>
+</div>
+
+<div id="pluginPanel">
+  <div id="panelHeader">
+    <h2>Plugin Yönetimi</h2>
+    <span id="panelClose">×</span>
+  </div>
+  <div id="pluginList"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script src="js/core/PluginRegistry.js"></script>
+<script src="js/core/PluginLoader.js"></script>
+<script src="js/core/PluginPanel.js"></script>
+<script src="js/core/PluginCommandsAPI.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
