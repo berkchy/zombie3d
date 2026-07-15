@@ -8,7 +8,7 @@ PluginRegistry.register({
   enabled: true,
 
   styles:
-    '#joystick-area{position:fixed;left:40px;bottom:70px;width:120px;height:120px;z-index:180;border-radius:50%;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);touch-action:none;display:none;user-select:none;-webkit-user-select:none;}' +
+    '#joystick-area{position:fixed;left:40px;bottom:110px;width:120px;height:120px;z-index:200;border-radius:50%;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);touch-action:none;display:none;user-select:none;-webkit-user-select:none;}' +
     '#joystick-area.active{display:block;}' +
     '#joystick-knob{position:absolute;top:50%;left:50%;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(255,255,255,0.2),rgba(255,255,255,0.05));border:1.5px solid rgba(255,255,255,0.12);transform:translate(-50%,-50%);box-shadow:0 0 20px rgba(255,255,255,0.04);transition:box-shadow .2s;}' +
     '#joystick-knob::after{content:"";position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 40% 30%,rgba(255,255,255,0.12),transparent 70%);}' +
