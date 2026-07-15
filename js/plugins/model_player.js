@@ -253,20 +253,19 @@ PluginRegistry.register({
       ]
     },
     die: {
-      duration: 0.8,
+      duration: 0.9,
       loop: false,
       tracks: [
-        { pivot: 'hip', prop: 'position.z', keys: [0, -0.35] },
-        { pivot: 'hip', prop: 'position.y', keys: [0.28, 0.32, 0.04] },
-        { pivot: 'torso', prop: 'rotation.x', keys: [0, -0.85] },
-        { pivot: 'torso', prop: 'rotation.z', keys: [0, 0.35] },
-        { pivot: 'head', prop: 'rotation.x', keys: [0, 0.5] },
-        { pivot: 'legL', prop: 'rotation.x', keys: [0, 0.35] },
-        { pivot: 'legR', prop: 'rotation.x', keys: [0, -0.35] },
-        { pivot: 'armL', prop: 'rotation.x', keys: [0.1, -0.85] },
-        { pivot: 'armR', prop: 'rotation.x', keys: [-0.08, -0.85] },
-        { pivot: 'armL', prop: 'rotation.z', keys: [0, 0.2] },
-        { pivot: 'armR', prop: 'rotation.z', keys: [0, -0.2] }
+        { pivot: 'hip', prop: 'rotation.x', keys: [0, -1.45] },
+        { pivot: 'hip', prop: 'position.y', keys: [0.28, 0.28, 0.04] },
+        { pivot: 'hip', prop: 'position.z', keys: [0, -0.3] },
+        { pivot: 'legL', prop: 'rotation.x', keys: [0, 0.15] },
+        { pivot: 'legR', prop: 'rotation.x', keys: [0, -0.15] },
+        { pivot: 'armL', prop: 'rotation.x', keys: [0.1, -0.3] },
+        { pivot: 'armR', prop: 'rotation.x', keys: [-0.08, -0.3] },
+        { pivot: 'armL', prop: 'rotation.z', keys: [0, 0.4] },
+        { pivot: 'armR', prop: 'rotation.z', keys: [0, -0.4] },
+        { pivot: 'head', prop: 'rotation.x', keys: [0, 0.35] }
       ]
     }
   }
