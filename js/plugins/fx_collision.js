@@ -7,8 +7,8 @@ PluginRegistry.register({
   priority: 99,
   enabled: true,
 
-  playerRadius: 0.35,
-  zombieRadius: 0.35,
+  playerRadius: 0.45,
+  zombieRadius: 0.4,
 
   update(dt) {
     if (!game || !game.player || !game.playerMesh) return;
@@ -22,7 +22,7 @@ PluginRegistry.register({
     var playerMesh = game.playerMesh;
     var playerPos = playerMesh.position;
 
-    // 1) Oyuncu vs zombi
+    // 1) Oyuncu vs zombi — oyuncu itilmez, zombi itilir
     var pMinDist = this.playerRadius + this.zombieRadius;
     for (var i = 0; i < zombies.length; i++) {
       var z = zombies[i];
@@ -36,11 +36,8 @@ PluginRegistry.register({
         var overlap = pMinDist - dist;
         var nx = dx / dist;
         var nz = dz / dist;
-        var push = overlap * 0.5;
-        playerPos.x += nx * push;
-        playerPos.z += nz * push;
-        z.mesh.position.x -= nx * push;
-        z.mesh.position.z -= nz * push;
+        z.mesh.position.x -= nx * overlap;
+        z.mesh.position.z -= nz * overlap;
       }
     }
 
