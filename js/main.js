@@ -188,7 +188,6 @@ function init() {
           this._tickTimer = 0;
           this._lastScore = 0;
           document.getElementById('scoreVal').textContent = '0';
-          document.getElementById('waveVal').textContent = '1';
           document.getElementById('waveLabel').innerHTML = 'Dalga <span id="waveVal">1</span>';
           document.getElementById('hpFill').style.width = '100%';
 
