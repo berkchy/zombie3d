@@ -51,6 +51,7 @@ PluginRegistry.register({
     }.bind(this);
 
     this._onClick = function() {
+      if (!window.gameStarted || this.game.gameOverFlag) return;
       document.body.requestPointerLock();
     }.bind(this);
 

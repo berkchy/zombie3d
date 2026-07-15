@@ -65,7 +65,7 @@ PluginRegistry.register({
     var wp = this._getWeapon();
     if (!wp) return;
     if (wp.weaponType === 'knife') return;
-    if (wp.maxAmmo <= 0) return;
+    if (wp.ammo >= wp.clip || wp.maxAmmo <= 0) return;
 
     this._reloading = true;
     this._wp = wp;
