@@ -351,7 +351,7 @@ function startGame() {
   if (gameStarted) return;
   gameStarted = true;
 
-  document.getElementById('hud').classList.add('show');
+  document.getElementById('hpFill').style.width = '100%';
 
   if (game.player && game.player.mesh) {
     game.player.mesh.position.set(0, 0, 0);
@@ -373,7 +373,7 @@ function startGame() {
       if (count > 0) game.hotbar.selectSlot(0);
     }
   } else {
-    document.getElementById('waveLabel').textContent = 'Dalga <span id="waveVal">1</span>';
+    document.getElementById('waveLabel').innerHTML = 'Dalga <span id="waveVal">1</span>';
   }
 
   game.score = 0;

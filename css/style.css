@@ -13,66 +13,6 @@ html, body { width:100%; height:100%; overflow:hidden; background:#111; font-fam
   pointer-events:none; z-index:10; opacity:.6;
 }
 
-/* ===== HUD ===== */
-#hud {
-  position:fixed; top:14px; left:50%; transform:translateX(-50%);
-  display:none; align-items:center; gap:0; z-index:20;
-  background:rgba(10,10,16,0.88); padding:0; border-radius:12px;
-  color:#fff; font-size:13px;
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,0.06);
-  box-shadow:0 4px 24px rgba(0,0,0,0.4);
-  overflow:hidden;
-  user-select:none;
-}
-#hud.show { display:flex; }
-
-.hud-block {
-  display:flex; align-items:center; gap:8px; padding:10px 16px;
-}
-
-.hud-sep {
-  width:1px; height:28px; background:rgba(255,255,255,0.06); flex-shrink:0;
-}
-
-.hud-icon {
-  font-size:15px; opacity:0.7; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-}
-.hud-icon.hp-icon { color:#f44336; opacity:0.9; }
-
-#hpBar {
-  width:140px; height:6px; background:rgba(255,255,255,0.08);
-  border-radius:3px; overflow:hidden;
-}
-#hpFill {
-  height:100%;
-  background:linear-gradient(90deg,#f44336,#ff9800,#4caf50);
-  border-radius:3px; transition:width .25s ease;
-  box-shadow:0 0 8px rgba(76,175,80,0.3);
-}
-
-.hud-lbl {
-  font-size:9px; font-weight:600; letter-spacing:1.5px;
-  text-transform:uppercase; color:rgba(255,255,255,0.3);
-}
-.hud-num {
-  font-size:15px; font-weight:600; color:rgba(255,255,255,0.9);
-  font-variant-numeric:tabular-nums; min-width:28px; text-align:right;
-}
-
-#waveLabel {
-  display:flex; align-items:center; gap:6px;
-  font-size:9px; font-weight:600; letter-spacing:1.5px;
-  text-transform:uppercase; color:rgba(255,255,255,0.3);
-  padding:10px 16px;
-}
-#waveLabel #waveVal {
-  font-size:15px; font-weight:600; color:#4fc3f7;
-  font-variant-numeric:tabular-nums; min-width:20px; text-align:right;
-  letter-spacing:0; text-transform:none;
-}
-
 /* ===== Game Over ===== */
 #gameOver {
   display:none; position:fixed; inset:0; z-index:240;
