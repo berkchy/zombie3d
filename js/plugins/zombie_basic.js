@@ -89,7 +89,7 @@ PluginRegistry.register({
       if (dist > 0.5) {
         z.mesh.position.x += dir.x * speed;
         z.mesh.position.z += dir.z * speed;
-        z.mesh.rotation.y = Math.atan2(-dir.x, -dir.z);
+        z.mesh.rotation.y = Math.atan2(dir.x, dir.z);
       } else {
         if (z.attackTimer <= 0) {
           this.game.player.takeDamage(z.damage);
