@@ -1,3 +1,15 @@
+function disposeMesh(mesh) {
+  mesh.traverse(function(child) {
+    if (child.isMesh) {
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        if (Array.isArray(child.material)) child.material.forEach(function(m) { m.dispose(); });
+        else child.material.dispose();
+      }
+    }
+  });
+}
+
 PluginRegistry.register({
   id: 'player_basic',
   name: 'Oyuncu',
@@ -10,6 +22,7 @@ PluginRegistry.register({
   game: null,
   mesh: null,
   weaponMesh: null,
+  _weaponSlot: null,
 
   speed: 6,
   hp: 100,
@@ -45,18 +58,12 @@ PluginRegistry.register({
     this.headMat = group.userData ? group.userData.headMat : null;
     if (this.bodyMat) this.bodyMat.color.setHex(this.color);
 
-    // Silah modelini weapon_slot'a tak
+    // Silah slot referansini sakla
+    this._weaponSlot = group.getObjectByName('weapon_slot');
+
+    // Varsayilan silahi tak (hotbar varsa ilk slot'taki silah kullanilir)
     this.weaponMesh = null;
-    var slot = group.getObjectByName('weapon_slot');
-    if (slot) {
-      var pistolPlugin = PluginRegistry.get('model_pistol');
-      if (pistolPlugin && pistolPlugin.enabled && typeof pistolPlugin.createModel === 'function') {
-        var pistol = pistolPlugin.createModel();
-        pistol.rotation.y = -Math.PI / 2;
-        slot.add(pistol);
-        this.weaponMesh = pistol;
-      }
-    }
+    this._attachDefaultWeapon();
 
     game.scene.add(group);
     game.player = this;
@@ -81,6 +88,66 @@ PluginRegistry.register({
         }
       }, 300);
     });
+
+    // Hotbar secimi degisince silah modelini degistir
+    PluginRegistry.on('hotbar:select', 'player_basic', function(data) {
+      var slotId = data.slot ? data.slot.id : null;
+      if (slotId) {
+        self._attachWeaponToSlot(slotId);
+      } else {
+        self._attachWeaponToSlot(null);
+      }
+    });
+  },
+
+  _attachDefaultWeapon() {
+    // Hotbar varsa ilk dolu slot'taki silahi kullan, yoksa pistol
+    var weaponId = null;
+    if (this.game && this.game.hotbar) {
+      for (var i = 0; i < 5; i++) {
+        var s = this.game.hotbar.getSlot(i);
+        if (s && s.id) { weaponId = s.id; break; }
+      }
+    }
+    if (!weaponId) weaponId = 'weapon_pistol';
+    this._attachWeaponToSlot(weaponId);
+  },
+
+  _attachWeaponToSlot(weaponId) {
+    if (!this._weaponSlot) return;
+
+    // Eski silahi kaldir
+    if (this.weaponMesh) {
+      this._weaponSlot.remove(this.weaponMesh);
+      disposeMesh(this.weaponMesh);
+      this.weaponMesh = null;
+    }
+
+    if (!weaponId) return;
+
+    // Weapon plugin'ini bul
+    var wp = PluginRegistry.get(weaponId);
+    if (!wp || !wp.enabled || !wp.modelId) return;
+
+    // Model plugin'ini bul ve olustur
+    var mp = PluginRegistry.get(wp.modelId);
+    if (!mp || !mp.enabled || typeof mp.createModel !== 'function') return;
+
+    var model;
+    try {
+      model = mp.createModel();
+    } catch (e) {
+      return;
+    }
+    if (!model) return;
+
+    // Silahi el pozisyonuna uygun sekilde konumlandir
+    model.rotation.order = 'YXZ';
+    model.rotation.y = 0.15;
+    model.rotation.x = -0.1;
+
+    this._weaponSlot.add(model);
+    this.weaponMesh = model;
   },
 
   update(dt) {
@@ -156,6 +223,7 @@ PluginRegistry.register({
 
   destroy: function() {
     PluginRegistry.off('player:dodge', this.id);
+    PluginRegistry.off('hotbar:select', this.id);
     if (this.mesh && this.game) {
       this.game.scene.remove(this.mesh);
     }

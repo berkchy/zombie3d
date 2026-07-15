@@ -32,10 +32,10 @@ PluginRegistry.register({
     nose.rotation.z = -Math.PI / 2;
     group.add(nose);
 
-    // Silah baglanti noktasi — weapon model plugin'i buraya takilir
+    // Silah baglanti noktasi — sag el pozisyonu
     var weaponSlot = new THREE.Object3D();
     weaponSlot.name = 'weapon_slot';
-    weaponSlot.position.set(0.55, 0.25, 0);
+    weaponSlot.position.set(0.5, 0.35, 0.25);
     group.add(weaponSlot);
 
     group.userData.bodyMat = bodyMat;
