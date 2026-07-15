@@ -14,6 +14,10 @@ html, body { width:100%; height:100%; overflow:hidden; background:#111; font-fam
 }
 
 /* ===== Game Over ===== */
+@keyframes goOverlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 #gameOver {
   display:none; position:fixed; inset:0; z-index:240;
   background:rgba(5,2,2,0.92);
@@ -21,7 +25,7 @@ html, body { width:100%; height:100%; overflow:hidden; background:#111; font-fam
   align-items:center; justify-content:center;
   color:#fff; font-family:'Segoe UI',sans-serif;
 }
-#gameOver.show { display:flex; }
+#gameOver.show { display:flex; animation:goOverlayFade .6s ease; }
 .go-content {
   display:flex; flex-direction:column; align-items:center;
   animation:goIn .4s ease both;

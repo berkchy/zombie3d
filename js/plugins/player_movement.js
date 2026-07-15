@@ -2,12 +2,12 @@ PluginRegistry.register({
   id: 'player_movement',
   name: 'Karakter Hareketi',
   type: 'player',
-  version: '1.1',
+  version: '1.2',
   description: 'Oyuncu hareket mantigi — hizlanma/yavaslama',
   priority: 20,
   enabled: true,
 
-  speed: 8,
+  speed: 5,
   velX: 0,
   velZ: 0,
   accel: 20,
@@ -35,8 +35,18 @@ PluginRegistry.register({
     var isMoving = inputX !== 0 || inputZ !== 0;
 
     if (isMoving) {
-      var targetVX = inputX * this.speed;
-      var targetVZ = inputZ * this.speed;
+      var targetVX, targetVZ;
+      var fp = PluginRegistry.get('fx_firstperson');
+      if (fp && fp.enabled && mesh.rotation.y !== undefined) {
+        var yaw = mesh.rotation.y;
+        var cosY = Math.cos(yaw);
+        var sinY = Math.sin(yaw);
+        targetVX = (inputX * cosY + inputZ * sinY) * this.speed;
+        targetVZ = (-inputX * sinY + inputZ * cosY) * this.speed;
+      } else {
+        targetVX = inputX * this.speed;
+        targetVZ = inputZ * this.speed;
+      }
 
       var diffX = targetVX - this.velX;
       var diffZ = targetVZ - this.velZ;

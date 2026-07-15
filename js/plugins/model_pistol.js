@@ -2,112 +2,175 @@ PluginRegistry.register({
   id: 'model_pistol',
   name: 'Tabanca',
   type: 'model',
-  version: '1.0',
-  description: 'Detayli tabanca modeli — player modeline takilir',
+  version: '2.0',
+  description: 'Detayli ince tabanca modeli — view modelde kullanilir',
   enabled: true,
 
   createModel() {
     var group = new THREE.Group();
 
-    // Ana govde (slide)
-    var slideGeo = new THREE.BoxGeometry(0.06, 0.06, 0.22);
-    var slideMat = new THREE.MeshStandardMaterial({ color: 0x7788aa, metalness: 0.7, roughness: 0.3 });
-    var slide = new THREE.Mesh(slideGeo, slideMat);
-    slide.position.set(0, 0.04, 0.18);
+    var steelMat = new THREE.MeshStandardMaterial({ color: 0x7788aa, metalness: 0.8, roughness: 0.25 });
+    var darkMat = new THREE.MeshStandardMaterial({ color: 0x556677, metalness: 0.7, roughness: 0.35 });
+    var blackMat = new THREE.MeshStandardMaterial({ color: 0x333344, metalness: 0.6, roughness: 0.4 });
+    var gripMat = new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.95, metalness: 0 });
+    var darkGripMat = new THREE.MeshStandardMaterial({ color: 0x2a1a0a, roughness: 0.95 });
+
+    // === SLIDE (govde) ===
+    var slide = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.20), steelMat);
+    slide.position.set(0, 0.035, 0.16);
     slide.name = 'slide';
     group.add(slide);
 
-    // Barrel (namlu)
-    var barrelGeo = new THREE.CylinderGeometry(0.025, 0.03, 0.18, 8);
-    var barrelMat = new THREE.MeshStandardMaterial({ color: 0x667799, metalness: 0.8, roughness: 0.2 });
-    var barrel = new THREE.Mesh(barrelGeo, barrelMat);
+    // Slide top (daha ince ust kisim)
+    var slideTop = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.01, 0.16), blackMat);
+    slideTop.position.set(0, 0.048, 0.15);
+    slideTop.name = 'slide_top';
+    group.add(slideTop);
+
+    // Slide serrations (cizgiler)
+    for (var i = 0; i < 5; i++) {
+      var serr = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.003, 0.004), darkMat);
+      serr.position.set(0, 0.052, 0.06 + i * 0.008);
+      serr.name = 'serration_' + i;
+      group.add(serr);
+    }
+
+    // Ejection port
+    var port = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.015, 0.04), blackMat);
+    port.position.set(0, 0.045, 0.15);
+    port.name = 'eject_port';
+    group.add(port);
+
+    // === BARREL (namlu) ===
+    var barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.018, 0.18, 8), steelMat);
     barrel.rotation.x = Math.PI / 2;
-    barrel.position.set(0, 0.015, 0.3);
+    barrel.position.set(0, 0.012, 0.30);
     barrel.name = 'barrel';
     group.add(barrel);
 
-    // Barrel front (namlu agzi)
-    var frontGeo = new THREE.CylinderGeometry(0.032, 0.028, 0.03, 8);
-    var frontMat = new THREE.MeshStandardMaterial({ color: 0x556688, metalness: 0.9, roughness: 0.2 });
-    var front = new THREE.Mesh(frontGeo, frontMat);
-    front.rotation.x = Math.PI / 2;
-    front.position.set(0, 0.015, 0.4);
-    front.name = 'front';
-    group.add(front);
+    // Barrel inner (namlu ici)
+    var barrelInner = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.01, 0.18, 8), blackMat);
+    barrelInner.rotation.x = Math.PI / 2;
+    barrelInner.position.set(0, 0.012, 0.30);
+    barrelInner.name = 'barrel_inner';
+    group.add(barrelInner);
 
-    // Grips
-    var gripGeo = new THREE.BoxGeometry(0.04, 0.12, 0.06);
-    var gripMat = new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.9, metalness: 0 });
-    var grip = new THREE.Mesh(gripGeo, gripMat);
-    grip.position.set(0, -0.06, 0.05);
-    grip.name = 'grip';
-    group.add(grip);
+    // Barrel bushing (namlu agzi bilezigi)
+    var bushing = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.02, 0.025, 8), darkMat);
+    bushing.rotation.x = Math.PI / 2;
+    bushing.position.set(0, 0.012, 0.40);
+    bushing.name = 'bushing';
+    group.add(bushing);
 
-    // Grip panel (texture detail)
-    var panelGeo = new THREE.BoxGeometry(0.005, 0.08, 0.04);
-    var panelMat = new THREE.MeshStandardMaterial({ color: 0x2a1a0a, roughness: 0.95 });
-    for (var side = -1; side <= 1; side += 2) {
-      var panel = new THREE.Mesh(panelGeo, panelMat);
-      panel.position.set(side * 0.022, -0.06, 0.05);
-      group.add(panel);
-    }
+    // Muzzle (en uctaki halka)
+    var muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.01, 8), blackMat);
+    muzzle.rotation.x = Math.PI / 2;
+    muzzle.position.set(0, 0.012, 0.415);
+    muzzle.name = 'muzzle';
+    group.add(muzzle);
 
-    // Trigger guard
-    var guardShape = new THREE.Shape();
-    guardShape.moveTo(-0.02, -0.025);
-    guardShape.quadraticCurveTo(-0.025, -0.06, 0, -0.06);
-    guardShape.quadraticCurveTo(0.025, -0.06, 0.02, -0.025);
-    var guardGeo = new THREE.ExtrudeGeometry(guardShape, { depth: 0.015, bevelEnabled: false });
-    var guardMat = new THREE.MeshStandardMaterial({ color: 0x556677, metalness: 0.5, roughness: 0.4 });
-    var guard = new THREE.Mesh(guardGeo, guardMat);
-    guard.position.set(0, 0, 0.1);
-    guard.rotation.y = Math.PI / 2;
-    guard.name = 'trigger_guard';
-    group.add(guard);
+    // === FRAME (alt govde) ===
+    var frame = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.12), darkMat);
+    frame.position.set(0, 0.0, 0.12);
+    frame.name = 'frame';
+    group.add(frame);
 
-    // Trigger (cakmak)
-    var trigGeo = new THREE.BoxGeometry(0.01, 0.025, 0.008);
-    var trigMat = new THREE.MeshStandardMaterial({ color: 0x8899aa, metalness: 0.6, roughness: 0.3 });
-    var trigger = new THREE.Mesh(trigGeo, trigMat);
-    trigger.position.set(0, -0.02, 0.1);
+    // Trigger guard (tetik korumasi)
+    var tgShape = new THREE.Shape();
+    tgShape.moveTo(-0.015, -0.015);
+    tgShape.quadraticCurveTo(-0.02, -0.05, 0, -0.05);
+    tgShape.quadraticCurveTo(0.02, -0.05, 0.015, -0.015);
+    var tgGeo = new THREE.ExtrudeGeometry(tgShape, { depth: 0.012, bevelEnabled: false });
+    var tGuard = new THREE.Mesh(tgGeo, darkMat);
+    tGuard.position.set(0, 0, 0.08);
+    tGuard.rotation.y = Math.PI / 2;
+    tGuard.name = 'trigger_guard';
+    group.add(tGuard);
+
+    // Trigger (tetik)
+    var trigger = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.02, 0.005), steelMat);
+    trigger.position.set(0, -0.015, 0.09);
     trigger.name = 'trigger';
     group.add(trigger);
 
+    // === GRIP (kabza) ===
+    var grip = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.08, 0.04), gripMat);
+    grip.position.set(0, -0.045, 0.04);
+    grip.rotation.z = -0.08;
+    grip.name = 'grip';
+    group.add(grip);
+
+    // Grip panels (kabza yan paneli)
+    for (var s = -1; s <= 1; s += 2) {
+      var panel = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.06, 0.03), darkGripMat);
+      panel.position.set(s * 0.016, -0.045, 0.04);
+      panel.name = 'grip_panel_' + (s > 0 ? 'r' : 'l');
+      group.add(panel);
+    }
+
+    // Grip checkering (kabza puanlari)
+    for (var r = 0; r < 3; r++) {
+      for (var c = 0; c < 3; c++) {
+        var dot = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.002), darkGripMat);
+        dot.position.set((c - 1) * 0.008, -0.025 + r * 0.02, 0.058);
+        dot.name = 'checker_' + r + '_' + c;
+        group.add(dot);
+      }
+    }
+
     // Magazine (sarjor)
-    var magGeo = new THREE.BoxGeometry(0.03, 0.06, 0.04);
-    var magMat = new THREE.MeshStandardMaterial({ color: 0x556677, metalness: 0.6, roughness: 0.4 });
-    var mag = new THREE.Mesh(magGeo, magMat);
-    mag.position.set(0, -0.12, 0.05);
+    var mag = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.04, 0.028), darkMat);
+    mag.position.set(0, -0.095, 0.04);
     mag.name = 'magazine';
     group.add(mag);
 
-    // Hammer (horoz)
-    var hammerGeo = new THREE.BoxGeometry(0.02, 0.025, 0.01);
-    var hammerMat = new THREE.MeshStandardMaterial({ color: 0x667788, metalness: 0.5, roughness: 0.4 });
-    var hammer = new THREE.Mesh(hammerGeo, hammerMat);
-    hammer.position.set(0, 0.05, 0.06);
+    // Magazine base
+    var magBase = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.006, 0.03), blackMat);
+    magBase.position.set(0, -0.118, 0.04);
+    magBase.name = 'mag_base';
+    group.add(magBase);
+
+    // === SLIDE STOP / RELEASE ===
+    var slideStop = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.025, 0.008), darkMat);
+    slideStop.position.set(0.022, 0.01, 0.10);
+    slideStop.name = 'slide_stop';
+    group.add(slideStop);
+
+    // === HAMMER (horoz) ===
+    var hammer = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.02, 0.008), darkMat);
+    hammer.position.set(0, 0.048, 0.05);
     hammer.name = 'hammer';
     group.add(hammer);
 
-    // Rear sight (arka gez)
-    var sightGeo = new THREE.BoxGeometry(0.02, 0.015, 0.008);
-    var sightMat = new THREE.MeshStandardMaterial({ color: 0x99aabb, metalness: 0.9 });
-    var sight = new THREE.Mesh(sightGeo, sightMat);
-    sight.position.set(0, 0.07, 0.07);
-    sight.name = 'rear_sight';
-    group.add(sight);
+    // === SIGHTS (gezler) ===
+    var rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.01, 0.005), blackMat);
+    rearSight.position.set(0, 0.06, 0.06);
+    rearSight.name = 'rear_sight';
+    group.add(rearSight);
 
-    // Front sight (on gez)
-    var fsight = sight.clone();
-    fsight.position.set(0, 0.07, 0.3);
-    fsight.name = 'front_sight';
-    group.add(fsight);
+    // Rear sight notch
+    var notch = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.005, 0.003), blackMat);
+    notch.position.set(0, 0.07, 0.06);
+    notch.name = 'rear_notch';
+    group.add(notch);
 
-    // Namlu ucu — merminin cikis noktasi (isaretci)
-    var muzzle = new THREE.Object3D();
-    muzzle.position.set(0, 0.015, 0.4);
-    muzzle.name = 'barrel_tip';
-    group.add(muzzle);
+    var frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.012, 0.004), blackMat);
+    frontSight.position.set(0, 0.058, 0.28);
+    frontSight.name = 'front_sight';
+    group.add(frontSight);
+
+    // Front sight dot
+    var dotFS = new THREE.Mesh(new THREE.SphereGeometry(0.003, 4, 4),
+      new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0xff2222, emissiveIntensity: 0.3 }));
+    dotFS.position.set(0, 0.066, 0.28);
+    dotFS.name = 'front_dot';
+    group.add(dotFS);
+
+    // Barrel tip (mermi cikisi)
+    var tip = new THREE.Object3D();
+    tip.position.set(0, 0.012, 0.42);
+    tip.name = 'barrel_tip';
+    group.add(tip);
 
     return group;
   }

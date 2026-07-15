@@ -3,11 +3,22 @@ var game;
 var lastTime = 0;
 var running = false;
 var gameStarted = false;
+var _fpsFrames = 0, _fpsTimer = 0, _currentFps = 0;
 
 // Plugin çökme — oyunu durdur, konsolu aç
 function crashGame(pluginId, phase, error) {
   running = false;
   gameStarted = false;
+  // Hatayi plugin uzerinde sakla
+  var all = PluginRegistry.getAll();
+  for (var i = 0; i < all.length; i++) {
+    if (all[i].id === pluginId) {
+      all[i]._crashed = true;
+      all[i]._crashError = (error && error.message) ? error.message : (error || '');
+      all[i]._crashPhase = phase;
+      break;
+    }
+  }
   if (game) {
     game._crashed = true;
     game.paused = false;
@@ -101,6 +112,9 @@ function init() {
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 18, 12);
       camera.lookAt(0, 0, 0);
+      window.camera = camera;
+      scene.add(camera);
+      try { var fov = PluginCvarAPI.get('camera_fov'); if (fov) { camera.fov = fov; camera.updateProjectionMatrix(); } } catch(e) {}
 
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -138,6 +152,8 @@ function init() {
         _tickTimer: 0,
         elapsed: 0,
         gameOverFlag: false,
+        _dying: false,
+        _dyingTimer: 0,
         paused: false,
         plugins: [],
         started: false,
@@ -176,6 +192,9 @@ function init() {
           document.getElementById('finalWave').textContent = this.poligonMode ? 'POLIGON' : document.getElementById('waveVal').textContent;
           document.getElementById('gameOver').classList.add('show');
 
+          camera.position.set(0, 18, 12);
+          camera.lookAt(0, 0, 0);
+
           PluginRegistry.emit('game:over');
         },
 
@@ -184,6 +203,7 @@ function init() {
           this.score = 0;
           this.elapsed = 0;
           this.gameOverFlag = false;
+          this._dying = false;
           this.paused = false;
           this._tickTimer = 0;
           this._lastScore = 0;
@@ -258,6 +278,11 @@ function init() {
     PluginRegistry.on('menu:poligon', '__engine__', function() {
       game.poligonMode = true;
       startGame();
+    });
+
+    PluginRegistry.on('player:dying', '__engine__', function(data) {
+      game._dying = true;
+      game._dyingTimer = 0;
     });
 
       // Loading ekranını kapat
@@ -362,7 +387,6 @@ function startGame() {
   // Poligon modu ayarlari
   if (game.poligonMode) {
     document.getElementById('waveLabel').textContent = 'POLIGON';
-    // Tum silah eklentilerini otomatik slotlara yerlestir (max 5)
     if (game.hotbar) {
       game.hotbar.clearAll();
       var weapons = PluginRegistry.getByType('weapon');
@@ -374,11 +398,20 @@ function startGame() {
     }
   } else {
     document.getElementById('waveLabel').innerHTML = 'Dalga <span id="waveVal">1</span>';
+    if (game.hotbar) {
+      game.hotbar.clearAll();
+      var weapons = PluginRegistry.getByType('weapon');
+      if (weapons.length > 0) {
+        game.hotbar.setSlot(0, weapons[0].id);
+        game.hotbar.selectSlot(0);
+      }
+    }
   }
 
   game.score = 0;
   game.elapsed = 0;
   game.gameOverFlag = false;
+  game._dying = false;
   PluginRegistry.emit('game:start');
 }
 
@@ -411,6 +444,7 @@ function loop(time) {
     if (!p.update || !p._loaded) continue;
     if (!gameStarted && p.type !== 'ui' && p.type !== 'menu' && p.type !== 'scene') continue;
     if (game.paused && p.type !== 'ui' && p.type !== 'menu' && p.type !== 'scene') continue;
+    if (game && game._dying && p.type !== 'core' && p.type !== 'ui') continue;
     try {
       p.update(dt);
     } catch (e) {
@@ -419,11 +453,99 @@ function loop(time) {
     }
   }
 
-  if (game.player && game.player.mesh && gameStarted) {
-    var pos = game.player.mesh.position;
-    camera.position.x += (pos.x - camera.position.x) * 0.08;
-    camera.position.z += (pos.z + 12 - camera.position.z) * 0.08;
-    camera.lookAt(pos.x, 0, pos.z);
+  // Animasyon guncellemesi (tip filtresini atla)
+  var animPlugin = PluginRegistry.get('core_animation');
+  if (animPlugin && animPlugin.enabled && animPlugin.update && animPlugin._loaded) {
+    try { animPlugin.update(dt); } catch (e) { crashGame('core_animation', 'update', e); return; }
+  }
+
+  // --- KAMERA ---
+  if (game.player && game.player.mesh && gameStarted && !game._dying) {
+    var fp = PluginRegistry.get('fx_firstperson');
+    if (fp && fp.enabled) {
+      // First person: kamerayi oyuncu kafasina yerlestir
+      var pos = game.player.mesh.position;
+      camera.position.set(pos.x, pos.y + 0.6, pos.z);
+      var yaw = game.fpYaw || 0;
+      var pitch = game.fpPitch || 0;
+      var euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+      camera.quaternion.setFromEuler(euler);
+      game.player.mesh.rotation.y = yaw;
+
+      // Oyuncu govdesini gizle (bacaklar kalsin)
+      var hip = game.player.mesh.getObjectByName('hip');
+      if (hip) {
+        var torsoN = hip.getObjectByName('torso');
+        if (torsoN && torsoN.visible !== false) torsoN.visible = false;
+      }
+
+      // View modeli kameraya ekle (bir kere) — pozisyon pose sistemi tarafindan ayarlanir
+      var vm = camera.getObjectByName('fp_viewmodel');
+      if (!vm && fp._viewGroup) {
+        camera.add(fp._viewGroup);
+        fp._viewGroup.visible = true;
+        // Ilk silahi yukle (pose sistemi pozisyonu otomatik ayarlar)
+        if (game.hotbar) {
+          var sel = game.hotbar.getSelected();
+          if (sel && sel.id) fp._updateViewWeapon(sel.id);
+        }
+      }
+      if (vm && !vm.visible) vm.visible = true;
+    } else {
+      // Third person
+      var pos = game.player.mesh.position;
+      camera.position.x += (pos.x - camera.position.x) * 0.08;
+      camera.position.z += (pos.z + 12 - camera.position.z) * 0.08;
+      camera.lookAt(pos.x, 0, pos.z);
+
+      // Oyuncu govdesini goster
+      var hip = game.player.mesh.getObjectByName('hip');
+      if (hip) {
+        var torsoN = hip.getObjectByName('torso');
+        if (torsoN && torsoN.visible !== true) torsoN.visible = true;
+      }
+
+      // View modeli gizle
+      var vm = camera.getObjectByName('fp_viewmodel');
+      if (vm && vm.visible) vm.visible = false;
+    }
+  }
+
+  // Olum ani zoom
+  if (game && game._dying && game.player && game.player.mesh) {
+    game._dyingTimer += dt;
+    var dieLen = 0.7;
+    var zoomLen = 1.5;
+
+    var fp = PluginRegistry.get('fx_firstperson');
+    if (fp && fp.enabled) {
+      // First person: kamera basi egilsin (yere dussun)
+      if (game._dyingTimer > dieLen) {
+        var t = Math.min((game._dyingTimer - dieLen) / zoomLen, 1);
+        var ppos = game.player.mesh.position;
+        camera.position.set(ppos.x, (ppos.y + 0.6) * (1 - t * 0.8), ppos.z);
+        camera.quaternion.slerp(new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(-Math.PI / 4, 0, 0)
+        ), t * 0.5);
+      }
+    } else {
+      var total = dieLen + zoomLen;
+      if (game._dyingTimer > dieLen) {
+        var t = (game._dyingTimer - dieLen) / zoomLen;
+        if (t > 1) t = 1;
+        var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        var ppos = game.player.mesh.position;
+        camera.position.x += (ppos.x - camera.position.x) * 0.05;
+        camera.position.y = 18 + (1.2 - 18) * ease;
+        camera.position.z = ppos.z + 12 + (2.8 - 12) * ease;
+        camera.lookAt(ppos.x, 0.4, ppos.z);
+      }
+    }
+
+    if (game._dyingTimer >= dieLen + zoomLen) {
+      game._dying = false;
+      game.gameOver();
+    }
   }
 
   renderer.render(scene, camera);
@@ -442,6 +564,17 @@ function loop(time) {
       crashGame(p2.id, 'render2d', e);
       return;
     }
+  }
+
+  // FPS sayaci
+  _fpsFrames++;
+  _fpsTimer += dt;
+  if (_fpsTimer >= 0.5) {
+    _currentFps = Math.round(_fpsFrames / _fpsTimer);
+    _fpsFrames = 0;
+    _fpsTimer = 0;
+    var fpsEl = document.getElementById('fps-counter');
+    if (fpsEl) fpsEl.textContent = 'FPS: ' + _currentFps;
   }
 
   requestAnimationFrame(loop);

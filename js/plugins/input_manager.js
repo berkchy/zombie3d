@@ -47,7 +47,6 @@ PluginRegistry.register({
         game.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
         game.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
       }
-      game.input.shoot = true;
     }, { passive: true });
     document.addEventListener('touchmove', function(e) {
       for (var i = 0; i < e.touches.length; i++) {
@@ -60,19 +59,10 @@ PluginRegistry.register({
       }
     }, { passive: true });
     document.addEventListener('touchend', function(e) {
-      // Kalan dokunuslarda non-joystick touch var mi?
-      var hasAimTouch = false;
-      for (var i = 0; i < e.touches.length; i++) {
-        var t = e.touches[i];
-        var el = document.elementFromPoint(t.clientX, t.clientY);
-        if (el && el.closest && el.closest('#joystick-area')) continue;
-        hasAimTouch = true;
-        break;
-      }
-      if (!hasAimTouch) game.input.shoot = false;
+      // sadece mouse aim guncellemesi, shoot touch tusu uzerinden
     }, { passive: true });
     document.addEventListener('touchcancel', function() {
-      game.input.shoot = false;
+      // shoot touch tusu uzerinden yonetilir
     }, { passive: true });
   },
 

@@ -37,6 +37,9 @@ PluginRegistry.register({
   level: 1,
   xpToNext: 50,
 
+  _animId: null,
+  _lastAnim: null,
+
   init(game) {
     this.game = game;
     this.hp = this.maxHp;
@@ -99,19 +102,48 @@ PluginRegistry.register({
         self._attachWeaponToSlot(null);
       }
     });
+
+    // Animasyon — idle ile basla
+    self._playAnim('idle');
+
+    // Hareket animasyonu gecisi
+    PluginRegistry.on('player:moving', 'player_basic', function(data) {
+      var isRun = data.speed > 0.3;
+      var target = isRun ? 'run' : 'idle';
+      if (self._lastAnim === target) return;
+      self._playAnim(target);
+    });
+  },
+
+  _playAnim(name) {
+    try {
+      if (this._lastAnim === name) return;
+      var anim = PluginRegistry.get('core_animation');
+      if (!anim || !anim.enabled || !this.mesh) return;
+      var modelPlugin = PluginRegistry.get('model_player');
+      var defs = modelPlugin && modelPlugin.animations ? modelPlugin.animations : null;
+      if (!defs || !defs[name]) return;
+      if (this._animId && anim.playing && anim.playing[this._animId]) {
+        anim.stop(this._animId);
+      }
+      this._lastAnim = name;
+      this._animId = anim.play(this.mesh, defs[name]);
+    } catch(e) {
+      if (window.PluginRegistry) console.warn('[player_basic] animasyon hatasi:', e.message);
+    }
   },
 
   _attachDefaultWeapon() {
-    // Hotbar varsa ilk dolu slot'taki silahi kullan, yoksa pistol
-    var weaponId = null;
-    if (this.game && this.game.hotbar) {
-      for (var i = 0; i < 5; i++) {
-        var s = this.game.hotbar.getSlot(i);
-        if (s && s.id) { weaponId = s.id; break; }
+    if (!this.game || !this.game.hotbar) return;
+    for (var i = 0; i < 5; i++) {
+      var s = this.game.hotbar.getSlot(i);
+      if (s && s.id) {
+        this._attachWeaponToSlot(s.id);
+        return;
       }
     }
-    if (!weaponId) weaponId = 'weapon_pistol';
-    this._attachWeaponToSlot(weaponId);
+    // Hicbir slot dolu degil, silahi kaldir
+    this._attachWeaponToSlot(null);
   },
 
   _attachWeaponToSlot(weaponId) {
@@ -175,26 +207,29 @@ PluginRegistry.register({
 
     if (this.dodgeCooldown > 0) this.dodgeCooldown -= dt;
 
-    // Mouse aiming
-    var cam = game.camera;
-    if (cam && game.mouse) {
-      var vec = new THREE.Vector3(game.mouse.x, game.mouse.y, 0.5);
-      vec.unproject(cam);
-      var dir = vec.sub(cam.position).normalize();
-      var distance = -cam.position.y / dir.y;
-      var targetX = cam.position.x + dir.x * distance;
-      var targetZ = cam.position.z + dir.z * distance;
-      var oldAngle = this.mesh.rotation.y;
-      var angle = Math.atan2(targetX - this.mesh.position.x, targetZ - this.mesh.position.z);
-      this.mesh.rotation.y = angle;
+    // Mouse aiming (sadece third person'da)
+    var fp = PluginRegistry.get('fx_firstperson');
+    if (!(fp && fp.enabled)) {
+      var cam = game.camera;
+      if (cam && game.mouse) {
+        var vec = new THREE.Vector3(game.mouse.x, game.mouse.y, 0.5);
+        vec.unproject(cam);
+        var dir = vec.sub(cam.position).normalize();
+        var distance = -cam.position.y / dir.y;
+        var targetX = cam.position.x + dir.x * distance;
+        var targetZ = cam.position.z + dir.z * distance;
+        var oldAngle = this.mesh.rotation.y;
+        var angle = Math.atan2(targetX - this.mesh.position.x, targetZ - this.mesh.position.z);
+        this.mesh.rotation.y = angle;
 
-      if (Math.abs(angle - oldAngle) > 0.01) {
-        PluginRegistry.emit('player:aiming', {
-          player: this,
-          angle: angle,
-          targetX: targetX,
-          targetZ: targetZ
-        });
+        if (Math.abs(angle - oldAngle) > 0.01) {
+          PluginRegistry.emit('player:aiming', {
+            player: this,
+            angle: angle,
+            targetX: targetX,
+            targetZ: targetZ
+          });
+        }
       }
     }
 
@@ -211,11 +246,13 @@ PluginRegistry.register({
   // ---------- Hasar ----------
   takeDamage: function(amount) {
     if (this.invincible) return;
+    if (this.game && this.game._dying) return;
     this.hp = Math.max(0, this.hp - amount);
     document.getElementById('hpFill').style.width = (this.hp / this.maxHp * 100) + '%';
     PluginRegistry.emit('player:hit', { player: this, damage: amount, hp: this.hp });
     if (this.hp <= 0) {
-      this.game.gameOver();
+      this._playAnim('die');
+      PluginRegistry.emit('player:dying', { player: this });
     }
   },
 
@@ -244,6 +281,12 @@ PluginRegistry.register({
   destroy: function() {
     PluginRegistry.off('player:dodge', this.id);
     PluginRegistry.off('hotbar:select', this.id);
+    PluginRegistry.off('player:moving', this.id);
+    var anim = PluginRegistry.get('core_animation');
+    if (anim && anim.enabled && this._animId) {
+      anim.stop(this._animId);
+      this._animId = null;
+    }
     if (this.mesh && this.game) {
       this.game.scene.remove(this.mesh);
     }

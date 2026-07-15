@@ -4,11 +4,12 @@ window.PluginLoader = (function() {
   var _loaded = {};
   var _errors = {};
   var _pendingErrors = [];
+  var _cacheBust = Date.now();
 
   // ---------- plugins.ini dosyasını oku ----------
   function loadIni(url, onDone) {
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
+    xhr.open('GET', url + '?v=' + _cacheBust, true);
     xhr.onload = function() {
       if (xhr.status === 200 || xhr.status === 0) {
         var lines = xhr.responseText.split('\n');
@@ -73,7 +74,7 @@ window.PluginLoader = (function() {
       loadingPaths[entry.path] = true;
 
       var script = document.createElement('script');
-      script.src = entry.path;
+      script.src = entry.path + '?v=' + _cacheBust;
       script.async = false;
 
       // InI yolunu script elementine ata — PluginRegistry.register() okusun

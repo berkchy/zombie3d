@@ -276,6 +276,9 @@ PluginRegistry.register({
           var status = (p._crashed ? 'Hata' : p.enabled ? 'Aktif' : 'Pasif').padEnd(8);
           var ver = p.version || '1.0';
           out += id + name + status + ver + '\n';
+          if (p._crashed && p._crashError) {
+            out += '  └─ [' + (p._crashPhase || '?') + '] ' + p._crashError + '\n';
+          }
         });
         return out;
       } else if (sub === 'get') {
@@ -283,7 +286,11 @@ PluginRegistry.register({
         var p = PluginRegistry.getAll().filter(function(x) { return x.id === args[1]; })[0];
         if (!p) return 'Plugin bulunamadı: ' + args[1];
         var durum = p._crashed ? 'Hata' : p.enabled ? 'Aktif' : 'Pasif';
-        return 'İsim: ' + (p.name || p.id) + '\nDosya: ' + (p._iniPath ? p._iniPath.split('/').pop() : '-') + '\nDurum: ' + durum + '\nSürüm: ' + (p.version || '1.0') + '\nTip: ' + (p.type || '-') + '\nYazar: ' + (p.author || '-');
+        var out = 'İsim: ' + (p.name || p.id) + '\nDosya: ' + (p._iniPath ? p._iniPath.split('/').pop() : '-') + '\nDurum: ' + durum + '\nSürüm: ' + (p.version || '1.0') + '\nTip: ' + (p.type || '-') + '\nYazar: ' + (p.author || '-');
+        if (p._crashed && p._crashError) {
+          out += '\nHata: [' + (p._crashPhase || '?') + '] ' + p._crashError;
+        }
+        return out;
       } else if (sub === 'pause' && args[1]) {
         var p = PluginRegistry.getAll().filter(function(x) { return x.id === args[1]; })[0];
         if (!p) return 'Plugin bulunamadı: ' + args[1];
@@ -299,6 +306,45 @@ PluginRegistry.register({
       }
       return 'Bilinmeyen alt komut: ' + sub;
     }, 'Plugin yönetimi: list / get / pause / resume');
+
+    PluginCommandsAPI.register('ui_devconsole', 'cvar', function(args) {
+      if (args.length === 0) return 'Kullanım: cvar list / cvar get <id> / cvar set <id> <değer> / cvar reset <id>';
+      var sub = args[0];
+      if (sub === 'list') {
+        var all = PluginCvarAPI.getAll();
+        if (all.length === 0) return 'Hiç cvar kayıtlı değil';
+        var out = 'ID'.padEnd(22) + 'Değer'.padEnd(14) + 'Tip'.padEnd(10) + 'Varsayılan\n';
+        out += '─'.repeat(56) + '\n';
+        all.forEach(function(c) {
+          var id = (c.id || '').substring(0, 20).padEnd(22);
+          var val = String(c.value).substring(0, 12).padEnd(14);
+          var t = c.type.padEnd(10);
+          var def = String(c.defaultValue).substring(0, 10);
+          out += id + val + t + def + '\n';
+        });
+        return out;
+      } else if (sub === 'get') {
+        if (!args[1]) return 'Kullanım: cvar get <id>';
+        var info = PluginCvarAPI.getInfo(args[1]);
+        if (!info) return 'Cvar bulunamadı: ' + args[1];
+        return info.id + ' = ' + info.value + '  (' + info.type + ', varsayılan: ' + info.defaultValue + ')  — ' + info.description;
+      } else if (sub === 'set') {
+        if (!args[1] || args[2] === undefined) return 'Kullanım: cvar set <id> <değer>';
+        var info = PluginCvarAPI.getInfo(args[1]);
+        if (!info) return 'Cvar bulunamadı: ' + args[1];
+        var result = PluginCvarAPI.set(args[1], args[2]);
+        if (!result.success) return result.error;
+        var out = info.id + ' değeri ' + info.value + ' olarak değiştirildi';
+        return out;
+      } else if (sub === 'reset') {
+        if (!args[1]) return 'Kullanım: cvar reset <id>';
+        var result = PluginCvarAPI.reset(args[1]);
+        if (!result.success) return result.error;
+        var info = PluginCvarAPI.getInfo(args[1]);
+        return info.id + ' sıfırlandı, varsayılan değer: ' + info.defaultValue;
+      }
+      return 'Bilinmeyen alt komut: ' + sub;
+    }, 'Cvar yönetimi: list / get / set / reset');
   },
 
   _hideSuggest() {
@@ -336,6 +382,20 @@ PluginRegistry.register({
         }
       });
     });
+
+    // Cvar'lari da oneri olarak ekle
+    if (typeof PluginCvarAPI !== 'undefined') {
+      var cvars = PluginCvarAPI.getAll();
+      cvars.forEach(function(c) {
+        if (c.id.toLowerCase().indexOf(lowerVal) === 0 || c.id.toLowerCase().indexOf(lowerVal) > 0) {
+          matches.push({
+            key: c.id,
+            cmd: { description: c.description + ' (' + c.type + ', =' + c.value + ')' },
+            score: c.id.toLowerCase().indexOf(lowerVal)
+          });
+        }
+      });
+    }
 
     // Deduplicate by key
     var seen = {};

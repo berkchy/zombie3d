@@ -3,25 +3,28 @@ PluginRegistry.register({
   name: 'Pompali',
   version: '1.0',
   type: 'weapon',
-  weaponType: 'ranged',
+  weaponType: 'shotgun',
   modelId: 'model_shotgun',
   description: 'Pompali tufek — 6 saçma atar, yavas ates eder',
 
   cooldown: 0,
   cooldownTime: 0.9,
   bullets: [],
-  bulletSpeed: 18,
+  bulletSpeed: 500,
   pelletsPerShot: 6,
   pelletDamage: 10,
-  spreadAngle: 0.12,
-  ammo: 999,
-  maxAmmo: 999,
+  spreadAngle: 0.07,
+  clip: 6,
+  ammo: 6,
+  maxAmmo: 30,
+  reloadTime: 0.5,
+  reloadMode: 'shell',
 
   init(game) {
     this.game = game;
     this.bullets = [];
     this.cooldown = 0;
-    this.ammo = this.maxAmmo;
+    this.ammo = this.clip;
   },
 
   shoot(owner) {
@@ -32,22 +35,40 @@ PluginRegistry.register({
 
     var scene = this.game.scene;
 
-    // Mermi cikis noktasi: namlu ucu
+    // Mermi cikis noktasi
     var pos = new THREE.Vector3();
-    if (typeof owner.getBarrelWorldPos === 'function') {
-      owner.getBarrelWorldPos(pos);
-    } else {
-      pos.copy(owner.mesh.position).add(new THREE.Vector3(0, 0.4, 0));
-    }
+    var fp = PluginRegistry.get('fx_firstperson');
 
     for (var p = 0; p < this.pelletsPerShot; p++) {
-      // Hedef yonu (player rotation)
-      var dir = new THREE.Vector3(0, 0, 1);
-      dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), owner.mesh.rotation.y);
+      // Hedef yonu
+      var dir;
+      if (fp && fp.enabled) {
+        if (p === 0) {
+          pos.copy(this.game.camera.position);
+          pos.y = owner.mesh.position.y + 0.35;
+          dir = new THREE.Vector3(0, 0, -1);
+          dir.applyQuaternion(this.game.camera.quaternion);
+          pos.add(dir.clone().multiplyScalar(0.15));
+        }
+        dir = new THREE.Vector3(0, 0, -1);
+        dir.applyQuaternion(this.game.camera.quaternion);
+      } else {
+        if (p === 0) {
+          if (typeof owner.getBarrelWorldPos === 'function') {
+            owner.getBarrelWorldPos(pos);
+          } else {
+            pos.copy(owner.mesh.position).add(new THREE.Vector3(0, 0.4, 0));
+          }
+        }
+        dir = new THREE.Vector3(0, 0, 1);
+        dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), owner.mesh.rotation.y);
+      }
 
-      // Saçılma: yatay eksende rotasyon (mermiler ayni Y seviyesinde kalir)
-      var spread = (Math.random() - 0.5) * this.spreadAngle * 2;
-      dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), spread);
+      // Saçılma: yatay + dikey — crosshair etrafında dairesel
+      var spreadH = (Math.random() - 0.5) * this.spreadAngle * 2;
+      var spreadV = (Math.random() - 0.5) * this.spreadAngle * 2;
+      dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), spreadH);
+      dir.applyAxisAngle(new THREE.Vector3(1, 0, 0), spreadV);
       dir.normalize();
 
       var geo = new THREE.SphereGeometry(0.04, 5, 5);
@@ -79,7 +100,7 @@ PluginRegistry.register({
       pellets: this.pelletsPerShot,
       ammo: this.ammo
     });
-    PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo });
+    PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo, clip: this.clip });
   },
 
   update(dt) {
@@ -94,18 +115,31 @@ PluginRegistry.register({
       b.life -= dt;
       if (b.life <= 0) { toRemove.push(i); continue; }
 
-      b.mesh.position.x += b.dir.x * this.bulletSpeed * dt;
-      b.mesh.position.z += b.dir.z * this.bulletSpeed * dt;
-      if (b.light) b.light.position.copy(b.mesh.position);
+      var totalDist = this.bulletSpeed * dt;
+      var step = 0.5;
+      var remaining = totalDist;
+      var hit = false;
 
-      // Her saçma ayri hitTest
-      if (zombiePlugin && zombiePlugin.enabled) {
-        if (zombiePlugin.hitTest(b.mesh.position, 0.1, b.damage)) {
-          PluginRegistry.emit('bullet:hit', { position: b.mesh.position.clone(), bullet: b });
-          toRemove.push(i);
-          continue;
+      while (remaining > 0) {
+        var stepSize = Math.min(step, remaining);
+        b.mesh.position.x += b.dir.x * stepSize;
+        b.mesh.position.y += b.dir.y * stepSize;
+        b.mesh.position.z += b.dir.z * stepSize;
+        remaining -= stepSize;
+
+        if (b.light) b.light.position.copy(b.mesh.position);
+
+        if (zombiePlugin && zombiePlugin.enabled) {
+          if (zombiePlugin.hitTest(b.mesh.position, 0.1, b.damage)) {
+            PluginRegistry.emit('bullet:hit', { position: b.mesh.position.clone(), bullet: b });
+            toRemove.push(i);
+            hit = true;
+            break;
+          }
         }
       }
+
+      if (hit) continue;
 
       var half = 28;
       if (Math.abs(b.mesh.position.x) > half || Math.abs(b.mesh.position.z) > half) {
@@ -126,7 +160,7 @@ PluginRegistry.register({
     var old = this.ammo;
     this.ammo = Math.min(this.maxAmmo, this.ammo + amount);
     if (this.ammo !== old) {
-      PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo });
+      PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo, clip: this.clip });
     }
   },
 

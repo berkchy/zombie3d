@@ -31,17 +31,22 @@ PluginRegistry.register({
     if (!this.game || !this.game.player || !this.game.player.mesh) return;
 
     if (this.game.poligonMode) {
-      // Poligon modu: sabit zombiler, dalga yok
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0 && this.zombies.length < 10) {
         this.spawnTimer = 2.0;
         this.spawnZombie();
       }
 
-      // Olu zombileri kaldir
+      var playerPos = this.game.player.mesh.position;
       var toRemove = [];
       for (var i = 0; i < this.zombies.length; i++) {
-        if (!this.zombies[i].alive) toRemove.push(i);
+        var z = this.zombies[i];
+        if (!z.alive) { toRemove.push(i); continue; }
+        if (z.dying) {
+          z.dieTimer -= dt;
+          if (z.dieTimer <= 0) { z.alive = false; toRemove.push(i); }
+          continue;
+        }
       }
       for (var i = toRemove.length - 1; i >= 0; i--) {
         var idx = toRemove[i];
@@ -79,6 +84,13 @@ PluginRegistry.register({
       var z = this.zombies[i];
       if (!z.alive) { toRemove.push(i); continue; }
 
+      // Olum ani
+      if (z.dying) {
+        z.dieTimer -= dt;
+        if (z.dieTimer <= 0) { z.alive = false; toRemove.push(i); }
+        continue;
+      }
+
       var speed = z.speed * dt;
       var dir = new THREE.Vector3()
         .copy(playerPos)
@@ -86,14 +98,31 @@ PluginRegistry.register({
       var dist = dir.length();
       dir.normalize();
 
+      var anim = PluginRegistry.get('core_animation');
+      var mp = PluginRegistry.get('model_zombie');
+
       if (dist > 0.5) {
         z.mesh.position.x += dir.x * speed;
         z.mesh.position.z += dir.z * speed;
         z.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+        if (anim && anim.enabled && mp && mp.animations) {
+          if (!z._animId || z._lastAnim !== 'walk') {
+            if (z._animId) anim.stop(z._animId);
+            z._animId = anim.play(z.mesh, mp.animations.walk);
+            z._lastAnim = 'walk';
+          }
+        }
       } else {
         if (z.attackTimer <= 0) {
           this.game.player.takeDamage(z.damage);
           z.attackTimer = 1.0;
+        }
+        if (anim && anim.enabled && mp && mp.animations) {
+          if (!z._animId || z._lastAnim !== 'idle') {
+            if (z._animId) anim.stop(z._animId);
+            z._animId = anim.play(z.mesh, mp.animations.idle);
+            z._lastAnim = 'idle';
+          }
         }
       }
 
@@ -135,8 +164,19 @@ PluginRegistry.register({
       damage: 5 + this.wave * 1,
       attackTimer: 0,
       alive: true,
+      dying: false,
+      dieTimer: 0,
+      _animId: null,
+      _lastAnim: null,
       spawnPos: new THREE.Vector3(clampedX, 0, clampedZ)
     };
+
+    // Animasyon — idle ile basla
+    var anim = PluginRegistry.get('core_animation');
+    var mp = PluginRegistry.get('model_zombie');
+    if (anim && anim.enabled && mp && mp.animations) {
+      zombie._animId = anim.play(mesh, mp.animations.idle);
+    }
 
     this.zombies.push(zombie);
 
@@ -151,7 +191,7 @@ PluginRegistry.register({
     damage = damage || 25;
     for (var i = 0; i < this.zombies.length; i++) {
       var z = this.zombies[i];
-      if (!z.alive) continue;
+      if (!z.alive || z.dying) continue;
       var dist = bulletPos.distanceTo(z.mesh.position);
       if (dist < radius + 0.4) {
         z.hp -= damage;
@@ -162,9 +202,19 @@ PluginRegistry.register({
           position: z.mesh.position.clone()
         });
         if (z.hp <= 0) {
-          z.alive = false;
+          z.dying = true;
+          z.dieTimer = 0.8;
           this.game.score += 10;
           document.getElementById('scoreVal').textContent = this.game.score;
+          var anim = PluginRegistry.get('core_animation');
+          var mp = PluginRegistry.get('model_zombie');
+          if (anim && anim.enabled && mp && mp.animations && z._animId) {
+            anim.stop(z._animId);
+            z._animId = null;
+          }
+          if (anim && anim.enabled && mp && mp.animations) {
+            z._animId = anim.play(z.mesh, mp.animations.die);
+          }
           PluginRegistry.emit('zombie:die', z.mesh.position.clone());
         }
         return true;

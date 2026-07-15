@@ -8,8 +8,7 @@ PluginRegistry.register({
   enabled: true,
 
   styles:
-    '#joystick-area{position:fixed;left:40px;bottom:140px;width:100px;height:100px;z-index:200;border-radius:50%;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);touch-action:none;display:none;user-select:none;-webkit-user-select:none;}' +
-    '#joystick-area.active{display:block;}' +
+    '#joystick-area{width:100px;height:100px;z-index:200;border-radius:50%;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);touch-action:none;user-select:none;-webkit-user-select:none;}' +
     '#joystick-knob{position:absolute;top:50%;left:50%;width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(255,255,255,0.2),rgba(255,255,255,0.05));border:1.5px solid rgba(255,255,255,0.12);transform:translate(-50%,-50%);box-shadow:0 0 20px rgba(255,255,255,0.04);transition:box-shadow .2s;}' +
     '#joystick-knob::after{content:"";position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle at 40% 30%,rgba(255,255,255,0.12),transparent 70%);}' +
     '#joystick-area.touching #joystick-knob{border-color:rgba(255,255,255,0.25);box-shadow:0 0 30px rgba(255,255,255,0.06);}',
@@ -29,13 +28,11 @@ PluginRegistry.register({
 
     var self = this;
 
-    // Sadece dokunmatik cihazlarda göster
     var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     if (!isTouch) return;
 
     var area = document.createElement('div');
     area.id = 'joystick-area';
-    area.className = 'active';
     var knob = document.createElement('div');
     knob.id = 'joystick-knob';
     area.appendChild(knob);
@@ -43,22 +40,13 @@ PluginRegistry.register({
     this.area = area;
     this.knob = knob;
 
-    // Oyun baslamadiginda gizle
-    area.style.display = 'none';
-    PluginRegistry.on('game:start', this.id, function() {
-      area.style.display = 'block';
-    });
     PluginRegistry.on('game:over', this.id, function() {
       self._reset();
-      area.style.display = 'none';
     });
 
-    function getPos(e) {
-      var t = e.touches ? e.touches[0] : e;
-      return { x: t.clientX, y: t.clientY };
-    }
-
     area.addEventListener('touchstart', function(e) {
+      var tb = PluginRegistry.get('system_touch_buttons');
+      if (tb && tb._editMode) return;
       e.preventDefault();
       if (self.active) return;
       self.active = true;
@@ -95,6 +83,20 @@ PluginRegistry.register({
     document.addEventListener('touchcancel', function() {
       self._reset();
     }, { passive: false });
+
+    // Touch Button Sistemine kaydet
+    var tb = PluginRegistry.get('system_touch_buttons');
+    if (tb) {
+      tb.touchAdd('joystick', {
+        element: area,
+        x: 16, y: 80,
+        width: 100, height: 100,
+        shape: 'circle',
+        zIndex: 200,
+        bgColor: 'transparent',
+        border: 'none'
+      });
+    }
   },
 
   _updateKnob(tx, ty) {

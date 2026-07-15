@@ -3,23 +3,25 @@ PluginRegistry.register({
   name: 'Tabanca',
   version: '1.0',
   type: 'weapon',
-  weaponType: 'ranged',
+  weaponType: 'pistol',
   modelId: 'model_pistol',
   description: 'Standart mermi silahı + weapon:fire, ammo:change',
 
   cooldown: 0,
   cooldownTime: 0.25,
   bullets: [],
-  bulletSpeed: 15,
+  bulletSpeed: 500,
   damage: 25,
-  ammo: 999,
-  maxAmmo: 999,
+  clip: 15,
+  ammo: 15,
+  maxAmmo: 60,
+  reloadTime: 1.5,
 
   init(game) {
     this.game = game;
     this.bullets = [];
     this.cooldown = 0;
-    this.ammo = this.maxAmmo;
+    this.ammo = this.clip;
   },
 
   shoot(owner) {
@@ -30,16 +32,25 @@ PluginRegistry.register({
 
     var scene = this.game.scene;
 
-    // Mermi cikis noktasi: namlu ucu
+    // Mermi cikis noktasi
     var pos = new THREE.Vector3();
-    if (typeof owner.getBarrelWorldPos === 'function') {
-      owner.getBarrelWorldPos(pos);
+    var dir;
+    var fp = PluginRegistry.get('fx_firstperson');
+    if (fp && fp.enabled) {
+      pos.copy(this.game.camera.position);
+      pos.y = owner.mesh.position.y + 0.35;
+      dir = new THREE.Vector3(0, 0, -1);
+      dir.applyQuaternion(this.game.camera.quaternion);
+      pos.add(dir.clone().multiplyScalar(0.15));
     } else {
-      pos.copy(owner.mesh.position).add(new THREE.Vector3(0, 0.4, 0));
+      if (typeof owner.getBarrelWorldPos === 'function') {
+        owner.getBarrelWorldPos(pos);
+      } else {
+        pos.copy(owner.mesh.position).add(new THREE.Vector3(0, 0.4, 0));
+      }
+      dir = new THREE.Vector3(0, 0, 1);
+      dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), owner.mesh.rotation.y);
     }
-
-    var dir = new THREE.Vector3(0, 0, 1);
-    dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), owner.mesh.rotation.y);
 
     var geo = new THREE.SphereGeometry(0.08, 6, 6);
     var mat = new THREE.MeshStandardMaterial({
@@ -68,7 +79,7 @@ PluginRegistry.register({
       direction: dir,
       ammo: this.ammo
     });
-    PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo });
+    PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo, clip: this.clip });
   },
 
   update(dt) {
@@ -82,20 +93,32 @@ PluginRegistry.register({
       b.life -= dt;
       if (b.life <= 0) { toRemove.push(i); continue; }
 
-      b.mesh.position.x += b.dir.x * this.bulletSpeed * dt;
-      b.mesh.position.z += b.dir.z * this.bulletSpeed * dt;
-      if (b.light) {
-        b.light.position.copy(b.mesh.position);
-      }
-
       var zombiePlugin = PluginRegistry.get('zombie_basic');
-      if (zombiePlugin && zombiePlugin.enabled) {
-        if (zombiePlugin.hitTest(b.mesh.position, 0.1)) {
-          PluginRegistry.emit('bullet:hit', { position: b.mesh.position.clone(), bullet: b });
-          toRemove.push(i);
-          continue;
+      var totalDist = this.bulletSpeed * dt;
+      var step = 0.5;
+      var remaining = totalDist;
+      var hit = false;
+
+      while (remaining > 0) {
+        var stepSize = Math.min(step, remaining);
+        b.mesh.position.x += b.dir.x * stepSize;
+        b.mesh.position.y += b.dir.y * stepSize;
+        b.mesh.position.z += b.dir.z * stepSize;
+        remaining -= stepSize;
+
+        if (b.light) b.light.position.copy(b.mesh.position);
+
+        if (zombiePlugin && zombiePlugin.enabled) {
+          if (zombiePlugin.hitTest(b.mesh.position, 0.1)) {
+            PluginRegistry.emit('bullet:hit', { position: b.mesh.position.clone(), bullet: b });
+            toRemove.push(i);
+            hit = true;
+            break;
+          }
         }
       }
+
+      if (hit) continue;
 
       var half = 28;
       if (Math.abs(b.mesh.position.x) > half || Math.abs(b.mesh.position.z) > half) {
@@ -116,7 +139,7 @@ PluginRegistry.register({
     var old = this.ammo;
     this.ammo = Math.min(this.maxAmmo, this.ammo + amount);
     if (this.ammo !== old) {
-      PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo });
+    PluginRegistry.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo, clip: this.clip });
     }
   },
 

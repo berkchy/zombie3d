@@ -12,6 +12,8 @@ PluginRegistry.register({
     '#modelTestOverlay.open{display:block;}' +
     '#modelTestOverlay.open{display:block;}' +
     'body.model-test-active #levelContainer,body.model-test-active #joystick-area,body.model-test-active .pause-overlay,body.model-test-active #gameOver{display:none!important;}' +
+    'body.model-test-panel-open #gameContainer{transform:translateX(-150px);transition:transform .3s cubic-bezier(.4,0,.2,1);}' +
+    '#gameContainer{transition:transform .3s cubic-bezier(.4,0,.2,1);}' +
     '#modelTestToggle{position:fixed;top:10px;right:54px;z-index:220;width:38px;height:38px;background:rgba(0,0,0,0.55);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:10px;display:none;align-items:center;justify-content:center;font-size:16px;cursor:pointer;pointer-events:auto;user-select:none;transition:all .2s cubic-bezier(.4,0,.2,1);}' +
     '#modelTestToggle:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:#fff;}' +
     '#modelTestToggle.show{display:flex;}' +
@@ -67,6 +69,7 @@ PluginRegistry.register({
         '</div>' +
         '<div class="mt-label" style="padding-left:12px;padding-top:12px;">Yüklü Modeller</div>' +
         '<div id="modelTestList"></div>' +
+        '<div id="modelTestExtra"></div>' +
         '<button id="mtBackBtn">ANA MENÜ</button>' +
       '</div>';
     document.body.appendChild(overlay);
@@ -165,6 +168,8 @@ PluginRegistry.register({
     if (panel) panel.classList.add('open');
     this.toggleBtn.classList.add('show');
 
+    this._updateShift();
+
     this.buildList();
     var models = PluginRegistry.getByType('model');
     if (models.length > 0) {
@@ -172,6 +177,8 @@ PluginRegistry.register({
       for (var i = 0; i < models.length; i++) { if (models[i].id === 'model_pistol') { pistol = models[i]; break; } }
       this.selectModel(pistol ? pistol.id : models[0].id);
     }
+
+    PluginRegistry.emit('model_test:open');
   },
 
   showPanel() {
@@ -179,6 +186,7 @@ PluginRegistry.register({
     this.panelOpen = true;
     var panel = document.getElementById('modelTestPanel');
     if (panel) panel.classList.add('open');
+    this._updateShift();
   },
 
   hidePanel() {
@@ -186,6 +194,11 @@ PluginRegistry.register({
     this.panelOpen = false;
     var panel = document.getElementById('modelTestPanel');
     if (panel) panel.classList.remove('open');
+    this._updateShift();
+  },
+
+  _updateShift() {
+    document.body.classList.toggle('model-test-panel-open', this.visible && this.panelOpen);
   },
 
   buildList() {
@@ -298,7 +311,7 @@ PluginRegistry.register({
   },
 
   selectModel(id) {
-    if (this.currentModelId === id) return;
+    if (this.currentModelId === id && this.currentModel) return;
     this.currentModelId = id;
 
     if (this.currentModel) {
@@ -311,7 +324,6 @@ PluginRegistry.register({
 
     var mesh = modelDef.createModel();
 
-    // Modeli platform yuzeyine oturt
     mesh.position.y = 0.4;
     mesh.rotation.y = 0;
     this.roomGroup.add(mesh);
@@ -321,6 +333,8 @@ PluginRegistry.register({
     for (var i = 0; i < cards.length; i++) {
       cards[i].classList.toggle('active', cards[i].dataset.modelId === id);
     }
+
+    PluginRegistry.emit('model_test:select', { modelId: id, modelDef: modelDef, mesh: mesh });
   },
 
   update(dt) {
@@ -341,8 +355,10 @@ PluginRegistry.register({
     var panel = document.getElementById('modelTestPanel');
     if (panel) panel.classList.remove('open');
     this.panelOpen = false;
+    this._updateShift();
     this.toggleBtn.classList.remove('show');
 
+    PluginRegistry.emit('model_test:close');
     if (this.currentModel) {
       this.roomGroup.remove(this.currentModel);
       this.currentModel = null;
