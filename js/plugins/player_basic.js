@@ -22,6 +22,7 @@ PluginRegistry.register({
   game: null,
   mesh: null,
   weaponMesh: null,
+  weaponBarrelTip: null,
   _weaponSlot: null,
 
   speed: 6,
@@ -122,6 +123,7 @@ PluginRegistry.register({
       disposeMesh(this.weaponMesh);
       this.weaponMesh = null;
     }
+    this.weaponBarrelTip = null;
 
     if (!weaponId) return;
 
@@ -141,10 +143,19 @@ PluginRegistry.register({
     }
     if (!model) return;
 
+    // Boyutu buyut (oyuncu uzerinde daha gorunur olsun)
+    model.scale.set(1.8, 1.8, 1.8);
+
     // Silahi el pozisyonuna uygun sekilde konumlandir
     model.rotation.order = 'YXZ';
     model.rotation.y = 0.15;
     model.rotation.x = -0.1;
+
+    // Namlu ucunu isaretle
+    var tip = model.getObjectByName('barrel_tip');
+    if (tip) {
+      this.weaponBarrelTip = tip;
+    }
 
     this._weaponSlot.add(model);
     this.weaponMesh = model;

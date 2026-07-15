@@ -29,8 +29,14 @@ PluginRegistry.register({
     this.ammo--;
 
     var scene = this.game.scene;
-    var pos = owner.mesh.position.clone();
-    pos.y = 0.4;
+
+    // Mermi cikis noktasi: namlu ucu
+    var pos = new THREE.Vector3();
+    if (owner.weaponBarrelTip) {
+      owner.weaponBarrelTip.getWorldPosition(pos);
+    } else {
+      pos.copy(owner.mesh.position).add(new THREE.Vector3(0, 0.4, 0));
+    }
 
     var dir = new THREE.Vector3(0, 0, 1);
     dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), owner.mesh.rotation.y);

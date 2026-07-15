@@ -103,6 +103,12 @@ PluginRegistry.register({
     fsight.name = 'front_sight';
     group.add(fsight);
 
+    // Namlu ucu — merminin cikis noktasi (isaretci)
+    var muzzle = new THREE.Object3D();
+    muzzle.position.set(0, 0.015, 0.4);
+    muzzle.name = 'barrel_tip';
+    group.add(muzzle);
+
     return group;
   }
 });
