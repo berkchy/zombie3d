@@ -63,7 +63,7 @@ PluginRegistry.register({
 
       if (z.hp <= 0) {
         z.dying = true;
-        z.dieTimer = 0.8;
+        z.dieTimer = 1.6;
         this.game.score += 10;
         document.getElementById('scoreVal').textContent = this.game.score;
 
