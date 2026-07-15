@@ -44,6 +44,12 @@ PluginRegistry.register({
         if (!z.alive) { toRemove.push(i); continue; }
         if (z.dying) {
           z.dieTimer -= dt;
+          if (z._deathVel) {
+            z.mesh.position.x += z._deathVel.x * dt;
+            z.mesh.position.z += z._deathVel.z * dt;
+            z._deathVel.multiplyScalar(0.96);
+            if (z._deathVel.lengthSq() < 0.01) z._deathVel = null;
+          }
           if (z.dieTimer <= 0) { z.alive = false; toRemove.push(i); }
           continue;
         }
@@ -87,6 +93,12 @@ PluginRegistry.register({
       // Olum ani
       if (z.dying) {
         z.dieTimer -= dt;
+        if (z._deathVel) {
+          z.mesh.position.x += z._deathVel.x * dt;
+          z.mesh.position.z += z._deathVel.z * dt;
+          z._deathVel.multiplyScalar(0.96);
+          if (z._deathVel.lengthSq() < 0.01) z._deathVel = null;
+        }
         if (z.dieTimer <= 0) { z.alive = false; toRemove.push(i); }
         continue;
       }
@@ -215,6 +227,7 @@ PluginRegistry.register({
         if (z.hp <= 0) {
           z.dying = true;
           z.dieTimer = 1.6;
+          z._deathVel = new THREE.Vector3().copy(z.mesh.position).sub(bulletPos).normalize().multiplyScalar(3);
           this.game.score += 10;
           document.getElementById('scoreVal').textContent = this.game.score;
           var anim = PluginRegistry.get('core_animation');

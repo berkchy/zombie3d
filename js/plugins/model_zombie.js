@@ -271,7 +271,6 @@ PluginRegistry.register({
       tracks: [
         { pivot: 'hip', prop: 'rotation.x', keys: [0.15, -1.45] },
         { pivot: 'hip', prop: 'position.y', keys: [0.26, 0.26, 0.03] },
-        { pivot: 'hip', prop: 'position.z', keys: [0, 0.35] },
         { pivot: 'legL', prop: 'rotation.x', keys: [0, 0.15] },
         { pivot: 'legR', prop: 'rotation.x', keys: [0, -0.15] },
         { pivot: 'armL', prop: 'rotation.x', keys: [0.1, -0.35] },

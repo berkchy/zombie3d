@@ -64,6 +64,7 @@ PluginRegistry.register({
       if (z.hp <= 0) {
         z.dying = true;
         z.dieTimer = 1.6;
+        z._deathVel = toZombie.clone().multiplyScalar(2.5);
         this.game.score += 10;
         document.getElementById('scoreVal').textContent = this.game.score;
 
