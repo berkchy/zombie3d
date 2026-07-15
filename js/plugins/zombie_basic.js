@@ -192,14 +192,25 @@ PluginRegistry.register({
     for (var i = 0; i < this.zombies.length; i++) {
       var z = this.zombies[i];
       if (!z.alive || z.dying) continue;
-      var dist = bulletPos.distanceTo(z.mesh.position);
-      if (dist < radius + 0.4) {
-        z.hp -= damage;
+
+      var bodyPos = new THREE.Vector3(z.mesh.position.x, z.mesh.position.y + 0.5, z.mesh.position.z);
+      var headPos = new THREE.Vector3(z.mesh.position.x, z.mesh.position.y + 0.9, z.mesh.position.z);
+      var r = radius + 0.4;
+
+      var bodyDist = bulletPos.distanceTo(bodyPos);
+      var headDist = bulletPos.distanceTo(headPos);
+      var isHeadshot = headDist < r * 0.8;
+      var isHit = bodyDist < r || headDist < r;
+
+      if (isHit) {
+        var finalDmg = isHeadshot ? damage * 2.5 : damage;
+        z.hp -= finalDmg;
         PluginRegistry.emit('zombie:hit', {
           zombie: z,
-          damage: 25,
+          damage: finalDmg,
           hp: z.hp,
-          position: z.mesh.position.clone()
+          position: z.mesh.position.clone(),
+          headshot: isHeadshot
         });
         if (z.hp <= 0) {
           z.dying = true;

@@ -55,6 +55,15 @@ PluginRegistry.register({
     '#touch-editor-panel .ep-color-text{font-size:11px;color:rgba(255,255,255,.35);font-family:monospace;}',
 
   init: function(game) {
+    // Mobil cihaz kontrolu — PC'de bu eklenti kendini devre disi birakir
+    if (!this._isMobile()) {
+      this.enabled = false;
+      var dc = PluginRegistry.get('ui_devconsole');
+      if (dc && dc.log) dc.log('system_touch_buttons', 'PC tespit edildi, mobil buton sistemi devre disi');
+      else console.log('[system_touch_buttons] PC tespit edildi, mobil buton sistemi devre disi');
+      return;
+    }
+
     this._game = game;
     this._createUI();
     this._loadPositions();
@@ -265,6 +274,10 @@ PluginRegistry.register({
   },
 
   // ─── Public API ────────────────────────────────────────
+
+  _isMobile: function() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(navigator.userAgent) || 'ontouchstart' in window;
+  },
 
   touchAdd: function(id, config) {
     if (this._buttons[id]) this.touchRemove(id);

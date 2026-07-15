@@ -55,8 +55,8 @@ PluginRegistry.register({
   _getWeapon: function() {
     if (!this._game || !this._game.hotbar) return null;
     var sel = this._game.hotbar.getSelected();
-    if (!sel || !sel.id) return null;
-    return PluginRegistry.get(sel.id);
+    if (!sel || !sel.slot || !sel.slot.id) return null;
+    return PluginRegistry.get(sel.slot.id);
   },
 
   _startReload: function() {
