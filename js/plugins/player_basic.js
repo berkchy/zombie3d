@@ -161,6 +161,15 @@ PluginRegistry.register({
     this.weaponMesh = model;
   },
 
+  getBarrelWorldPos(target) {
+    target = target || new THREE.Vector3();
+    if (this.weaponBarrelTip) {
+      return this.weaponBarrelTip.getWorldPosition(target);
+    }
+    target.copy(this.mesh.position).add(new THREE.Vector3(0, 0.4, 0));
+    return target;
+  },
+
   update(dt) {
     if (!this.mesh) return;
 

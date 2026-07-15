@@ -32,8 +32,8 @@ PluginRegistry.register({
 
     // Mermi cikis noktasi: namlu ucu
     var pos = new THREE.Vector3();
-    if (owner.weaponBarrelTip) {
-      owner.weaponBarrelTip.getWorldPosition(pos);
+    if (typeof owner.getBarrelWorldPos === 'function') {
+      owner.getBarrelWorldPos(pos);
     } else {
       pos.copy(owner.mesh.position).add(new THREE.Vector3(0, 0.4, 0));
     }
