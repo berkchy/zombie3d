@@ -266,7 +266,7 @@ PluginRegistry.register({
       ]
     },
     die: {
-      duration: 0.8,
+      duration: 1.2,
       loop: false,
       tracks: [
         { pivot: 'hip', prop: 'rotation.x', keys: [0.15, -1.45] },
