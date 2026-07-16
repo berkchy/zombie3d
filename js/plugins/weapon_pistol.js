@@ -24,16 +24,16 @@ PluginRegistry.register({
   _restPose: null,
   _armAnims: {
     fire: { duration: 0.25, loop: false, tracks: [
-      { pivot: '__self__', prop: 'position.z', keys: [0, -0.015, -0.003, 0] },
-      { pivot: '__self__', prop: 'position.y', keys: [0, 0.005, -0.001, 0] },
-      { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.03, 0.005, 0] }
+      { pivot: '__self__', prop: 'position.z', keys: [0, -0.006, -0.001, 0] },
+      { pivot: '__self__', prop: 'position.y', keys: [0, 0.003, -0.001, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.012, 0.002, 0] }
     ]},
     reload: { duration: 1.5, loop: false, tracks: [
-      { pivot: '__self__', prop: 'position.y', keys: [0, -0.03, -0.03, -0.015, 0, 0] },
-      { pivot: '__self__', prop: 'position.z', keys: [0, 0.01, 0.01, -0.035, -0.01, 0] },
-      { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.06, 0.06, -0.04, -0.01, 0] }
+      { pivot: '__self__', prop: 'position.y', keys: [0, -0.04, -0.04, -0.02, -0.01, 0] },
+      { pivot: '__self__', prop: 'position.z', keys: [0, 0.02, 0.02, 0.005, -0.03, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.08, 0.1, 0.03, -0.02, 0] }
     ]},
-    equip: { duration: 1.2, loop: false, tracks: [
+    equip: { duration: 2.0, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.y', keys: [-0.7, -0.6, -0.4, -0.15, -0.02, 0] },
       { pivot: '__self__', prop: 'position.z', keys: [0.5, 0.4, 0.25, 0.1, 0.02, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0.7, 0.5, 0.25, 0.08, 0.01, 0] }
