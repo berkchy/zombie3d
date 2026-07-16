@@ -192,6 +192,8 @@ PluginRegistry.register({
 
     slot.add(model);
     this._viewWeapon = model;
+
+    if (wp.setModelRef) wp.setModelRef(model);
   },
 
   _clampPitch() {

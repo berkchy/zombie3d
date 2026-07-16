@@ -173,5 +173,35 @@ PluginRegistry.register({
     group.add(tip);
 
     return group;
+  },
+
+  animations: {
+    fire: {
+      duration: 0.12,
+      loop: false,
+      tracks: [
+        { pivot: '__self__', prop: 'position.z', keys: [0, -0.04, 0] },
+        { pivot: '__self__', prop: 'position.y', keys: [0, 0.008, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, 0] }
+      ]
+    },
+    reload: {
+      duration: 1.5,
+      loop: false,
+      tracks: [
+        { pivot: '__self__', prop: 'position.z', keys: [0, 0.02, -0.06, -0.06, 0] },
+        { pivot: '__self__', prop: 'position.y', keys: [0, 0.0, -0.02, -0.02, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.05, -0.2, -0.2, 0] }
+      ]
+    },
+    equip: {
+      duration: 0.3,
+      loop: false,
+      tracks: [
+        { pivot: '__self__', prop: 'position.y', keys: [-0.12, 0] },
+        { pivot: '__self__', prop: 'position.z', keys: [0.15, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0.2, 0] }
+      ]
+    }
   }
 });

@@ -16,12 +16,45 @@ PluginRegistry.register({
   ammo: 15,
   maxAmmo: 60,
   reloadTime: 1.5,
+  _modelRef: null,
+  _animId: null,
 
   init(game) {
     this.game = game;
     this.bullets = [];
     this.cooldown = 0;
     this.ammo = this.clip;
+    this._modelRef = null;
+    this._animId = null;
+
+    var self = this;
+    PluginRegistry.on('reload:start', this.id, function() {
+      if (!self._modelRef) return;
+      var sel = game.hotbar ? game.hotbar.getSelected() : null;
+      if (sel && sel.slot && sel.slot.id === self.id) self._playAnim('reload');
+    });
+    PluginRegistry.on('hotbar:select', this.id, function() {
+      if (self._animId) {
+        var a = PluginRegistry.get('core_animation');
+        if (a && a.stop) a.stop(self._animId);
+        self._animId = null;
+      }
+    });
+  },
+
+  setModelRef: function(model) {
+    this._modelRef = model;
+    this._playAnim('equip');
+  },
+
+  _playAnim: function(name) {
+    if (!this._modelRef) return;
+    var a = PluginRegistry.get('core_animation');
+    if (!a || !a.enabled) return;
+    var mp = PluginRegistry.get('model_pistol');
+    if (!mp || !mp.animations || !mp.animations[name]) return;
+    if (this._animId && a.playing && a.playing[this._animId]) a.stop(this._animId);
+    this._animId = a.play(this._modelRef, mp.animations[name]);
   },
 
   shoot(owner) {
@@ -51,6 +84,8 @@ PluginRegistry.register({
       dir = new THREE.Vector3(0, 0, 1);
       dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), owner.mesh.rotation.y);
     }
+
+    this._playAnim('fire');
 
     var geo = new THREE.SphereGeometry(0.08, 6, 6);
     var mat = new THREE.MeshStandardMaterial({
@@ -150,5 +185,9 @@ PluginRegistry.register({
       if (b.light) scene.remove(b.light);
     });
     this.bullets = [];
+    this._modelRef = null;
+    this._animId = null;
+    PluginRegistry.off('reload:start', this.id);
+    PluginRegistry.off('hotbar:select', this.id);
   }
 });

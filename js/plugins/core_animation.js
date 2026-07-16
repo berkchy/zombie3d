@@ -146,7 +146,7 @@ PluginRegistry.register({
   },
 
   _findPivot(group, name) {
-    // Recursive pivot arama
+    if (name === '__self__') return group;
     function search(obj) {
       if (obj.name === name) return obj;
       if (obj.children) {

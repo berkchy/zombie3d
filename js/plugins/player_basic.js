@@ -191,6 +191,8 @@ PluginRegistry.register({
 
     this._weaponSlot.add(model);
     this.weaponMesh = model;
+
+    if (wp.setModelRef) wp.setModelRef(model);
   },
 
   getBarrelWorldPos(target) {
