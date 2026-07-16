@@ -197,14 +197,14 @@ PluginRegistry.register({
       ]
     },
     equip: {
-      duration: 0.5,
+      duration: 1.2,
       loop: false,
       tracks: [
-        { pivot: '__self__', prop: 'position.y', keys: [-0.15, -0.05, 0] },
-        { pivot: '__self__', prop: 'position.z', keys: [0.25, 0.08, 0] },
-        { pivot: '__self__', prop: 'position.x', keys: [0.04, 0.01, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0.3, 0.08, 0] },
-        { pivot: '__self__', prop: 'rotation.z', keys: [0.08, 0.02, 0] }
+        { pivot: '__self__', prop: 'position.y', keys: [-0.6, -0.4, -0.2, -0.05, 0, 0] },
+        { pivot: '__self__', prop: 'position.z', keys: [0.35, 0.25, 0.1, 0.02, 0, 0] },
+        { pivot: '__self__', prop: 'position.x', keys: [0.06, 0.03, 0.01, 0, 0, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, -1.88, -4.08, -5.97, -6.28, -6.28] },
+        { pivot: '__self__', prop: 'rotation.z', keys: [0.12, -0.06, 0.04, -0.02, 0, 0] }
       ]
     }
   }

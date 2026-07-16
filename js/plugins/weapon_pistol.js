@@ -16,6 +16,7 @@ PluginRegistry.register({
   ammo: 15,
   maxAmmo: 60,
   reloadTime: 1.5,
+  _equipping: false,
   _modelRef: null,
   _animId: null,
   _armsRef: null,
@@ -32,10 +33,10 @@ PluginRegistry.register({
       { pivot: '__self__', prop: 'position.z', keys: [0, 0.01, 0.01, -0.035, -0.01, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.06, 0.06, -0.04, -0.01, 0] }
     ]},
-    equip: { duration: 0.5, loop: false, tracks: [
-      { pivot: '__self__', prop: 'position.y', keys: [-0.1, -0.03, 0] },
-      { pivot: '__self__', prop: 'position.z', keys: [0.12, 0.04, 0] },
-      { pivot: '__self__', prop: 'rotation.x', keys: [0.15, 0.04, 0] }
+    equip: { duration: 1.2, loop: false, tracks: [
+      { pivot: '__self__', prop: 'position.y', keys: [-0.5, -0.35, -0.18, -0.05, 0, 0] },
+      { pivot: '__self__', prop: 'position.z', keys: [0.45, 0.3, 0.12, 0.03, 0, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0.5, 0.3, 0.1, 0.02, 0, 0] }
     ]}
   },
 
@@ -48,6 +49,7 @@ PluginRegistry.register({
     this._animId = null;
     this._animArmId = null;
     this._restPose = null;
+    this._equipping = false;
 
     var self = this;
     PluginRegistry.on('reload:start', this.id, function(data) {
@@ -61,6 +63,7 @@ PluginRegistry.register({
       self._animId = null;
       self._animArmId = null;
       self._resetToRestPose();
+      self._equipping = false;
     });
   },
 
@@ -70,6 +73,7 @@ PluginRegistry.register({
       pos: { x: model.position.x, y: model.position.y, z: model.position.z },
       rot: { x: model.rotation.x, y: model.rotation.y, z: model.rotation.z }
     };
+    this._equipping = true;
     this._playAnim('equip');
   },
 
@@ -102,7 +106,10 @@ PluginRegistry.register({
       if (mp && mp.animations && mp.animations[name]) {
         var def = mp.animations[name];
         var defCb = Object.assign({}, def, {
-          onComplete: function() { self._resetToRestPose(); }
+          onComplete: function() {
+            self._resetToRestPose();
+            if (name === 'equip') self._equipping = false;
+          }
         });
         this._animId = a.play(this._modelRef, defCb);
       }
@@ -114,6 +121,7 @@ PluginRegistry.register({
 
   shoot(owner) {
     if (this.cooldown > 0) return;
+    if (this._equipping) return;
     if (this.ammo <= 0) return;
     this.cooldown = this.cooldownTime;
     this.ammo--;
