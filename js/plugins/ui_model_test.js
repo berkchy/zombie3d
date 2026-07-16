@@ -171,12 +171,6 @@ PluginRegistry.register({
     this._updateShift();
 
     this.buildList();
-    var models = PluginRegistry.getByType('model');
-    if (models.length > 0) {
-      var pistol = null;
-      for (var i = 0; i < models.length; i++) { if (models[i].id === 'model_pistol') { pistol = models[i]; break; } }
-      this.selectModel(pistol ? pistol.id : models[0].id);
-    }
 
     PluginRegistry.emit('model_test:open');
   },

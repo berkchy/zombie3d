@@ -71,7 +71,8 @@ PluginRegistry.register({
     Object.keys(anims).forEach(function(name) {
       var btn = document.createElement('button');
       btn.className = 'mt-anim-btn';
-      btn.textContent = name;
+      var dur = anims[name].duration;
+      btn.textContent = name + ' ' + dur.toFixed(1) + 'sn';
       btn.addEventListener('click', function() {
         self._playAnim(name);
         var all = list.querySelectorAll('.mt-anim-btn');
@@ -90,7 +91,9 @@ PluginRegistry.register({
     this._stopAnim();
     var testRoom = PluginRegistry.get('ui_model_test');
     if (testRoom && testRoom.currentModel) {
+      var savedY = testRoom.currentModel.rotation.y;
       animPlugin.resetPose(testRoom.currentModel, modelDef);
+      testRoom.currentModel.rotation.y = savedY;
       this._testAnimId = animPlugin.play(testRoom.currentModel, modelDef.animations[name]);
     }
   },
