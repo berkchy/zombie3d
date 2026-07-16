@@ -194,6 +194,7 @@ PluginRegistry.register({
     this._viewWeapon = model;
 
     if (wp.setModelRef) wp.setModelRef(model);
+    if (wp.setArmsRef && this._arms) wp.setArmsRef(this._arms.group);
   },
 
   _clampPitch() {

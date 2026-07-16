@@ -18,6 +18,23 @@ PluginRegistry.register({
   reloadTime: 1.5,
   _modelRef: null,
   _animId: null,
+  _armsRef: null,
+  _animArmId: null,
+  _armAnims: {
+    fire: { duration: 0.12, loop: false, tracks: [
+      { pivot: '__self__', prop: 'position.y', keys: [0, 0.004, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.015, 0] }
+    ]},
+    reload: { duration: 1.5, loop: false, tracks: [
+      { pivot: '__self__', prop: 'position.z', keys: [0, -0.01, -0.04, -0.04, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.03, -0.12, -0.12, 0] }
+    ]},
+    equip: { duration: 0.3, loop: false, tracks: [
+      { pivot: '__self__', prop: 'position.y', keys: [-0.08, 0] },
+      { pivot: '__self__', prop: 'position.z', keys: [0.1, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0.15, 0] }
+    ]}
+  },
 
   init(game) {
     this.game = game;
@@ -28,10 +45,9 @@ PluginRegistry.register({
     this._animId = null;
 
     var self = this;
-    PluginRegistry.on('reload:start', this.id, function() {
+    PluginRegistry.on('reload:start', this.id, function(data) {
       if (!self._modelRef) return;
-      var sel = game.hotbar ? game.hotbar.getSelected() : null;
-      if (sel && sel.slot && sel.slot.id === self.id) self._playAnim('reload');
+      if (data && data.weapon && data.weapon.id === self.id) self._playAnim('reload');
     });
     PluginRegistry.on('hotbar:select', this.id, function() {
       if (self._animId) {
@@ -39,12 +55,21 @@ PluginRegistry.register({
         if (a && a.stop) a.stop(self._animId);
         self._animId = null;
       }
+      if (self._animArmId) {
+        var a = PluginRegistry.get('core_animation');
+        if (a && a.stop) a.stop(self._animArmId);
+        self._animArmId = null;
+      }
     });
   },
 
   setModelRef: function(model) {
     this._modelRef = model;
     this._playAnim('equip');
+  },
+
+  setArmsRef: function(group) {
+    this._armsRef = group;
   },
 
   _playAnim: function(name) {
@@ -55,6 +80,11 @@ PluginRegistry.register({
     if (!mp || !mp.animations || !mp.animations[name]) return;
     if (this._animId && a.playing && a.playing[this._animId]) a.stop(this._animId);
     this._animId = a.play(this._modelRef, mp.animations[name]);
+
+    if (this._armsRef && this._armAnims && this._armAnims[name]) {
+      if (this._animArmId && a.playing && a.playing[this._animArmId]) a.stop(this._animArmId);
+      this._animArmId = a.play(this._armsRef, this._armAnims[name]);
+    }
   },
 
   shoot(owner) {
@@ -186,7 +216,9 @@ PluginRegistry.register({
     });
     this.bullets = [];
     this._modelRef = null;
+    this._armsRef = null;
     this._animId = null;
+    this._animArmId = null;
     PluginRegistry.off('reload:start', this.id);
     PluginRegistry.off('hotbar:select', this.id);
   }

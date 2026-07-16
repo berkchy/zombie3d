@@ -79,6 +79,8 @@ PluginRegistry.register({
     }
 
     this._showUI();
+
+    PluginRegistry.emit('reload:start', { weapon: wp });
   },
 
   update: function(dt) {
