@@ -15,7 +15,7 @@ PluginRegistry.register({
     // Zemin
     const groundGeo = new THREE.PlaneGeometry(60, 60);
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x2d1b0e,
+      color: 0x3d2010,
       roughness: 0.9
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -53,11 +53,11 @@ PluginRegistry.register({
     }, this);
 
     // Işık
-    const ambient = new THREE.AmbientLight(0x404060, 0.4);
+    const ambient = new THREE.AmbientLight(0x605050, 0.5);
     scene.add(ambient);
     this.objects.push(ambient);
 
-    const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+    const dirLight = new THREE.DirectionalLight(0xffaa66, 1.4);
     dirLight.position.set(10, 20, 10);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;

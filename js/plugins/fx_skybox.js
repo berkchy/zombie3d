@@ -19,11 +19,13 @@ PluginRegistry.register({
     canvas.height = 64;
     var ctx = canvas.getContext('2d');
     var grad = ctx.createLinearGradient(0, 0, 0, 64);
-    grad.addColorStop(0, '#0a0a1a');
-    grad.addColorStop(0.3, '#141428');
-    grad.addColorStop(0.6, '#1a1a30');
-    grad.addColorStop(0.85, '#2a1a18');
-    grad.addColorStop(1, '#1a0f0a');
+    grad.addColorStop(0, '#0d0d2b');
+    grad.addColorStop(0.15, '#2a1040');
+    grad.addColorStop(0.3, '#7a2040');
+    grad.addColorStop(0.5, '#c84a20');
+    grad.addColorStop(0.7, '#e88430');
+    grad.addColorStop(0.85, '#f0a050');
+    grad.addColorStop(1, '#b06030');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1, 64);
 
@@ -56,7 +58,7 @@ PluginRegistry.register({
       color: 0xffffff,
       size: 0.15,
       transparent: true,
-      opacity: 0.7
+      opacity: 0.2
     });
     var stars = new THREE.Points(starGeo, starMat);
     stars.name = 'stars';
