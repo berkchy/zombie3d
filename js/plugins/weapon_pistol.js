@@ -95,10 +95,16 @@ PluginRegistry.register({
 
     if (name !== 'equip') this._resetToRestPose();
 
+    var self = this;
+
     if (this._modelRef) {
       var mp = PluginRegistry.get('model_pistol');
       if (mp && mp.animations && mp.animations[name]) {
-        this._animId = a.play(this._modelRef, mp.animations[name]);
+        var def = mp.animations[name];
+        var defCb = Object.assign({}, def, {
+          onComplete: function() { self._resetToRestPose(); }
+        });
+        this._animId = a.play(this._modelRef, defCb);
       }
     }
     if (this._armsRef && this._armAnims && this._armAnims[name]) {
