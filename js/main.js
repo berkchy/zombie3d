@@ -104,6 +104,22 @@ function init() {
 
     // Pluginleri yükle (progress callback'li)
     PluginLoader.loadAll(function(results) {
+      // ---------- Plugin yukleme hatasi — crash ----------
+      if (results.errors.length > 0) {
+        var errMsg = 'Plugin yuklenemedi: ' + results.errors.join(', ');
+        console.error('[CRASH] ' + errMsg);
+
+        // Devconsole scripti yuklu ama init edilmemis olabilir — manual init
+        var dc = PluginRegistry.get('ui_devconsole');
+        if (dc && !dc._loaded) {
+          try { dc.init(null); } catch (e) {}
+          dc._loaded = true;
+        }
+
+        crashGame('PluginLoader', 'loadAll', new Error(errMsg));
+        return;
+      }
+
       // ---------- Three.js ----------
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x1a0f0a);
