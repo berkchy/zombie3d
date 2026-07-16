@@ -23,7 +23,7 @@ PluginRegistry.register({
     var self = this;
     var scene = game.scene;
 
-    // Model pluginlerini dinamik yukle
+    // Model pluginlerini PluginLoader ile dinamik yukle
     var modelPaths = [
       'js/plugins/maps/models/map_ground.js',
       'js/plugins/maps/models/map_platform.js',
@@ -36,12 +36,10 @@ PluginRegistry.register({
     this._depLoaded = 0;
 
     modelPaths.forEach(function(path) {
-      var script = document.createElement('script');
-      script.src = path + '?v=' + Date.now();
-      script.async = false;
-      script.onload = function() { self._depLoaded++; };
-      script.onerror = function() { self._depLoaded++; console.warn('[map_arena] yuklenemedi:', path); };
-      document.body.appendChild(script);
+      PluginLoader.loadScript(path, function(err) {
+        if (err) console.warn('[map_arena]', err);
+        self._depLoaded++;
+      });
     });
 
     // Isik (bagimliliksiz)

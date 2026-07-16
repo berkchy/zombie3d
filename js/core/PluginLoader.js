@@ -113,6 +113,33 @@ window.PluginLoader = (function() {
     });
   }
 
+  // ---------- Tek plugin script'ini dinamik yükle ----------
+  // callback(err, path): err=null basarili, err=string hata mesaji
+  function loadScript(path, callback) {
+    if (_loaded[path]) {
+      if (callback) callback(null, path);
+      return;
+    }
+
+    var script = document.createElement('script');
+    script.src = path + '?v=' + _cacheBust;
+    script.async = false;
+    script.setAttribute('data-ini-path', path);
+
+    script.onload = function() {
+      _loaded[path] = true;
+      if (callback) callback(null, path);
+    };
+
+    script.onerror = function() {
+      _errors[path] = true;
+      console.error('[PluginLoader] Yüklenemedi:', path);
+      if (callback) callback('Yüklenemedi: ' + path, path);
+    };
+
+    document.body.appendChild(script);
+  }
+
   // ---------- Durum sorgulama ----------
   function isLoaded(path) { return !!_loaded[path]; }
   function getErrors() { return Object.keys(_errors); }
@@ -128,6 +155,7 @@ window.PluginLoader = (function() {
   return {
     loadIni: loadIni,
     loadAll: loadAll,
+    loadScript: loadScript,
     isLoaded: isLoaded,
     getErrors: getErrors,
     getPendingErrors: getPendingErrors,
