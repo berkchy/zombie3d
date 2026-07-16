@@ -123,7 +123,7 @@ PluginRegistry.register({
     var g = new THREE.Group();
     g.name = 'fp_viewmodel';
     g.visible = false;
-    g.position.set(0.2, -0.08, -0.35);
+    g.position.set(0.18, -0.1, -0.25);
 
     var armsPlugin = PluginRegistry.get('model_viewmodel_arms');
     if (armsPlugin && armsPlugin.enabled && armsPlugin.createArms) {
