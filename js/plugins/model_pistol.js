@@ -182,8 +182,7 @@ PluginRegistry.register({
       tracks: [
         { pivot: '__self__', prop: 'position.z', keys: [0, -0.008, -0.002, 0] },
         { pivot: '__self__', prop: 'position.y', keys: [0, 0.004, -0.001, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.025, 0.004, 0] },
-        { pivot: '__self__', prop: 'rotation.y', keys: [0, 0.005, -0.001, 0] }
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.025, 0.004, 0] }
       ]
     },
     reload: {

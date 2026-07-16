@@ -318,8 +318,20 @@ PluginRegistry.register({
 
     var mesh = modelDef.createModel();
 
-    mesh.position.y = 0.4;
-    mesh.rotation.y = 0;
+    // Boyutu normalize et
+    var box = new THREE.Box3().setFromObject(mesh);
+    var size = box.getSize(new THREE.Vector3());
+    var maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 0) {
+      var targetSize = 1.2;
+      var scale = targetSize / maxDim;
+      mesh.scale.set(scale, scale, scale);
+    }
+    box = new THREE.Box3().setFromObject(mesh);
+    var center = box.getCenter(new THREE.Vector3());
+    mesh.position.sub(center);
+    mesh.position.y += 0.4;
+
     this.roomGroup.add(mesh);
     this.currentModel = mesh;
 
