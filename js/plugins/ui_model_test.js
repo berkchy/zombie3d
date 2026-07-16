@@ -308,17 +308,19 @@ PluginRegistry.register({
     if (this.currentModelId === id && this.currentModel) return;
     this.currentModelId = id;
 
-    if (this.currentModel) {
-      this.roomGroup.remove(this.currentModel);
-      this.currentModel = null;
+    if (this._modelWrapper) {
+      this.roomGroup.remove(this._modelWrapper);
+      this._modelWrapper = null;
     }
+    this.currentModel = null;
 
     var modelDef = PluginRegistry.get(id);
     if (!modelDef || !modelDef.enabled || typeof modelDef.createModel !== 'function') return;
 
     var mesh = modelDef.createModel();
+    var wrapper = new THREE.Group();
 
-    // Boyutu normalize et
+    // Boyutu normalize et (scale, mesh.position'u degistirme)
     var box = new THREE.Box3().setFromObject(mesh);
     var size = box.getSize(new THREE.Vector3());
     var maxDim = Math.max(size.x, size.y, size.z);
@@ -327,12 +329,11 @@ PluginRegistry.register({
       var scale = targetSize / maxDim;
       mesh.scale.set(scale, scale, scale);
     }
-    box = new THREE.Box3().setFromObject(mesh);
-    var center = box.getCenter(new THREE.Vector3());
-    mesh.position.sub(center);
-    mesh.position.y += 0.4;
 
-    this.roomGroup.add(mesh);
+    wrapper.add(mesh);
+    wrapper.position.y = 0.4;
+    this.roomGroup.add(wrapper);
+    this._modelWrapper = wrapper;
     this.currentModel = mesh;
 
     var cards = this.listEl.querySelectorAll('.mt-card');
@@ -365,10 +366,11 @@ PluginRegistry.register({
     this.toggleBtn.classList.remove('show');
 
     PluginRegistry.emit('model_test:close');
-    if (this.currentModel) {
-      this.roomGroup.remove(this.currentModel);
-      this.currentModel = null;
+    if (this._modelWrapper) {
+      this.roomGroup.remove(this._modelWrapper);
+      this._modelWrapper = null;
     }
+    this.currentModel = null;
     this.currentModelId = null;
 
     if (this.roomGroup) {
