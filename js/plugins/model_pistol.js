@@ -187,7 +187,7 @@ PluginRegistry.register({
       ]
     },
     reload: {
-      duration: 1.8,
+      duration: 1.5,
       loop: false,
       tracks: [
         { pivot: '__self__', prop: 'position.y', keys: [0, -0.045, -0.045, -0.03, 0, 0] },
