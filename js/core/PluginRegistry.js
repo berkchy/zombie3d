@@ -1,3 +1,5 @@
+var include, getCoreModule;
+
 window.PluginRegistry = (function() {
   var _plugins = new Map();
   var _hookChains = {};
@@ -139,7 +141,7 @@ window.PluginRegistry = (function() {
       });
     },
 
-    emit: function(hook) {
+      emit: function(hook) {
       var chain = _hookChains[hook];
       if (!chain) return;
       var args = Array.prototype.slice.call(arguments, 1);
@@ -150,3 +152,20 @@ window.PluginRegistry = (function() {
     }
   };
 })();
+
+getCoreModule = function(name) {
+  switch (name) {
+    case 'registry': return window.PluginRegistry;
+    case 'cvar': return window.PluginCvarAPI || null;
+    case 'loader': return window.PluginLoader || null;
+    case 'commands': return window.PluginCommandsAPI || null;
+    case 'map': return window.MapRegistry || null;
+    case 'game': return window.Game || window.game || null;
+    case 'panel': return window.PluginPanel || null;
+    default: return null;
+  }
+};
+
+include = function(name) {
+  return getCoreModule(name);
+};

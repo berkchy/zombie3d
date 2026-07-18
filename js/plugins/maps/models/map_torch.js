@@ -1,4 +1,5 @@
-PluginRegistry.register({
+var plugin = include('registry');
+plugin.register({
   id: 'map_torch',
   name: 'Mesale',
   type: 'map_model',

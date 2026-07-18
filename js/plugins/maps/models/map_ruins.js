@@ -1,4 +1,5 @@
-PluginRegistry.register({
+var plugin = include('registry');
+plugin.register({
   id: 'map_ruins',
   name: 'Yikik Duvar',
   type: 'map_model',

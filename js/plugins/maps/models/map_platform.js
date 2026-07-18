@@ -1,4 +1,5 @@
-PluginRegistry.register({
+var plugin = include('registry');
+plugin.register({
   id: 'map_platform',
   name: 'Merkez Platform',
   type: 'map_model',
@@ -54,8 +55,8 @@ PluginRegistry.register({
     group.add(aBase);
 
     colliders.push({
-      min: [cx - 0.4, cy + 0.35, cz - 0.4],
-      max: [cx + 0.4, cy + 0.73, cz + 0.4],
+      min: [cx - 0.4, cy + 0.355, cz - 0.4],
+      max: [cx + 0.4, cy + 0.605, cz + 0.4],
       walkable: false
     });
 

@@ -1,4 +1,5 @@
-PluginRegistry.register({
+var plugin = include('registry');
+plugin.register({
   id: 'map_ground',
   name: 'Zemin',
   type: 'map_model',
@@ -13,7 +14,7 @@ PluginRegistry.register({
     var gMat = new THREE.MeshStandardMaterial({ color: config.color || 0x9a8a6a, roughness: 0.95 });
     var ground = new THREE.Mesh(new THREE.PlaneGeometry(size, size), gMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.1;
+    ground.position.y = 0;
     ground.receiveShadow = true;
     group.add(ground);
 
@@ -34,7 +35,11 @@ PluginRegistry.register({
 
     return {
       mesh: group,
-      colliders: []
+      colliders: [{
+        min: [-half, -0.01, -half],
+        max: [half, 0, half],
+        walkable: true
+      }]
     };
   }
 });

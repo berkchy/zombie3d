@@ -1,4 +1,5 @@
-PluginRegistry.register({
+var plugin = include('registry');
+plugin.register({
   id: 'map_wall',
   name: 'Sinir Duvari',
   type: 'map_model',

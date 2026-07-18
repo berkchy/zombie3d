@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Zombie Survivor 3D</title>
+<title>DEADWAKE</title>
 <link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Fjalla+One&display=swap" rel="stylesheet">
 </head>
 <body>
 <div id="gameContainer">
@@ -13,7 +14,6 @@
   </div>
   <div id="panelToggle" title="Plugin Yönetimi">⚙</div>
   <div id="modelTestToggle" title="Model Listesi">◈</div>
-  <div id="crosshair">+</div>
   <div id="gameOver">
     <div class="go-content">
       <div class="go-icon">☠</div>
@@ -29,10 +29,12 @@
 </div>
 
 <div id="loadingScreen">
-  <div class="loader-text">EKLENTİLER YÜKLENİYOR</div>
-  <div class="loader-bar"><div class="loader-fill"></div></div>
-  <div class="loader-status" id="loadStatus">0 / 0</div>
-  <div class="loader-plugin" id="loadPlugin"></div>
+  <div class="loader-card">
+    <div class="loader-text">EKLENTİLER YÜKLENİYOR</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <div class="loader-status" id="loadStatus">0 / 0</div>
+    <div class="loader-plugin" id="loadPlugin"></div>
+  </div>
 </div>
 
 <div id="pluginPanel">
@@ -43,13 +45,15 @@
   <div id="pluginList"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/lib/howler.min.js"></script>
+<script src="js/lib/three.min.js"></script>
 
 <script src="js/core/PluginRegistry.js"></script>
 <script src="js/core/PluginLoader.js"></script>
 <script src="js/core/PluginPanel.js"></script>
 <script src="js/core/PluginCommandsAPI.js"></script>
 <script src="js/core/PluginCvarAPI.js"></script>
+<script src="js/core/MapRegistry.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

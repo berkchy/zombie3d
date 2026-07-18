@@ -1,4 +1,5 @@
-PluginRegistry.register({
+var plugin = include('registry');
+plugin.register({
   id: 'map_pillar',
   name: 'Sutun',
   type: 'map_model',
@@ -28,13 +29,38 @@ PluginRegistry.register({
       fall.castShadow = true;
       group.add(fall);
 
-      var minX = cx - len / 2;
-      var maxX = cx + len / 2;
-      var minZ = cz - radius;
-      var maxZ = cz + radius;
+      var halfLen = len / 2;
+      var euler = new THREE.Euler(rx, 0, rz, 'XYZ');
+      var pts = [];
+      // Cylinder ekseninin iki ucu
+      var v = new THREE.Vector3(0, -halfLen, 0);
+      v.applyEuler(euler); pts.push(v.x + cx, v.y + cy + 0.2, v.z + cz);
+      v.set(0, halfLen, 0);
+      v.applyEuler(euler); pts.push(v.x + cx, v.y + cy + 0.2, v.z + cz);
+      // Yuzeydeki dort nokta (orta kesitte)
+      var r = radius * 0.85;
+      [
+        [r, 0, 0], [-r, 0, 0],
+        [0, 0, r], [0, 0, -r]
+      ].forEach(function(p) {
+        v.set(p[0], p[1], p[2]);
+        v.applyEuler(euler);
+        pts.push(v.x + cx, v.y + cy + 0.2, v.z + cz);
+      });
+      // AABB bul
+      var minX = Infinity, minY = Infinity, minZ = Infinity;
+      var maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+      for (var pi = 0; pi < pts.length; pi += 3) {
+        if (pts[pi] < minX) minX = pts[pi];
+        if (pts[pi+1] < minY) minY = pts[pi+1];
+        if (pts[pi+2] < minZ) minZ = pts[pi+2];
+        if (pts[pi] > maxX) maxX = pts[pi];
+        if (pts[pi+1] > maxY) maxY = pts[pi+1];
+        if (pts[pi+2] > maxZ) maxZ = pts[pi+2];
+      }
       colliders.push({
-        min: [minX, cy, minZ],
-        max: [maxX, cy + radius * 0.8, maxZ],
+        min: [minX, minY, minZ],
+        max: [maxX, maxY, maxZ],
         walkable: true
       });
     } else {
