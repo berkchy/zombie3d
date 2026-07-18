@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/js/plugins/:path*/", "destination": "/api/plugins?path=:path*" }
+  ]
+}
