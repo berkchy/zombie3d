@@ -20,6 +20,7 @@ plugin.register({
     var self = this;
 
     document.addEventListener('keydown', function(e) {
+      if (self.game._consoleOpen) return;
       var k = e.key.toLowerCase();
       if (k in self._keys) { self._keys[k] = true; e.preventDefault(); }
       if (k === ' ') { game.input.shoot = true; e.preventDefault(); }
@@ -28,14 +29,17 @@ plugin.register({
       }
     });
     document.addEventListener('keyup', function(e) {
+      if (self.game._consoleOpen) return;
       var k = e.key.toLowerCase();
       if (k in self._keys) self._keys[k] = false;
       if (k === ' ') game.input.shoot = false;
     });
     document.addEventListener('mousedown', function(e) {
+      if (self.game._consoleOpen) return;
       if (e.button === 0) game.input.shoot = true;
     });
     document.addEventListener('mouseup', function(e) {
+      if (self.game._consoleOpen) return;
       if (e.button === 0) game.input.shoot = false;
     });
     document.addEventListener('mousemove', function(e) {

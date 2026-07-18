@@ -192,6 +192,7 @@ plugin.register({
     btn.addEventListener('click', function() {
       var isOpen = consoleEl.classList.toggle('open');
       btn.classList.toggle('open', isOpen);
+      game._consoleOpen = isOpen;
       if (isOpen) {
         self._clearBadge();
         setTimeout(function() { self._input.focus(); }, 50);
