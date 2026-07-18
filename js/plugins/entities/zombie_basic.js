@@ -144,6 +144,8 @@ plugin.register({
         continue;
       }
 
+      if (this.game.poligonMode) continue;
+
       var speed = z.speed * dt;
       var dir = new THREE.Vector3()
         .copy(playerPos)
