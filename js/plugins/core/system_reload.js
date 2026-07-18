@@ -163,7 +163,7 @@ plugin.register({
 
   _updateReloadBtn: function() {
     var tb = plugin.get('system_touch_buttons');
-    if (!tb) return;
+    if (!tb || !tb.enabled) return;
     if (!tb._buttons || !tb._buttons['reload']) {
       tb.touchAdd('reload', {
         label: 'RELOAD', x: 87, y: 65, width: 68, height: 68,

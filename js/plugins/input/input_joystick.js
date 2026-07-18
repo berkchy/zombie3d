@@ -88,7 +88,7 @@ plugin.register({
 
     // Touch Button Sistemine kaydet
     var tb = plugin.get('system_touch_buttons');
-    if (tb) {
+    if (tb && tb.enabled) {
       tb.touchAdd('joystick', {
         element: area,
         x: 16, y: 80,
