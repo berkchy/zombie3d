@@ -198,6 +198,14 @@ plugin.register({
       }
     });
 
+    // Klavye kısayolu: ` (backtick) ile aç/kapa
+    document.addEventListener('keydown', function(e) {
+      if (e.key === '`' || e.key === '~' || e.code === 'Backquote') {
+        e.preventDefault();
+        btn.click();
+      }
+    });
+
     document.getElementById('devconsole-clear').addEventListener('click', function() {
       self._body.innerHTML = '';
       self._logs = [];
