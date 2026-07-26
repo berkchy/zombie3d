@@ -46,6 +46,9 @@ plugin.register({
           self.speed = 2.5;
         }
       }
+      if ((e.key === 'w' || e.key === 'W') && e.ctrlKey) {
+        e.preventDefault();
+      }
     });
     document.addEventListener('keyup', function(e) {
       if (e.key === 'Control') {
