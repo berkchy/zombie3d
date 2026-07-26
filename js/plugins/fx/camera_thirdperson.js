@@ -62,7 +62,7 @@ plugin.register({
     var yaw = this.game.fpYaw || 0;
     var pitch = this.game.fpPitch || 0;
     var effectivePitch = pitch + pitchOffset;
-    mesh.rotation.y = yaw;
+    mesh.rotation.y = yaw + Math.PI;
 
     var cam = this.game.camera;
     if (!cam) {
