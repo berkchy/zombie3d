@@ -20,7 +20,7 @@ plugin.register({
     cvar.register('camera_mode', 'firstperson', 'string', 'Kamera modu (firstperson / thirdperson)');
     cvar.register('camera_thirdperson_distance', 4, 'number', 'TP kamera mesafesi (1-15)');
     cvar.register('camera_thirdperson_height', 1.8, 'number', 'TP kamera yuksekligi (0-5)');
-    cvar.register('camera_thirdperson_pitch', -0.3, 'number', 'TP kameranin dikey acisi (-1.5 - 1.5)');
+    cvar.register('camera_thirdperson_pitch', 0, 'number', 'TP kameranin dikey acisi (-1.5 - 1.5)');
     cvar.register('camera_thirdperson_smooth', 0.08, 'number', 'TP kameranin yumusaklik katsayisi (0.01-0.3)');
     cvar.register('camera_thirdperson_fov', 60, 'number', 'TP kamerasi FOV (40-120)');
     cvar.register('camera_thirdperson_collision', true, 'boolean', 'TP kameranin duvarlarla carpisma kontrolu');
@@ -56,13 +56,13 @@ plugin.register({
     var dist = +cvar.get('camera_thirdperson_distance') || 4;
     var height = +cvar.get('camera_thirdperson_height') || 1.8;
     var smooth = +cvar.get('camera_thirdperson_smooth') || 0.08;
-    var pitchOffset = +cvar.get('camera_thirdperson_pitch') || -0.3;
+    var pitchOffset = +cvar.get('camera_thirdperson_pitch') || 0;
     var collision = cvar.get('camera_thirdperson_collision') !== false;
 
     var yaw = this.game.fpYaw || 0;
     var pitch = this.game.fpPitch || 0;
     var effectivePitch = pitch + pitchOffset;
-    mesh.rotation.y = yaw + Math.PI;
+    mesh.rotation.y = yaw;
 
     var cam = this.game.camera;
     if (!cam) {
