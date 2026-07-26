@@ -271,20 +271,20 @@ plugin.register({
       tracks: [
         { pivot: '__self__', prop: 'position.z', keys: [0, 0.06, 0.02, 0] },
         { pivot: '__self__', prop: 'position.y', keys: [0, 0.03, -0.005, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.18, -0.03, 0] },
-        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.04, 0.01, 0] },
-        { pivot: 'pump', prop: 'position.z', keys: [0.28, 0.28, 0.22, 0.28] }
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.18, 0.03, 0] },
+        { pivot: '__self__', prop: 'rotation.z', keys: [0, 0.04, -0.01, 0] },
+        { pivot: 'pump', prop: 'position.z', keys: [0.28, 0.28, 0.2, 0.28] }
       ]
     },
     reload: {
-      duration: 1.6,
+      duration: 1.8,
       loop: false,
       tracks: [
-        { pivot: '__self__', prop: 'position.y', keys: [0, -0.06, -0.1, -0.1, -0.04, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.08, 0.15, 0.12, 0.04, 0] },
-        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.18, -0.22, -0.2, -0.08, 0] },
-        { pivot: 'shell', prop: 'position.z', keys: [0.1, 0.1, 0.1, 0.1, 0.12, 0.1] },
-        { pivot: 'shell', prop: 'position.y', keys: [-0.035, -0.035, -0.035, -0.035, -0.03, -0.035] }
+        { pivot: '__self__', prop: 'position.y', keys: [0, -0.05, -0.08, -0.08, -0.02, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.06, 0.12, 0.1, 0.03, 0] },
+        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.2, -0.25, -0.22, -0.1, 0] },
+        { pivot: 'shell', prop: 'position.z', keys: [0.1, 0.1, 0.06, 0.1, 0.1, 0.1] },
+        { pivot: 'shell', prop: 'position.y', keys: [-0.035, -0.035, 0.0, -0.035, -0.035, -0.035] }
       ]
     },
     equip: {
