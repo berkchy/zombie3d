@@ -11,7 +11,12 @@ plugin.register({
   priority: 90,
   enabled: true,
 
+  yaw: 0,
+  pitch: 0,
+  locked: false,
   _raycaster: null,
+  _touchId: null,
+  _touchLast: null,
 
   init(game) {
     this.game = game;
@@ -20,7 +25,6 @@ plugin.register({
     cvar.register('camera_mode', 'firstperson', 'string', 'Kamera modu (firstperson / thirdperson)');
     cvar.register('camera_thirdperson_distance', 4, 'number', 'TP kamera mesafesi (1-15)');
     cvar.register('camera_thirdperson_height', 1.8, 'number', 'TP kamera yuksekligi (0-5)');
-    cvar.register('camera_thirdperson_pitch', 0, 'number', 'TP kameranin dikey acisi (-1.5 - 1.5)');
     cvar.register('camera_thirdperson_smooth', 0.08, 'number', 'TP kameranin yumusaklik katsayisi (0.01-0.3)');
     cvar.register('camera_thirdperson_fov', 60, 'number', 'TP kamerasi FOV (40-120)');
     cvar.register('camera_thirdperson_collision', true, 'boolean', 'TP kameranin duvarlarla carpisma kontrolu');
@@ -28,6 +32,72 @@ plugin.register({
     game.cameraMode = cvar.get('camera_mode') || 'firstperson';
 
     var self = this;
+
+    this._onMove = function(e) {
+      if (!this.locked) return;
+      var mult = this._readMult();
+      this.yaw -= (e.movementX || 0) * 0.002 * mult;
+      this.pitch += (e.movementY || 0) * 0.002 * mult;
+      this._clampPitch();
+    }.bind(this);
+
+    this._onClick = function() {
+      if (!window.gameStarted || this.game.gameOverFlag) return;
+      document.body.requestPointerLock();
+    }.bind(this);
+
+    this._onLock = function() {
+      this.locked = document.pointerLockElement !== null;
+    }.bind(this);
+
+    document.addEventListener('mousemove', this._onMove);
+    document.addEventListener('click', this._onClick);
+    document.addEventListener('pointerlockchange', this._onLock);
+    document.addEventListener('mozpointerlockchange', this._onLock);
+
+    this._onTouchStart = function(e) {
+      if (this._touchId !== null) return;
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i];
+        if (t.clientX > window.innerWidth / 2) {
+          this._touchId = t.identifier;
+          this._touchLast = { x: t.clientX, y: t.clientY };
+          break;
+        }
+      }
+    }.bind(this);
+
+    this._onTouchMove = function(e) {
+      if (this._touchId === null) return;
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        var t = e.changedTouches[i];
+        if (t.identifier === this._touchId) {
+          var dx = t.clientX - this._touchLast.x;
+          var dy = t.clientY - this._touchLast.y;
+          this._touchLast = { x: t.clientX, y: t.clientY };
+          var mult = this._readMult();
+          this.yaw -= dx * 0.004 * mult;
+          this.pitch += dy * 0.004 * mult;
+          this._clampPitch();
+          break;
+        }
+      }
+    }.bind(this);
+
+    this._onTouchEnd = function(e) {
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === this._touchId) {
+          this._touchId = null;
+          this._touchLast = null;
+          break;
+        }
+      }
+    }.bind(this);
+
+    document.addEventListener('touchstart', this._onTouchStart, { passive: true });
+    document.addEventListener('touchmove', this._onTouchMove, { passive: true });
+    document.addEventListener('touchend', this._onTouchEnd, { passive: true });
+    document.addEventListener('touchcancel', this._onTouchEnd, { passive: true });
 
     cvar.onChange('camera_mode', function(val) {
       game.cameraMode = val;
@@ -46,9 +116,20 @@ plugin.register({
     }, 'Birinci sahis kamerasi');
   },
 
+  _readMult: function() {
+    try { return cvar.get('sensitivity') || 1; } catch(e) { return 1; }
+  },
+
+  _clampPitch() {
+    this.pitch = Math.max(-1.2, Math.min(1.2, this.pitch));
+  },
+
   update(dt) {
     if (!this.game || this.game._dying) return;
     if (this.game.cameraMode !== 'thirdperson') return;
+
+    this.game.fpYaw = this.yaw;
+    this.game.fpPitch = this.pitch;
 
     var mesh = this.game.playerMesh;
     if (!mesh) return;
@@ -56,13 +137,9 @@ plugin.register({
     var dist = +cvar.get('camera_thirdperson_distance') || 4;
     var height = +cvar.get('camera_thirdperson_height') || 1.8;
     var smooth = +cvar.get('camera_thirdperson_smooth') || 0.08;
-    var pitchOffset = +cvar.get('camera_thirdperson_pitch') || 0;
     var collision = cvar.get('camera_thirdperson_collision') !== false;
 
-    var yaw = this.game.fpYaw || 0;
-    var pitch = this.game.fpPitch || 0;
-    var effectivePitch = pitch + pitchOffset;
-    mesh.rotation.y = yaw;
+    mesh.rotation.y = this.yaw;
 
     var cam = this.game.camera;
     if (!cam) {
@@ -70,9 +147,9 @@ plugin.register({
       if (!cam) return;
     }
 
-    var targetX = mesh.position.x + dist * Math.sin(yaw) * Math.cos(effectivePitch);
-    var targetY = mesh.position.y + height + dist * Math.sin(effectivePitch);
-    var targetZ = mesh.position.z + dist * Math.cos(yaw) * Math.cos(effectivePitch);
+    var targetX = mesh.position.x + dist * Math.sin(this.yaw) * Math.cos(this.pitch);
+    var targetY = mesh.position.y + height + dist * Math.sin(this.pitch);
+    var targetZ = mesh.position.z + dist * Math.cos(this.yaw) * Math.cos(this.pitch);
 
     if (collision && this.game.scene) {
       this._raycaster.set(
@@ -105,6 +182,14 @@ plugin.register({
   },
 
   destroy() {
+    document.removeEventListener('mousemove', this._onMove);
+    document.removeEventListener('click', this._onClick);
+    document.removeEventListener('pointerlockchange', this._onLock);
+    document.removeEventListener('mozpointerlockchange', this._onLock);
+    document.removeEventListener('touchstart', this._onTouchStart);
+    document.removeEventListener('touchmove', this._onTouchMove);
+    document.removeEventListener('touchend', this._onTouchEnd);
+    document.removeEventListener('touchcancel', this._onTouchEnd);
     commands.unregisterAll('camera_thirdperson');
   }
 });

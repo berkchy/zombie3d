@@ -751,8 +751,7 @@ function loop(time) {
     var fp = PluginRegistry.get('fx_firstperson');
     var tp = PluginRegistry.get('camera_thirdperson');
     if (game.cameraMode === 'thirdperson' && tp && tp.enabled) {
-      // TP kamera — plugin kendi update'inde pozisyonu ayarlar
-      game.player.mesh.rotation.y = game.fpYaw || 0;
+      // TP kamera — plugin kendi update'inde pozisyon ve rotasyonu ayarlar
 
       // Oyuncu govdesini goster
       var hip = game.player.mesh.getObjectByName('hip');
