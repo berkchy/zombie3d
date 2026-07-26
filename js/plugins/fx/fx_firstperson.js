@@ -180,20 +180,27 @@ plugin.register({
     var slot = this._arms ? this._arms.slot : null;
     if (!slot) return;
 
-    while (slot.children.length > 0) {
-      var child = slot.children[0];
-      slot.remove(child);
-      if (child.traverse) {
-        child.traverse(function(n) {
-          if (n.isMesh) {
-            if (n.geometry) n.geometry.dispose();
-            if (n.material) {
-              if (Array.isArray(n.material)) n.material.forEach(function(m) { m.dispose(); });
-              else n.material.dispose();
+    function clearChildren(parent) {
+      if (!parent) return;
+      while (parent.children.length > 0) {
+        var child = parent.children[0];
+        parent.remove(child);
+        if (child.traverse) {
+          child.traverse(function(n) {
+            if (n.isMesh) {
+              if (n.geometry) n.geometry.dispose();
+              if (n.material) {
+                if (Array.isArray(n.material)) n.material.forEach(function(m) { m.dispose(); });
+                else n.material.dispose();
+              }
             }
-          }
-        });
+          });
+        }
       }
+    }
+    clearChildren(slot);
+    if (this._arms && this._arms.group) {
+      clearChildren(this._arms.group.getObjectByName('right_wrist'));
     }
     this._viewWeapon = null;
 
