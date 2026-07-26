@@ -67,7 +67,7 @@ plugin.register({
     document.addEventListener('keydown', this._pickupKeyHandler);
 
     var touch = plugin.get('system_touch_buttons');
-    if (touch && touch.touchAdd) {
+    if (touch && touch.enabled) {
       this._touchBtn = touch.touchAdd('drop_weapon', {
         label: '', x: 92, y: 45, width: 56, height: 56,
         shape: 'circle', bgColor: 'rgba(180,50,50,.5)', color: '#fff',
@@ -259,7 +259,7 @@ plugin.register({
     }
 
     var touch = plugin.get('system_touch_buttons');
-    if (this._pickupBtn && touch && touch.touchEdit) {
+    if (this._pickupBtn && touch && touch.enabled) {
       touch.touchEdit('pickup_weapon', { hidden: !showPickup });
     }
 
@@ -270,7 +270,7 @@ plugin.register({
         this._dropMeshes.splice(idx, 1);
       }
       if (hint) hint.style.display = 'none';
-      if (this._pickupBtn && touch && touch.touchEdit) {
+      if (this._pickupBtn && touch && touch.enabled) {
         touch.touchEdit('pickup_weapon', { hidden: true });
       }
     }
@@ -352,7 +352,7 @@ plugin.register({
     if (this._pickupKeyHandler) document.removeEventListener('keydown', this._pickupKeyHandler);
     plugin.off('game:loaded', this.id + '_snd');
     var touch = plugin.get('system_touch_buttons');
-    if (touch && touch.touchRemove) {
+    if (touch && touch.enabled) {
       touch.touchRemove('drop_weapon');
       touch.touchRemove('pickup_weapon');
     }

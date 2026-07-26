@@ -102,7 +102,7 @@ plugin.register({
     });
 
     var touch = plugin.get('system_touch_buttons');
-    if (touch && touch.touchAdd) {
+    if (touch && touch.enabled) {
       this._interactBtn = touch.touchAdd('interact', {
         label: '',
         html: '<svg viewBox="0 0 40 40" width="28" height="28" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20 L18 36 C18 37.5 19 38 20 38 C21 38 22 37.5 22 36 L22 28"/><path d="M22 28 L22 10 C22 7 20 5 18 5 C16 5 14 7 14 10 L14 24"/><path d="M14 24 L12 22 C10 20 8 21 8 23 L8 25 C8 27 10 28 12 28 L14 28"/><path d="M22 24 L26 22 C28 20 30 21 30 23 L30 25 C30 27 28 28 26 28 L22 28"/></svg>',
@@ -200,7 +200,7 @@ plugin.register({
       }
       if (this._interactBtn && this._interactBtn._el) {
         var touch = plugin.get('system_touch_buttons');
-        if (touch && touch._updateElement) {
+        if (touch && touch.enabled) {
           touch._updateElement(this._interactBtn);
         }
         this._interactBtn._el.style.display = this._interactBtn.hidden ? 'none' : 'flex';
@@ -685,7 +685,7 @@ plugin.register({
     if (this._keyHandler) document.removeEventListener('keydown', this._keyHandler);
     plugin.off('game:loaded', this.id + '_snd');
     var touch = plugin.get('system_touch_buttons');
-    if (touch && touch.touchRemove) touch.touchRemove('interact');
+    if (touch && touch.enabled) touch.touchRemove('interact');
     plugin.off('map:entered', this.id);
     plugin.off('game:over', this.id);
   }
