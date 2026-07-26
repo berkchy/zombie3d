@@ -139,7 +139,7 @@ plugin.register({
     var smooth = +cvar.get('camera_thirdperson_smooth') || 0.08;
     var collision = cvar.get('camera_thirdperson_collision') !== false;
 
-    mesh.rotation.y = this.yaw;
+    mesh.rotation.y = this.yaw + Math.PI;
 
     var cam = this.game.camera;
     if (!cam) {

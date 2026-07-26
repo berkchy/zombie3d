@@ -97,7 +97,8 @@ plugin.register({
       var targetVX, targetVZ;
       var fp = plugin.get('fx_firstperson');
       if (fp && fp.enabled && mesh.rotation.y !== undefined) {
-        var yaw = mesh.rotation.y;
+        var camPlugin = plugin.get('camera_thirdperson');
+        var yaw = (camPlugin && camPlugin.enabled && game.cameraMode === 'thirdperson') ? camPlugin.yaw : mesh.rotation.y;
         var cosY = Math.cos(yaw);
         var sinY = Math.sin(yaw);
         targetVX = (inputX * cosY + inputZ * sinY) * this.speed;
