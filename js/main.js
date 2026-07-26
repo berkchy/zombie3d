@@ -844,7 +844,8 @@ function loop(time) {
 
   // View model overlay pass — ayri sahne, depth temizlenip uste bindirilir
   var fp = PluginRegistry.get('fx_firstperson');
-  if (fp && fp.enabled && fp._overlayScene && fp._overlayCamera && gameStarted && fp._viewGroup) {
+  var isTp = game.cameraMode === 'thirdperson' && PluginRegistry.get('camera_thirdperson');
+  if (fp && fp.enabled && !isTp && fp._overlayScene && fp._overlayCamera && gameStarted && fp._viewGroup) {
     fp.syncMainCamera(camera);
     renderer.autoClear = false;
     renderer.clear(false, true, false);

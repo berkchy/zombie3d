@@ -70,14 +70,14 @@ plugin.register({
       if (!cam) return;
     }
 
-    var targetX = mesh.position.x + dist * Math.sin(yaw) * Math.cos(effectivePitch);
+    var targetX = mesh.position.x - dist * Math.sin(yaw) * Math.cos(effectivePitch);
     var targetY = mesh.position.y + height + dist * Math.sin(effectivePitch);
-    var targetZ = mesh.position.z + dist * Math.cos(yaw) * Math.cos(effectivePitch);
+    var targetZ = mesh.position.z - dist * Math.cos(yaw) * Math.cos(effectivePitch);
 
     if (collision && this.game.scene) {
       this._raycaster.set(
         new THREE.Vector3(mesh.position.x, mesh.position.y + height, mesh.position.z),
-        new THREE.Vector3(targetX - mesh.position.x, targetY - (mesh.position.y + height), targetZ - mesh.position.z).normalize()
+        new THREE.Vector3(mesh.position.x - targetX, (mesh.position.y + height) - targetY, mesh.position.z - targetZ).normalize()
       );
       var mapPluginId = this.game.currentMap ? 'map_' + this.game.currentMap.id : null;
       var mapPlugin = mapPluginId ? plugin.get(mapPluginId) : null;
