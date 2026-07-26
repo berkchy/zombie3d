@@ -46,10 +46,13 @@ plugin.register({
           self.speed = 2.5;
         }
       }
-      if ((e.key === 'w' || e.key === 'W') && e.ctrlKey) {
-        e.preventDefault();
-      }
     });
+    window.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && (e.key === 'w' || e.key === 'W')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, { capture: true });
     document.addEventListener('keyup', function(e) {
       if (e.key === 'Control') {
         self.crouching = false;
