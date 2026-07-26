@@ -20,6 +20,7 @@ plugin.register({
   accel: 20,
   friction: 12,
   _stepTimer: 0,
+  crouching: false,
 
   init(game) {
     this.game = game;
@@ -33,7 +34,25 @@ plugin.register({
     this._walkFading = false;
     this._fallStartY = null;
     this._wasOnGround = false;
+    this.crouching = false;
     if (game.player) game.player._gravityMultiplier = 1.0;
+
+    var self = this;
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Control') {
+        e.preventDefault();
+        if (!self.crouching) {
+          self.crouching = true;
+          self.speed = 2.5;
+        }
+      }
+    });
+    document.addEventListener('keyup', function(e) {
+      if (e.key === 'Control') {
+        self.crouching = false;
+        self.speed = 5;
+      }
+    });
 
     var self = this;
     plugin.on('game:loaded', this.id, function() {
@@ -211,7 +230,8 @@ plugin.register({
       z: mesh.position.z,
       dx: this.velX,
       dz: this.velZ,
-      speed: speed
+      speed: speed,
+      crouching: this.crouching
     });
   },
 

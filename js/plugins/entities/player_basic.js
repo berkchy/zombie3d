@@ -43,6 +43,8 @@ plugin.register({
 
   _animId: null,
   _lastAnim: null,
+  _wasCrouching: false,
+  _transitionTimer: 0,
 
   _modelReady: false,
 
@@ -114,10 +116,24 @@ plugin.register({
 
     // Hareket animasyonu gecisi
     plugin.on('player:moving', 'player_basic', function(data) {
-      var isRun = data.speed > 0.3;
-      var target = isRun ? 'run' : 'idle';
-      if (self._lastAnim === target) return;
-      self._playAnim(target);
+      if (data.crouching) {
+        self._transitionTimer = 0;
+        if (!self._wasCrouching) {
+          self._wasCrouching = true;
+          self._playAnim('crouch_idle');
+        }
+      } else if (self._wasCrouching) {
+        self._wasCrouching = false;
+        self._transitionTimer = 0.3;
+        self._playAnim('stand');
+      } else if (self._transitionTimer > 0) {
+        return;
+      } else {
+        var isRun = data.speed > 0.3;
+        var target = isRun ? 'run' : 'idle';
+        if (self._lastAnim === target) return;
+        self._playAnim(target);
+      }
     });
   },
 
@@ -242,6 +258,7 @@ plugin.register({
   update(dt) {
     if (!this.mesh) return;
 
+    if (this._transitionTimer > 0) this._transitionTimer -= dt;
     if (this.dodgeCooldown > 0) this.dodgeCooldown -= dt;
 
     // Mouse aiming (sadece third person'da)

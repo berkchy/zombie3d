@@ -250,6 +250,48 @@ plugin.register({
         { pivot: 'head', prop: 'rotation.y', keys: [0, 0.02, -0.03, 0.02, 0] }
       ]
     },
+    crouch: {
+      duration: 0.3,
+      loop: false,
+      tracks: [
+        { pivot: 'hip', prop: 'position.y', keys: [0.32, 0.12] },
+        { pivot: 'legL', prop: 'rotation.x', keys: [0, 0.6] },
+        { pivot: 'legR', prop: 'rotation.x', keys: [0, 0.6] },
+        { pivot: 'kneeL', prop: 'rotation.x', keys: [0, -0.8] },
+        { pivot: 'kneeR', prop: 'rotation.x', keys: [0, -0.8] },
+        { pivot: 'torso', prop: 'rotation.x', keys: [0, 0.25] },
+        { pivot: 'armL', prop: 'rotation.x', keys: [0.12, 0.4] },
+        { pivot: 'armR', prop: 'rotation.x', keys: [-0.10, 0.3] }
+      ]
+    },
+    crouch_idle: {
+      duration: 0.3,
+      loop: false,
+      tracks: [
+        { pivot: 'hip', prop: 'position.y', keys: [0.32, 0.12] },
+        { pivot: 'legL', prop: 'rotation.x', keys: [0, 0.6] },
+        { pivot: 'legR', prop: 'rotation.x', keys: [0, 0.6] },
+        { pivot: 'kneeL', prop: 'rotation.x', keys: [0, -0.8] },
+        { pivot: 'kneeR', prop: 'rotation.x', keys: [0, -0.8] },
+        { pivot: 'torso', prop: 'rotation.x', keys: [0, 0.25] },
+        { pivot: 'armL', prop: 'rotation.x', keys: [0.12, 0.4] },
+        { pivot: 'armR', prop: 'rotation.x', keys: [-0.10, 0.3] }
+      ]
+    },
+    stand: {
+      duration: 0.25,
+      loop: false,
+      tracks: [
+        { pivot: 'hip', prop: 'position.y', keys: [0.12, 0.32] },
+        { pivot: 'legL', prop: 'rotation.x', keys: [0.6, 0] },
+        { pivot: 'legR', prop: 'rotation.x', keys: [0.6, 0] },
+        { pivot: 'kneeL', prop: 'rotation.x', keys: [-0.8, 0] },
+        { pivot: 'kneeR', prop: 'rotation.x', keys: [-0.8, 0] },
+        { pivot: 'torso', prop: 'rotation.x', keys: [0.25, 0] },
+        { pivot: 'armL', prop: 'rotation.x', keys: [0.4, 0.12] },
+        { pivot: 'armR', prop: 'rotation.x', keys: [0.3, -0.10] }
+      ]
+    },
     die: {
       duration: 1.8,
       loop: false,

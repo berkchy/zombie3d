@@ -759,12 +759,9 @@ function loop(time) {
       camera.quaternion.setFromEuler(euler);
       game.player.mesh.rotation.y = yaw;
 
-      // Oyuncu govdesini gizle (bacaklar kalsin)
+      // Oyuncu govdesini gizle (FP overlay kollari kullanir)
       var hip = game.player.mesh.getObjectByName('hip');
-      if (hip) {
-        var torsoN = hip.getObjectByName('torso');
-        if (torsoN && torsoN.visible !== false) torsoN.visible = false;
-      }
+      if (hip && hip.visible !== false) hip.visible = false;
 
       // View model overlay kamerasi ana kamerayla senkronize edilir
       if (fp.syncMainCamera) fp.syncMainCamera(camera);
@@ -777,10 +774,7 @@ function loop(time) {
 
       // Oyuncu govdesini goster
       var hip = game.player.mesh.getObjectByName('hip');
-      if (hip) {
-        var torsoN = hip.getObjectByName('torso');
-        if (torsoN && torsoN.visible !== true) torsoN.visible = true;
-      }
+      if (hip && hip.visible !== true) hip.visible = true;
 
       // View modeli gizle
       var vm = camera.getObjectByName('fp_viewmodel');
