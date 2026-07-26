@@ -12,18 +12,44 @@ plugin.register({
   speed: 5,
   velX: 0,
   velZ: 0,
+  velocityY: 0,
+  gravity: -9.8,
+  jumpForce: 4,
+  onGround: false,
+  _floorY: 0,
   accel: 20,
   friction: 12,
-  playerY: 0,
+  _stepTimer: 0,
 
   init(game) {
     this.game = game;
     if (!game.input) game.input = { x: 0, y: 0 };
     this.velX = 0;
     this.velZ = 0;
-    this.playerY = 0;
+    this.velocityY = 0;
+    this.onGround = false;
+    this._floorY = 0;
+    this._stepTimer = 0;
+    this._walkFading = false;
+    this._fallStartY = null;
+    this._wasOnGround = false;
+    if (game.player) game.player._gravityMultiplier = 1.0;
 
     var self = this;
+    plugin.on('game:loaded', this.id, function() {
+      if (self.game && self.game.sound) {
+        self.game.sound.addSound('player_walk', {
+          randomPlay: true, currentIndex: 0, label: 'Yürüme Sesi', cat: 'oyuncu',
+          variants: [
+            { src: ['audio/player_walk_1.mp3'], volume: 0.4 },
+            { src: ['audio/player_walk_2.mp3'], volume: 0.4 },
+            { src: ['audio/player_walk_3.mp3'], volume: 0.4 },
+            { src: ['audio/player_walk_4.mp3'], volume: 0.4 },
+            { src: ['audio/player_walk_5.mp3'], volume: 0.4 }
+          ]
+        });
+      }
+    });
     game.move = {
       get speed() { return self.speed; },
       setSpeed: function(v) { self.speed = v; }
@@ -40,6 +66,15 @@ plugin.register({
     var isMoving = inputX !== 0 || inputZ !== 0;
 
     if (isMoving) {
+      if (this._walkFading) {
+        this._walkFading = false;
+        this._restoreWalkVolume();
+      }
+      this._stepTimer -= dt;
+      if (this._stepTimer <= 0 && this.onGround) {
+        this._stepTimer = 0.4;
+        if (this.game && this.game.sound) this.game.sound.play('player_walk');
+      }
       var targetVX, targetVZ;
       var fp = plugin.get('fx_firstperson');
       if (fp && fp.enabled && mesh.rotation.y !== undefined) {
@@ -64,6 +99,10 @@ plugin.register({
         this.velZ += (diffZ / diffLen) * maxAccel;
       }
     } else {
+      if (!this._walkFading && this.game && this.game.sound) {
+        this._walkFading = true;
+        this.game.sound.fadeOut('player_walk', 100);
+      }
       var spd = Math.sqrt(this.velX * this.velX + this.velZ * this.velZ);
       if (spd > 0.001) {
         var decay = this.friction * dt;
@@ -73,48 +112,93 @@ plugin.register({
       }
     }
 
-    // Yeni pozisyon (kaba)
-    var nx = mesh.position.x + this.velX * dt;
-    var nz = mesh.position.z + this.velZ * dt;
-
-    // Harita collider kontrolu — su anki haritadan
+    // Mesh Collider + Gravity
     var mapPluginId = game.currentMap ? 'map_' + game.currentMap.id : null;
     var map = mapPluginId ? plugin.get(mapPluginId) : null;
-    if (map && map.getColliders) {
-      var colliders = map.getColliders();
-      var pr = 0.3;
-      var stepH = 0.4;
-      var floorY = 0;
+    if (game.scene) game.scene.updateMatrixWorld(true);
+    var meshes = map ? MeshCollider.collectMapMeshes(map) : null;
+    var floorY = null;
+    var pr = 0.3, stepH = 0.4;
+    var nx = mesh.position.x + this.velX * dt;
+    var nz = mesh.position.z + this.velZ * dt;
+    if (meshes && meshes.length > 0) {
+      var result = MeshCollider.slideMove(
+        mesh.position.x, mesh.position.y, mesh.position.z,
+        this.velX * dt, this.velZ * dt,
+        meshes, pr, stepH
+      );
+      nx = result.x; nz = result.z;
 
-      for (var i = 0; i < colliders.length; i++) {
-        var c = colliders[i];
-        var minX = c.min[0], minY = c.min[1], minZ = c.min[2];
-        var maxX = c.max[0], maxY = c.max[1], maxZ = c.max[2];
+      floorY = MeshCollider.getFloorY(nx, mesh.position.y, nz, meshes, stepH);
 
-        if (c.walkable) {
-          // Oyuncu merkezi bu alanin icinde mi?
-          if (nx > minX && nx < maxX && nz > minZ && nz < maxZ) {
-            var topY = maxY;
-            if (topY >= floorY) {
-              var diff = topY - this.playerY;
-              if (diff > stepH) {
-                // Cok yuksek — adim asamaz ama itme de (x yonunde de)
-                // sadece bu yuzey icin floorY'i guncelleme
-              } else {
-                floorY = topY;
+      // Dynamic colliders (entity colliders, kept for dropbox etc.)
+      if (game._dynamicColliders) {
+        for (var ci = 0; ci < game._dynamicColliders.length; ci++) {
+          var c = game._dynamicColliders[ci];
+          var maxY = c.max[1];
+          if (mesh.position.y >= maxY - 0.3) {
+            if (ColliderHelper.pointInBox(nx, nz, c)) {
+              if (floorY === null || maxY > floorY) floorY = maxY;
+            }
+          } else {
+            var r = ColliderHelper.circleVsBox(nx, nz, pr, c);
+            if (r.x !== nx || r.z !== nz) {
+              var diffX = nx - r.x, diffZ = nz - r.z;
+              var diffLen = Math.sqrt(diffX * diffX + diffZ * diffZ);
+              if (diffLen > 0.001) {
+                nx = r.x; nz = r.z;
               }
             }
           }
-        } else {
-          // Duvarlar / katı cisimler
-          var res = this._pushCircleAABB(nx, nz, pr, minX, minZ, maxX, maxZ);
-          nx = res.x; nz = res.z;
         }
       }
-
-      this.playerY = floorY;
-      mesh.position.y = this.playerY;
     }
+
+    // Jump – only if on ground and triggered this frame
+    var wantJump = game.input.jump;
+    game.input.jump = false;
+    var wasOnGround = this.onGround;
+    if (wantJump && this.onGround) {
+      this.velocityY = this.jumpForce;
+      this.onGround = false;
+    }
+    if (wantJump) {
+      plugin.emit('player:jumpPress', { wasOnGround: wasOnGround });
+    }
+
+    // Gravity
+    var gravMult = (game.player && game.player._gravityMultiplier) || 1;
+    this.velocityY += this.gravity * gravMult * dt;
+    var ny = mesh.position.y + this.velocityY * dt;
+
+    // Ground clamp
+    if (floorY !== null) {
+      if (ny <= floorY) {
+        ny = floorY;
+        this.velocityY = 0;
+
+        if (!this._wasOnGround && this._fallStartY !== null) {
+          var fallDist = this._fallStartY - ny;
+          if (fallDist > 3) {
+            var dmg = Math.round((fallDist - 3) * 20);
+            dmg = Math.min(999, Math.max(1, dmg));
+            if (game.player && game.player.takeDamage) {
+              game.player.takeDamage(dmg);
+            }
+          }
+          this._fallStartY = null;
+        }
+
+        this.onGround = true;
+        this._wasOnGround = true;
+      } else if (this.onGround) {
+        this._fallStartY = mesh.position.y;
+        this.onGround = false;
+        this._wasOnGround = false;
+      }
+    }
+    this._floorY = (floorY !== null) ? floorY : this._floorY;
+    mesh.position.y = ny;
 
     // Sinir kontrolu (yedek)
     var half = 28;
@@ -131,30 +215,16 @@ plugin.register({
     });
   },
 
-  _pushCircleAABB: function(px, pz, radius, minX, minZ, maxX, maxZ) {
-    var closestX = Math.max(minX, Math.min(maxX, px));
-    var closestZ = Math.max(minZ, Math.min(maxZ, pz));
-    var dx = px - closestX;
-    var dz = pz - closestZ;
-    var distSq = dx * dx + dz * dz;
-
-    if (distSq < radius * radius) {
-      if (distSq > 0.0001) {
-        var dist = Math.sqrt(distSq);
-        var overlap = radius - dist;
-        px += (dx / dist) * overlap;
-        pz += (dz / dist) * overlap;
-      } else {
-        // Iceride — en yakin kenara it
-        var ox = Math.min(px - minX, maxX - px);
-        var oz = Math.min(pz - minZ, maxZ - pz);
-        if (ox < oz) {
-          px += (px - minX < maxX - px ? -(ox + radius) : (ox + radius));
-        } else {
-          pz += (pz - minZ < maxZ - pz ? -(oz + radius) : (oz + radius));
-        }
-      }
+  _restoreWalkVolume: function() {
+    if (!this.game || !this.game.sound) return;
+    var snd = this.game.sound;
+    var howls = snd._sounds['player_walk'];
+    if (!howls) return;
+    var saved = PluginStorageAPI.get('ss_vol_player_walk', null);
+    var vol = saved !== null ? parseInt(saved, 10) / 100 : 0.4;
+    for (var i = 0; i < howls.length; i++) {
+      if (howls[i]) howls[i].volume(vol);
     }
-    return { x: px, z: pz };
-  }
+  },
+
 });

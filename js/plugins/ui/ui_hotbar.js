@@ -26,6 +26,7 @@ plugin.register({
   _onClick: null,
   _keyHandler: null,
   _iconCache: null,
+  _lastWeaponId: null,
 
   init(game) {
     var self = this;
@@ -38,7 +39,7 @@ plugin.register({
     this.container = container;
 
     for (var i = 0; i < 5; i++) {
-      this.slots.push({ id: null, icon: null });
+      this.slots.push({ id: null, icon: null, ammo: 0, reserve: 0, instanceId: null });
 
       var slot = document.createElement('div');
       slot.className = 'hb-slot';
@@ -67,14 +68,14 @@ plugin.register({
 
     // API — diger pluginler game.hotbar ile yonetir
     game.hotbar = {
-      setSlot: function(index, itemId) { return self.setSlot(index, itemId); },
+      setSlot: function(index, itemId, instanceId) { return self.setSlot(index, itemId, instanceId); },
       getSlot: function(index) { return self.getSlot(index); },
       selectSlot: function(index) { self.selectSlot(index); },
       getSelected: function() { return self.getSelected(); },
       clearSlot: function(index) { return self.clearSlot(index); },
       clearAll: function() { self.clearAll(); },
       setSlotIcon: function(index, dataUrl) { self.setSlotIcon(index, dataUrl); },
-      addItem: function(itemId) { return self.addItem(itemId); },
+      addItem: function(itemId, instanceId) { return self.addItem(itemId, instanceId); },
       length: 5
     };
 
@@ -96,15 +97,37 @@ plugin.register({
     document.addEventListener('keydown', this._keyHandler);
   },
 
-  setSlot(index, itemId) {
+  setSlot(index, itemId, instanceId) {
     if (index < 0 || index >= 5) return null;
-    this.slots[index].id = itemId || null;
-    if (itemId) {
-      this._renderWeaponIcon(index, itemId);
-    } else {
-      this.slots[index].icon = null;
+    var registry = plugin.get('system_weapon_instance');
+    if (!itemId) {
+      this.slots[index] = { id: null, icon: null, ammo: 0, reserve: 0, instanceId: null };
       this._renderSlot(index);
+      return this.slots[index];
     }
+    if (instanceId && registry && registry.enabled) {
+      var inst = registry.get(instanceId);
+      if (inst) {
+        this.slots[index].instanceId = instanceId;
+        this.slots[index].id = itemId;
+        this.slots[index].ammo = inst.ammo;
+        this.slots[index].reserve = inst.reserve;
+      }
+    } else {
+      var wp = plugin.get(itemId);
+      var defAmmo = (wp && wp.clip !== undefined) ? (wp.ammo || wp.clip) : 0;
+      var defMax = wp ? (wp.maxAmmo || 0) : 0;
+      var defRes = wp ? (wp.reserve || 0) : 0;
+      if (registry && registry.enabled && defAmmo > 0) {
+        instanceId = registry.create(itemId, defAmmo, defMax, defRes);
+      }
+      this.slots[index].instanceId = instanceId;
+      this.slots[index].id = itemId;
+      var inst2 = (registry && registry.enabled && instanceId) ? registry.get(instanceId) : null;
+      this.slots[index].ammo = inst2 ? inst2.ammo : 0;
+      this.slots[index].reserve = inst2 ? inst2.reserve : 0;
+    }
+    this._renderWeaponIcon(index, itemId);
     return this.slots[index];
   },
 
@@ -117,11 +140,15 @@ plugin.register({
     if (index < 0 || index >= 5) return;
     if (this.selectedIndex === index) return;
 
+    this._saveSlotState();
+
     if (this.selectedIndex >= 0 && this.slotEls[this.selectedIndex]) {
       this.slotEls[this.selectedIndex].classList.remove('active');
     }
 
     this.selectedIndex = index;
+
+    this._loadSlotState();
 
     var el = this.slotEls[index];
     if (el) el.classList.add('active');
@@ -136,25 +163,22 @@ plugin.register({
 
   clearSlot(index) {
     if (index < 0 || index >= 5) return;
-    this.slots[index] = { id: null, icon: null };
+    this.slots[index] = { id: null, icon: null, ammo: 0, reserve: 0, instanceId: null };
     this._renderSlot(index);
   },
 
   clearAll() {
     for (var i = 0; i < 5; i++) {
-      this.slots[i] = { id: null, icon: null };
+      this.slots[i] = { id: null, icon: null, ammo: 0, reserve: 0, instanceId: null };
       this._renderSlot(i);
     }
   },
 
-  addItem(itemId) {
+  addItem(itemId, instanceId) {
     if (!itemId) return null;
     for (var i = 0; i < 5; i++) {
-      if (this.slots[i].id === itemId) return null;
-    }
-    for (var i = 0; i < 5; i++) {
       if (!this.slots[i].id) {
-        this.setSlot(i, itemId);
+        this.setSlot(i, itemId, instanceId);
         return this.slots[i];
       }
     }
@@ -209,7 +233,38 @@ plugin.register({
     this._renderSlot(index);
   },
 
+  _saveSlotState: function() {
+    if (this.selectedIndex < 0) return;
+    var slot = this.slots[this.selectedIndex];
+    if (!slot || !slot.id) return;
+    var wp = plugin.get(slot.id);
+    if (wp && wp.clip !== undefined) {
+      slot.ammo = wp.ammo;
+      slot.reserve = wp.reserve;
+    }
+    var registry = plugin.get('system_weapon_instance');
+    if (registry && registry.enabled && slot.instanceId) {
+      registry.update(slot.instanceId, { ammo: slot.ammo, reserve: slot.reserve });
+    }
+  },
+
+  _loadSlotState: function() {
+    if (this.selectedIndex < 0) return;
+    var slot = this.slots[this.selectedIndex];
+    if (!slot || !slot.id) return;
+    var wp = plugin.get(slot.id);
+    if (wp && wp.clip !== undefined) {
+      wp.ammo = slot.ammo;
+      wp.reserve = slot.reserve;
+    }
+  },
+
+  update(dt) {
+    this._saveSlotState();
+  },
+
   destroy() {
+    this._saveSlotState();
     this._iconCache = null;
     if (this.container) this.container.remove();
     if (this._keyHandler) document.removeEventListener('keydown', this._keyHandler);

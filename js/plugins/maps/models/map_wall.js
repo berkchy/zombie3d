@@ -20,15 +20,12 @@ plugin.register({
     mesh.position.set(cx, cy + h / 2, cz);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.userData.walkable = false;
     group.add(mesh);
 
     return {
       mesh: group,
-      colliders: [{
-        min: [cx - sx / 2, cy, cz - sz / 2],
-        max: [cx + sx / 2, cy + h, cz + sz / 2],
-        walkable: false
-      }]
+      colliders: ColliderHelper.extractColliders(group)
     };
   }
 });

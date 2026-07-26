@@ -9,7 +9,7 @@ plugin.register({
   description: 'Oyun ana menüsü + harita seçimi',
   priority: 100,
 
-  styles: '.menu-overlay{position:fixed;inset:0;z-index:210;background:rgba(10,10,10,0.8);color:#fff;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;transition:opacity .4s ease;}' +
+  styles: '.menu-overlay{position:fixed;inset:0;z-index:210;background:rgba(10,10,10,0.6);color:#fff;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;transition:opacity .4s ease;}' +
     '.menu-overlay.hidden{opacity:0;pointer-events:none;}' +
     '.menu-overlay .menu-view{display:flex;flex-direction:column;width:100%;height:100%;position:absolute;inset:0;opacity:0;transform:translateY(12px);transition:all .35s ease;pointer-events:none;}' +
     '.menu-overlay .menu-view.active{opacity:1;transform:translateY(0);pointer-events:auto;}' +
@@ -22,34 +22,39 @@ plugin.register({
     '#mv-main .mm-btn:hover{color:#fff;transform:translateX(6px);}' +
     '#mv-main .mm-btn.primary{color:#c62828;}' +
     '#mv-main .mm-btn.primary:hover{color:#ef5350;}' +
-    '#mv-maps{padding:20px clamp(20px,4vw,60px);}' +
-    '#mv-maps .mv-top{display:flex;align-items:center;padding:4px 0 16px;flex-shrink:0;}' +
-    '#mv-maps .mv-top .mb-back{background:none;border:none;color:rgba(255,255,255,.3);font-family:inherit;font-size:13px;letter-spacing:1px;cursor:pointer;padding:8px 12px;transition:color .2s,transform .2s;border-radius:4px;}' +
-    '#mv-maps .mv-top .mb-back:hover{color:#fff;background:rgba(255,255,255,.04);transform:translateX(-3px);}' +
-    '#mv-maps .mv-body{flex:1;overflow-y:auto;padding:4px 0;}' +
+    '#mv-maps{padding:0;display:flex;flex-direction:column;}' +
+    '#mv-maps .mv-top{display:flex;align-items:center;padding:14px clamp(20px,4vw,50px);flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.04);}' +
+    '#mv-maps .mv-top h2{color:#fff;font-size:16px;letter-spacing:3px;text-transform:uppercase;margin:0 0 0 14px;font-weight:400;}' +
+    '#mv-maps .mv-top .mb-back{background:none;border:none;color:rgba(255,255,255,.3);font-family:inherit;font-size:13px;letter-spacing:1px;cursor:pointer;padding:8px 10px;transition:all .2s;border-radius:4px;line-height:1;}' +
+    '#mv-maps .mv-top .mb-back:hover{color:#fff;background:rgba(255,255,255,.04);}' +
+    '#mv-maps .mv-body{flex:1;overflow-y:auto;padding:20px clamp(20px,4vw,50px);display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-content:flex-start;}' +
     '#mv-maps .mv-body::-webkit-scrollbar{width:4px;}' +
     '#mv-maps .mv-body::-webkit-scrollbar-track{background:transparent;}' +
     '#mv-maps .mv-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}' +
-    '#mv-maps .mv-bottom{display:flex;justify-content:flex-end;padding:16px 0 4px;flex-shrink:0;}' +
-    '#mv-maps .mv-bottom .mb-enter{background:#c62828;border:none;color:#fff;font-family:inherit;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:12px 32px;border-radius:4px;cursor:pointer;transition:background .2s,transform .2s,opacity .2s;}' +
-    '#mv-maps .mv-bottom .mb-enter:hover{background:#b71c1c;transform:scale(1.03);}' +
+    '#mv-maps .mv-bottom{display:flex;justify-content:center;padding:16px clamp(20px,4vw,50px);flex-shrink:0;border-top:1px solid rgba(255,255,255,.04);}' +
+    '#mv-maps .mv-bottom .mb-enter{background:#c62828;border:none;color:#fff;font-family:inherit;font-size:14px;letter-spacing:2px;text-transform:uppercase;padding:14px 48px;border-radius:8px;cursor:pointer;transition:all .25s;}' +
+    '#mv-maps .mv-bottom .mb-enter:hover{background:#b71c1c;transform:scale(1.03);box-shadow:0 4px 20px rgba(198,40,40,.25);}' +
     '#mv-maps .mv-bottom .mb-enter:active{transform:scale(.97);}' +
-    '#mv-maps .mv-bottom .mb-enter:disabled{background:rgba(255,255,255,.05);color:rgba(255,255,255,.15);cursor:default;transform:none;}' +
-    '.map-entry{display:flex;gap:16px;padding:10px;border:1px solid rgba(255,255,255,.06);border-radius:8px;cursor:pointer;transition:all .25s ease;background:rgba(255,255,255,.02);margin-bottom:10px;transform:scale(1);}' +
-    '.map-entry:hover{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.04);transform:scale(1.01);}' +
-    '.map-entry:active{transform:scale(.99);}' +
-    '.map-entry.selected{border-color:#c62828;background:rgba(198,40,40,.06);box-shadow:0 0 24px rgba(198,40,40,.06);}' +
-    '.map-entry.selected:hover{transform:scale(1.01);}' +
-    '.map-entry .me-thumb{width:clamp(120px,16vw,200px);aspect-ratio:4/3;border-radius:4px;background:#12121e;overflow:hidden;flex-shrink:0;}' +
-    '.map-entry .me-thumb img{width:100%;height:100%;object-fit:cover;display:block;}' +
+    '#mv-maps .mv-bottom .mb-enter:disabled{background:rgba(255,255,255,.05);color:rgba(255,255,255,.15);cursor:default;transform:none;box-shadow:none;}' +
+    '.map-entry{width:clamp(260px,34vw,400px);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .3s ease;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);position:relative;}' +
+    '.map-entry:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.12);box-shadow:0 8px 30px rgba(0,0,0,.35);}' +
+    '.map-entry:active{transform:translateY(-2px);}' +
+    '.map-entry.selected{border-color:#c62828;box-shadow:0 0 30px rgba(198,40,40,.08),0 8px 30px rgba(0,0,0,.35);}' +
+    '.map-entry .me-thumb{width:100%;aspect-ratio:16/9;position:relative;overflow:hidden;background:#12121e;}' +
+    '.map-entry .me-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease;}' +
+    '.map-entry:hover .me-thumb img{transform:scale(1.06);}' +
     '.map-entry .me-thumb .met-load{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,.12);letter-spacing:1px;}' +
-    '.map-entry .me-info{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;}' +
-    '.map-entry .me-info .mei-name{font-size:clamp(14px,1.5vw,18px);color:#fff;letter-spacing:.5px;}' +
-    '.map-entry .me-info .mei-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}' +
-    '.map-entry .me-info .mei-mode{font-size:clamp(10px,1vw,12px);padding:2px 10px;border-radius:3px;text-transform:uppercase;letter-spacing:1.5px;font-weight:500;}' +
-    '.map-entry .me-info .mei-mode.normal{background:rgba(76,175,80,.12);color:#4caf50;}' +
-    '.map-entry .me-info .mei-mode.polygon{background:rgba(79,195,247,.12);color:#4fc3f7;}' +
-    '.map-entry .me-info .mei-desc{font-size:clamp(11px,1.1vw,13px);color:rgba(255,255,255,.3);letter-spacing:.3px;}' +
+    '.map-entry .me-thumb .mei-mode{position:absolute;top:10px;right:10px;font-size:9px;padding:3px 10px;border-radius:3px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;background:rgba(0,0,0,.5);}' +
+    '.map-entry .me-thumb .mei-mode.normal{color:#4caf50;}' +
+    '.map-entry .me-thumb .mei-mode.polygon{color:#4fc3f7;}' +
+    '.map-entry .me-thumb .mei-mode.empty{color:rgba(255,255,255,.5);}' +
+    '.map-entry .me-thumb .mei-overlay{position:absolute;bottom:0;left:0;right:0;padding:24px 14px 12px;background:linear-gradient(transparent,rgba(0,0,0,.75));}' +
+    '.map-entry .me-thumb .mei-overlay .mei-name{color:#fff;font-size:17px;font-weight:700;letter-spacing:.5px;}' +
+    '.map-entry .me-info{padding:14px;display:flex;flex-direction:column;gap:8px;}' +
+    '.map-entry .me-info .mei-desc{font-size:12px;color:rgba(255,255,255,.3);line-height:1.4;letter-spacing:.3px;}' +
+    '.map-entry .me-info .mei-stars{display:flex;gap:3px;}' +
+    '.map-entry .me-info .mei-stars span{font-size:11px;color:rgba(255,255,255,.08);}' +
+    '.map-entry .me-info .mei-stars span.on{color:#ffa726;}' +
     '.empty-maps{width:100%;text-align:center;padding:80px 20px;color:rgba(255,255,255,.2);font-size:13px;letter-spacing:1px;}' +
     '.empty-maps strong{display:block;font-size:16px;color:rgba(255,255,255,.4);margin-bottom:6px;}',
 
@@ -64,12 +69,19 @@ plugin.register({
 
     if (game.sound) {
       game.sound.addSound('ui_click', {
-        spatial: false,
+        spatial: false, label: 'UI Tıklama', cat: 'arayuz',
         variants: [{ src: ['audio/ui_click.mp3'], volume: 0.3 }]
       });
       game.sound.addSound('menu_music', {
-        spatial: false,
-        variants: [{ src: ['audio/menu_music.mp3'], loop: true, volume: game.sound._musicVol }],
+        spatial: false, label: 'Menü Müziği', cat: 'muzik',
+        variants: [
+          { src: ['audio/menu_music_1.mp3'], loop: true, volume: game.sound._musicVol },
+          { src: ['audio/menu_music_2.mp3'], loop: true, volume: game.sound._musicVol },
+          { src: ['audio/menu_music_3.mp3'], loop: true, volume: game.sound._musicVol },
+          { src: ['audio/menu_music_4.mp3'], loop: true, volume: game.sound._musicVol },
+          { src: ['audio/menu_music_5.mp3'], loop: true, volume: game.sound._musicVol },
+          { src: ['audio/menu_music_6.mp3'], loop: true, volume: game.sound._musicVol }
+        ],
         music: true
       });
     }
@@ -80,7 +92,15 @@ plugin.register({
       if (game.sound) {
         if (!game.sound._bank || !game.sound._bank['menu_music']) {
           game.sound.addSound('menu_music', {
-            variants: [{ src: ['audio/menu_music.mp3'], loop: true, volume: game.sound._musicVol }],
+            spatial: false, label: 'Menü Müziği', cat: 'muzik',
+            variants: [
+              { src: ['audio/menu_music_1.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_2.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_3.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_4.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_5.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_6.mp3'], loop: true, volume: game.sound._musicVol }
+            ],
             music: true
           });
         }
@@ -94,7 +114,15 @@ plugin.register({
       if (game.sound) {
         if (!game.sound._bank || !game.sound._bank['menu_music']) {
           game.sound.addSound('menu_music', {
-            variants: [{ src: ['audio/menu_music.mp3'], loop: true, volume: game.sound._musicVol }],
+            spatial: false, label: 'Menü Müziği', cat: 'muzik',
+            variants: [
+              { src: ['audio/menu_music_1.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_2.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_3.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_4.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_5.mp3'], loop: true, volume: game.sound._musicVol },
+              { src: ['audio/menu_music_6.mp3'], loop: true, volume: game.sound._musicVol }
+            ],
             music: true
           });
         }
@@ -112,9 +140,10 @@ plugin.register({
         '<button class="mm-btn primary" id="menuPlay">Oyunu Başlat</button>' +
         '<button class="mm-btn" id="menuModelTest">Model Test Odası</button>' +
         '<button class="mm-btn" id="menuPlugins">Eklentiler</button>' +
+        '<button class="mm-btn" id="menuSoundSettings">Ses Ayarları</button>' +
       '</div>' +
       '<div class="menu-view" id="mv-maps">' +
-        '<div class="mv-top"><button class="mb-back" id="mapBack">← Geri</button></div>' +
+        '<div class="mv-top"><button class="mb-back" id="mapBack">← Geri</button><h2>Harita Seç</h2></div>' +
         '<div class="mv-body" id="mapList"></div>' +
         '<div class="mv-bottom"><button class="mb-enter" id="mapEnter">Haritaya Gir</button></div>' +
       '</div>';
@@ -134,7 +163,13 @@ plugin.register({
 
     document.getElementById('menuPlugins').addEventListener('click', function() {
       self._playClick();
-      document.getElementById('pluginPanel').classList.add('open');
+      console.warn('[Plugin] Panel kaldirildi, konsol uzerinden yonetin: PluginRegistry.list()');
+    });
+
+    document.getElementById('menuSoundSettings').addEventListener('click', function() {
+      self._playClick();
+      var evt = new CustomEvent('soundSettings:open');
+      document.dispatchEvent(evt);
     });
 
     document.getElementById('mapBack').addEventListener('click', function() {
@@ -145,9 +180,19 @@ plugin.register({
     document.getElementById('mapEnter').addEventListener('click', function() {
       self._playClick();
       if (!this._selectedMapId) return;
-      this.container.style.display = 'none';
-      this.visible = false;
-      plugin.emit('menu:play', { mapId: this._selectedMapId });
+      var sc = plugin.get('system_class');
+      if (sc && sc._classes && Object.keys(sc._classes).length > 0) {
+        sc.show(function(selected) {
+          sc._apply(selected);
+          self.container.style.display = 'none';
+          self.visible = false;
+          plugin.emit('menu:play', { mapId: self._selectedMapId });
+        });
+      } else {
+        this.container.style.display = 'none';
+        this.visible = false;
+        plugin.emit('menu:play', { mapId: this._selectedMapId });
+      }
     }.bind(this));
 
     plugin.on('intro:done', 'menu_main', function() {
@@ -170,7 +215,7 @@ plugin.register({
     var s = this.game.sound;
     if (!s._bank || !s._bank['ui_click']) {
       s.addSound('ui_click', {
-        spatial: false,
+        spatial: false, label: 'UI Tıklama', cat: 'arayuz',
         variants: [{ src: ['audio/ui_click.mp3'], volume: 0.3 }]
       });
     }
@@ -215,19 +260,24 @@ plugin.register({
       entry.className = 'map-entry';
       entry.dataset.mapId = def.id;
 
-      var modeClass = def.mode === 'polygon' ? 'polygon' : 'normal';
-      var modeLabel = def.mode === 'polygon' ? 'POLIGON' : 'NORMAL';
+      var modeClass = def.mode || 'normal';
+      var modeLabel = (def.mode || 'normal').toUpperCase();
+
+      var diffStars = def.difficulty || (def.mode === 'polygon' ? 1 : def.mode === 'empty' ? 0 : 3);
+      var starsHtml = '';
+      for (var si = 0; si < 3; si++) {
+        starsHtml += '<span class="' + (si < diffStars ? 'on' : '') + '">★</span>';
+      }
 
       entry.innerHTML =
         '<div class="me-thumb" id="thumb-' + def.id + '">' +
           '<div class="met-load">YÜKLENİYOR</div>' +
+          '<span class="mei-mode ' + modeClass + '">' + modeLabel + '</span>' +
+          '<div class="mei-overlay"><div class="mei-name">' + (def.name || def.id) + '</div></div>' +
         '</div>' +
         '<div class="me-info">' +
-          '<div class="mei-name">' + (def.name || def.id) + '</div>' +
-          '<div class="mei-row">' +
-            '<span class="mei-mode ' + modeClass + '">' + modeLabel + '</span>' +
-            '<span class="mei-desc">' + (def.modeDescription || '') + '</span>' +
-          '</div>' +
+          '<div class="mei-desc">' + (def.modeDescription || '') + '</div>' +
+          '<div class="mei-stars">' + starsHtml + '</div>' +
         '</div>';
 
       entry.addEventListener('click', function() {
@@ -240,10 +290,13 @@ plugin.register({
 
       list.appendChild(entry);
 
-      map.renderThumbnail(def.id, 200, 150, function(url) {
+      map.renderThumbnail(def.id, 400, 225, function(url) {
         var thumb = document.getElementById('thumb-' + def.id);
         if (thumb && url) {
-          thumb.innerHTML = '<img src="' + url + '" alt="' + (def.name || def.id) + '">';
+          thumb.innerHTML =
+            '<img src="' + url + '" alt="' + (def.name || def.id) + '">' +
+            '<span class="mei-mode ' + modeClass + '">' + modeLabel + '</span>' +
+            '<div class="mei-overlay"><div class="mei-name">' + (def.name || def.id) + '</div></div>';
         } else if (thumb) {
           thumb.innerHTML = '<div class="met-load">—</div>';
         }

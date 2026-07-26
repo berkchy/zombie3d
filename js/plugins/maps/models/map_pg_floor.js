@@ -17,6 +17,7 @@ plugin.register({
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.y = 0;
     mesh.receiveShadow = true;
+    mesh.userData.walkable = true;
     group.add(mesh);
 
     var lineMat = new THREE.MeshBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.25 });
@@ -47,11 +48,7 @@ plugin.register({
 
     return {
       mesh: group,
-      colliders: [{
-        min: [-sx / 2, -0.01, -sz / 2],
-        max: [sx / 2, 0, sz / 2],
-        walkable: true
-      }]
+      colliders: ColliderHelper.extractColliders(group)
     };
   }
 });

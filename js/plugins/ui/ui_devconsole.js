@@ -38,6 +38,9 @@ plugin.register({
     '#devconsole-suggest .s-item:last-child{border-bottom:none;}' +
     '#devconsole-suggest .s-item:hover,#devconsole-suggest .s-item.hover{background:rgba(79,195,247,0.08);color:#4fc3f7;}' +
     '#devconsole-suggest .s-item .s-desc{color:rgba(255,255,255,0.2);font-size:9px;margin-left:6px;}' +
+    '#devconsole-suggest .s-badge{display:inline-block;width:26px;text-align:center;font-size:9px;font-weight:600;padding:0 2px;border-radius:2px;margin-right:4px;}' +
+    '#devconsole-suggest .badge-cmd{color:#4fc3f7;background:rgba(79,195,247,0.12);}' +
+    '#devconsole-suggest .badge-cvar{color:#81c784;background:rgba(129,199,132,0.12);}' +
     '#devconsole-btn{position:fixed;bottom:10px;right:10px;width:36px;height:36px;border-radius:8px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);color:#666;font-size:14px;cursor:pointer;z-index:251;display:none;align-items:center;justify-content:center;transition:all 0.2s;font-family:monospace;}' +
     '#devconsole-btn:hover{background:rgba(255,255,255,0.08);color:#aaa;border-color:rgba(255,255,255,0.15);}' +
     '#devconsole-btn.open{color:#4fc3f7;border-color:rgba(79,195,247,0.3);}' +
@@ -138,6 +141,24 @@ plugin.register({
         self._input.value = '';
         self._addLog('cmd', '> ' + val);
         var result = commands.execute(val);
+        if (!result.success && cvar) {
+          var parts = val.split(' ');
+          var cvarId = parts[0];
+          var cvarVal = parts.slice(1).join(' ');
+          var info = cvar.getInfo(cvarId);
+          if (info) {
+            if (cvarVal) {
+              var setResult = cvar.set(cvarId, cvarVal);
+              if (setResult.success) {
+                result = { success: true, output: cvarId + ' = ' + cvar.getInfo(cvarId).value };
+              } else {
+                result = { success: false, output: setResult.error };
+              }
+            } else {
+              result = { success: true, output: cvarId + ' = ' + info.value + '  (' + info.type + ', varsayılan: ' + info.defaultValue + ')  — ' + info.description };
+            }
+          }
+        }
         if (result.output) {
           self._addLog(result.success ? 'output' : 'error', result.output);
         }
@@ -332,7 +353,7 @@ plugin.register({
     }, 'Plugin yönetimi: list / get / pause / resume');
 
     commands.register('ui_devconsole', 'cvar', function(args) {
-      if (args.length === 0) return 'Kullanım: cvar list / cvar get <id> / cvar set <id> <değer> / cvar reset <id>';
+      if (args.length === 0) return 'Kullanım: cvar list / cvar reset <id>';
       var sub = args[0];
       if (sub === 'list') {
         var all = cvar.getAll();
@@ -351,19 +372,6 @@ plugin.register({
           out += id + val + t + def + '\n';
         });
         return out;
-      } else if (sub === 'get') {
-        if (!args[1]) return 'Kullanım: cvar get <id>';
-        var info = cvar.getInfo(args[1]);
-        if (!info) return 'Cvar bulunamadı: ' + args[1];
-        return info.id + ' = ' + info.value + '  (' + info.type + ', varsayılan: ' + info.defaultValue + ')  — ' + info.description;
-      } else if (sub === 'set') {
-        if (!args[1] || args[2] === undefined) return 'Kullanım: cvar set <id> <değer>';
-        var info = cvar.getInfo(args[1]);
-        if (!info) return 'Cvar bulunamadı: ' + args[1];
-        var result = cvar.set(args[1], args[2]);
-        if (!result.success) return result.error;
-        var out = info.id + ' değeri ' + info.value + ' olarak değiştirildi';
-        return out;
       } else if (sub === 'reset') {
         if (!args[1]) return 'Kullanım: cvar reset <id>';
         var result = cvar.reset(args[1]);
@@ -372,7 +380,7 @@ plugin.register({
         return info.id + ' sıfırlandı, varsayılan değer: ' + info.defaultValue;
       }
       return 'Bilinmeyen alt komut: ' + sub;
-    }, 'Cvar yönetimi: list / get / set / reset');
+    }, 'Cvar yönetimi: list / reset');
 
     commands.register('ui_devconsole', 'sound', function(args) {
       var s = window.game && window.game.sound;
@@ -419,6 +427,7 @@ plugin.register({
         }
         return String(result);
       } catch (e) {
+        if (typeof crashGame === 'function') crashGame('eval', 'eval', e);
         return 'HATA: ' + e.message;
       }
     }, 'JavaScript ifadesi çalıştır (eval)');
@@ -511,7 +520,10 @@ plugin.register({
       var match = m.key.substring(idx, idx + lowerVal.length);
       var suffix = m.key.substring(idx + lowerVal.length);
       var displayKey = prefix + '<b style="color:#4fc3f7;font-weight:600;">' + match + '</b>' + suffix;
-      item.innerHTML = displayKey + '<span class="s-desc">' + (m.cmd.description || '') + '</span>';
+      var isCmd = !!m.cmd.commandName;
+      var badgeClass = isCmd ? 'badge-cmd' : 'badge-cvar';
+      var badgeText = isCmd ? 'cmd' : 'cvar';
+      item.innerHTML = '<span class="s-badge ' + badgeClass + '">' + badgeText + '</span> ' + displayKey + '<span class="s-desc">' + (m.cmd.description || '') + '</span>';
       item.addEventListener('click', function() {
         self._applySuggestion(this);
       });

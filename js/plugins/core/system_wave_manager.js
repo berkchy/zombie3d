@@ -15,6 +15,7 @@ plugin.register({
   zombiesKilled: 0,
   totalZombies: 0,
   spawnTimer: 0,
+  _movementAllowed: false,
 
   container: null,
   waveEl: null,
@@ -41,6 +42,32 @@ plugin.register({
     this.zombiesKilled = 0;
     this.totalZombies = 0;
     this.spawnTimer = 0;
+    this._movementAllowed = false;
+
+    var self = this;
+    plugin.on('game:start', this.id, function() {
+      self.wave = 0;
+      self.phase = 'idle';
+      var mode = (game.currentMap && game.currentMap.mode) || 'normal';
+      if (mode === 'empty') {
+        self.phase = 'disabled';
+        return;
+      }
+      if (mode === 'polygon') {
+        self.phase = 'disabled';
+        self._movementAllowed = false;
+        plugin.emit('wave:movement', { canMove: false });
+        if (self.container) self.container.classList.remove('show');
+        return;
+      }
+      if (game.sound) game.sound.addSound('next_wave', {
+        label: 'Yeni Dalga', cat: 'arayuz',
+        variants: [{ src: ['audio/next_wave.mp3'], volume: 0.8 }]
+      });
+      self._movementAllowed = true;
+      plugin.emit('wave:movement', { canMove: true });
+      self._startNextWave();
+    });
 
     var c = document.createElement('div');
     c.id = 'waveUI';
@@ -65,17 +92,11 @@ plugin.register({
 
     document.body.appendChild(c);
 
-    var self = this;
     plugin.on('zombie:die', this.id, function() {
       self._onZombieKilled();
     });
     plugin.on('boss:die', this.id, function() {
       self._onBossKilled();
-    });
-    plugin.on('game:start', this.id, function() {
-      self.wave = 0;
-      self.phase = 'idle';
-      self._startNextWave();
     });
     plugin.on('game:over', this.id, function() {
       self.phase = 'idle';
@@ -83,6 +104,7 @@ plugin.register({
     });
     plugin.on('game:restart', this.id, function() {
       self.phase = 'idle';
+      self._movementAllowed = false;
       c.classList.remove('show');
     });
   },
@@ -118,12 +140,14 @@ plugin.register({
     this.statusEl.className = 'wu-status' + (isBoss ? ' boss-warn' : '');
     this.container.classList.add('show');
 
+    if (this.game && this.game.sound) this.game.sound.play('next_wave');
+
     plugin.emit('wave:change', { oldWave: this.wave - 1, newWave: this.wave });
   },
 
   _onZombieKilled() {
-    if (this.phase === 'idle') return;
-    if (this.game && this.game.poligonMode) return;
+    if (this.phase === 'idle' || this.phase === 'disabled') return;
+    if (this.game && this.game.currentMap && this.game.currentMap.mode === 'polygon') return;
     if (this.zombiesKilled >= this.totalZombies) return;
     this.zombiesKilled++;
     var killedEl = document.getElementById('wuKilled');
@@ -155,10 +179,12 @@ plugin.register({
   },
 
   update(dt) {
+    var mode = this.game && this.game.currentMap && this.game.currentMap.mode;
     if (!this.game || !this.game.player) return;
     if (!this.game.started) return;
+    if (mode === 'empty') return;
 
-    if (this.game.poligonMode) {
+    if (mode === 'polygon') {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) {
         this.spawnTimer = 2.0;

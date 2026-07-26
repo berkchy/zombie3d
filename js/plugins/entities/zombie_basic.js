@@ -11,6 +11,8 @@ plugin.register({
   game: null,
   zombies: [],
   _maxPoligon: 10,
+  _canMove: true,
+  _moveIdCounter: 0,
 
   createModel() {
     var modelPlugin = plugin.get('model_zombie');
@@ -24,10 +26,11 @@ plugin.register({
     loader.loadScript('model_zombie', function(){});
     this.game = game;
     this.zombies = [];
+    this._canMove = true;
 
     if (game.sound) {
       game.sound.addSound('zombie_attack', {
-        randomPlay: true, currentIndex: 0,
+        randomPlay: true, currentIndex: 0, label: 'Zombi Saldırısı', cat: 'yaratiklar',
         variants: [
           { src: ['audio/zombie_attack_1.mp3'], volume: 0.7 },
           { src: ['audio/zombie_attack_2.mp3'], volume: 0.7 },
@@ -35,12 +38,21 @@ plugin.register({
         ]
       });
       game.sound.addSound('zombie_death', {
-        randomPlay: true, currentIndex: 0,
+        randomPlay: true, currentIndex: 0, label: 'Zombi Ölüm', cat: 'yaratiklar',
         variants: [
           { src: ['audio/zombie_death_1.mp3'], volume: 0.7 },
           { src: ['audio/zombie_death_2.mp3'], volume: 0.7 },
           { src: ['audio/zombie_death_3.mp3'], volume: 0.7 },
           { src: ['audio/zombie_death_4.mp3'], volume: 0.7 }
+        ]
+      });
+      game.sound.addSound('zombie_pain', {
+        randomPlay: true, currentIndex: 0, label: 'Zombi Acı', cat: 'yaratiklar',
+        variants: [
+          { src: ['audio/zombie_pain_1.mp3'], volume: 0.7 },
+          { src: ['audio/zombie_pain_2.mp3'], volume: 0.7 },
+          { src: ['audio/zombie_pain_3.mp3'], volume: 0.7 },
+          { src: ['audio/zombie_pain_4.mp3'], volume: 0.7 }
         ]
       });
     }
@@ -56,6 +68,19 @@ plugin.register({
 
     plugin.on('zombie:die', this.id, function(pos) {
       if (self.game && self.game.sound) self.game.sound.playAt('zombie_death', pos);
+    });
+
+    plugin.on('zombie:hit', this.id, function(data) {
+      if (!self.game || !self.game.sound) return;
+      if (data && data.hp > 0) self.game.sound.playAt('zombie_pain', data.position);
+    });
+
+    plugin.on('wave:movement', this.id, function(data) {
+      var canMove = data && data.canMove;
+      self._canMove = canMove;
+      for (var i = 0; i < self.zombies.length; i++) {
+        plugin.emit('movement:set_speed', { entityId: self.zombies[i]._moveId, canMove: canMove });
+      }
     });
   },
 
@@ -90,7 +115,9 @@ plugin.register({
     mesh.position.set(x, 0, z);
     game.scene.add(mesh);
 
+    var moveId = 'zb_' + (this._moveIdCounter++);
     var zombie = {
+      _moveId: moveId,
       mesh: mesh,
       hp: config.hp || 20,
       maxHp: config.maxHp || 20,
@@ -107,10 +134,23 @@ plugin.register({
       spawnPos: new THREE.Vector3(x, 0, z)
     };
 
+    plugin.emit('movement:register', {
+      entityId: moveId,
+      mesh: mesh,
+      speed: zombie.speed,
+      radius: 0.3,
+      canMove: this._canMove
+    });
+
     var anim = plugin.get('core_animation');
     var mp = plugin.get('model_zombie');
     if (anim && anim.enabled && mp && mp.animations) {
       zombie._animId = anim.play(mesh, mp.animations.idle);
+    }
+
+    var hitbox = plugin.get('system_hitbox');
+    if (hitbox && hitbox.enabled && mp && typeof mp.getHitboxDefs === 'function') {
+      hitbox.createHitboxes(mesh, mp.getHitboxDefs());
     }
 
     this.zombies.push(zombie);
@@ -144,9 +184,18 @@ plugin.register({
         continue;
       }
 
-      if (this.game.poligonMode) continue;
+      if (!this._canMove) {
+        plugin.emit('movement:stop', { entityId: z._moveId });
+        continue;
+      }
 
-      var speed = z.speed * dt;
+      if (z._stunTimer > 0) {
+        z._stunTimer -= dt;
+        if (z._stunTimer <= 0) {
+          plugin.emit('movement:set_speed', { entityId: z._moveId, speed: z.speed });
+        }
+      }
+
       var dir = new THREE.Vector3()
         .copy(playerPos)
         .sub(z.mesh.position);
@@ -157,6 +206,7 @@ plugin.register({
       var mp = plugin.get('model_zombie');
 
       if (z._attacking) {
+        plugin.emit('movement:stop', { entityId: z._moveId });
         z._attackTimer -= dt;
         if (z._attackTimer <= 0) {
           z._attacking = false;
@@ -169,8 +219,7 @@ plugin.register({
           }
         }
       } else if (dist > 0.5) {
-        z.mesh.position.x += dir.x * speed;
-        z.mesh.position.z += dir.z * speed;
+        plugin.emit('movement:move_to', { entityId: z._moveId, target: playerPos });
         z.mesh.rotation.y = Math.atan2(dir.x, dir.z);
         if (anim && anim.enabled && mp && mp.animations) {
           if (!z._animId || z._lastAnim !== 'walk') {
@@ -204,62 +253,92 @@ plugin.register({
 
     for (var i = toRemove.length - 1; i >= 0; i--) {
       var idx = toRemove[i];
-      if (this.zombies[idx] && this.zombies[idx].mesh) {
-        this.game.scene.remove(this.zombies[idx].mesh);
+      if (this.zombies[idx]) {
+        plugin.emit('movement:unregister', { entityId: this.zombies[idx]._moveId });
+        if (this.zombies[idx].mesh) {
+          var hitbox = plugin.get('system_hitbox');
+          if (hitbox && hitbox.enabled) hitbox.removeHitboxes(this.zombies[idx].mesh);
+          this.game.scene.remove(this.zombies[idx].mesh);
+        }
       }
       this.zombies.splice(idx, 1);
     }
   },
 
-  hitTest(bulletPos, radius, damage) {
+  hitTest(bulletPos, radius, damage, extra) {
     damage = damage || 25;
+    var hitbox = plugin.get('system_hitbox');
+    var hasHitbox = hitbox && hitbox.enabled;
     for (var i = 0; i < this.zombies.length; i++) {
       var z = this.zombies[i];
       if (!z.alive || z.dying) continue;
 
+      if (hasHitbox && z.mesh.userData && z.mesh.userData.hitboxes) {
+        var hitType = hitbox.getHitTypeAtPoint(z.mesh, bulletPos);
+        if (!hitType) continue;
+        return this._hit(z, bulletPos, damage, hitType, hitbox, extra);
+      }
+
       var bodyPos = new THREE.Vector3(z.mesh.position.x, z.mesh.position.y + 0.5, z.mesh.position.z);
       var headPos = new THREE.Vector3(z.mesh.position.x, z.mesh.position.y + 0.9, z.mesh.position.z);
       var r = radius + 0.4;
-
-      var bodyDist = bulletPos.distanceTo(bodyPos);
-      var headDist = bulletPos.distanceTo(headPos);
-      var isHeadshot = headDist < r * 0.8;
-      var isHit = bodyDist < r || headDist < r;
-
-      if (isHit) {
-        var finalDmg = isHeadshot ? damage * 2.5 : damage;
-        z.hp -= finalDmg;
-        plugin.emit('zombie:hit', {
-          zombie: z,
-          damage: finalDmg,
-          hp: z.hp,
-          position: z.mesh.position.clone(),
-          headshot: isHeadshot
-        });
-        if (z.hp <= 0) {
-          z.dying = true;
-          z.dieTimer = 1.6;
-          z._deathVel = new THREE.Vector3().copy(z.mesh.position).sub(bulletPos).normalize().multiplyScalar(3);
-          this.game.score += 10;
-          document.getElementById('scoreVal').textContent = this.game.score;
-          var anim = plugin.get('core_animation');
-          var mp = plugin.get('model_zombie');
-          if (anim && anim.enabled && mp && mp.animations && z._animId) {
-            anim.stop(z._animId);
-            z._animId = null;
-          }
-          if (anim && anim.enabled && mp && mp.animations) {
-            z._animId = anim.play(z.mesh, mp.animations.die);
-          }
-          plugin.emit('zombie:die', z.mesh.position.clone());
-        }
-        return true;
-      }
+      if (!(bulletPos.distanceTo(bodyPos) < r || bulletPos.distanceTo(headPos) < r)) continue;
+      var hitType = bulletPos.distanceTo(headPos) < r * 0.8 ? 'head' : 'chest';
+      return this._hit(z, bulletPos, damage, hitType, null, extra);
     }
     return false;
   },
 
+  _hit(z, bulletPos, damage, hitType, hitbox, extra) {
+    var dist = bulletPos.distanceTo(z.mesh.position);
+    var finalDmg = hitbox ? hitbox.calcDamage(damage, hitType, dist) : (hitType === 'head' ? damage * 2.5 : damage);
+    var ev = { damage: finalDmg, hitType: hitType, enemy: z, knockback: (extra && extra.knockback) || 0, position: z.mesh.position.clone() };
+    plugin.emit('enemy:hit', ev);
+    finalDmg = ev.damage;
+    z.hp -= finalDmg;
+    z._stunTimer = 0.3;
+    plugin.emit('movement:set_speed', { entityId: z._moveId, speed: z.speed * 0.3 });
+    plugin.emit('zombie:hit', {
+      zombie: z, damage: finalDmg, hp: z.hp, position: z.mesh.position.clone(),
+      headshot: hitType === 'head', hitType: hitType
+    });
+
+    var kbVal = (extra && extra.knockback) || 0;
+    if (kbVal > 0) {
+      var kbSys = plugin.get('entity_knockback');
+      if (kbSys && kbSys.enabled) {
+        var kbDir = (extra && extra.direction) ? extra.direction.clone().normalize() : new THREE.Vector3().copy(z.mesh.position).sub(bulletPos).normalize();
+        kbSys.applyAt(z.mesh, bulletPos, kbVal, kbDir, 70);
+      }
+    }
+
+    if (z.hp <= 0) {
+      z.dying = true;
+      z.dieTimer = 1.6;
+      z._deathVel = new THREE.Vector3().copy(z.mesh.position).sub(bulletPos).normalize().multiplyScalar(3);
+      plugin.emit('movement:unregister', { entityId: z._moveId });
+      this.game.score += 10;
+      document.getElementById('scoreVal').textContent = this.game.score;
+      var anim = plugin.get('core_animation');
+      var mp = plugin.get('model_zombie');
+      if (anim && anim.enabled && mp && mp.animations && z._animId) {
+        anim.stop(z._animId);
+        z._animId = null;
+      }
+      if (anim && anim.enabled && mp && mp.animations) {
+        z._animId = anim.play(z.mesh, mp.animations.die);
+      }
+      plugin.emit('player:kill', { enemy: z, type: 'basic', score: 10, position: z.mesh.position.clone() });
+      plugin.emit('zombie:die', z.mesh.position.clone());
+    }
+    return true;
+  },
+
   destroy() {
+    plugin.off('wave:spawn', this.id);
+    plugin.off('zombie:die', this.id);
+    plugin.off('zombie:hit', this.id);
+    plugin.off('wave:movement', this.id);
     this.zombies.forEach(function(z) {
       if (z.mesh && this.game) this.game.scene.remove(z.mesh);
     }, this);

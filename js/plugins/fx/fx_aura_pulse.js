@@ -49,22 +49,8 @@ plugin.register({
     this.ring.position.y = 0.05;
     game.scene.add(this.ring);
 
-    // 2) Hook dinleme: oyuncu hasar alınca renk değiştir
+    // 2) Hook dinleme: oyuncu hasar alınca halka parlasın
     plugin.on('player:hit', 'fx_aura_pulse', function(data) {
-      const player = data.player;
-      if (!player || !player.bodyMat) return;
-      // Can azaldıkça rengi kırmızıya kaydır
-      const ratio = player.hp / player.maxHp;
-      const r = Math.round(79 + (244 - 79) * (1 - ratio));    // 0x4f → 0xf4
-      const g = Math.round(195 - 195 * (1 - ratio));          // 0xc3 → 0x00
-      const b = Math.round(247 - 247 * (1 - ratio));          // 0xf7 → 0x00
-      player.bodyMat.color.setRGB(r / 255, g / 255, b / 255);
-
-      // Aura da renk değiştirsin
-      this.ring.material.color.setRGB(r / 255, g / 255, b / 255);
-      this.ring.material.emissive.setRGB(r / 255, g / 255, b / 255);
-
-      // Hasar alınca halka parlasın
       this.pulseIntensity = 1;
     }.bind(this));
 

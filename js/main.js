@@ -133,7 +133,7 @@ function crashGame(pluginId, phase, error) {
       '</div>' +
       (compactStack.length > 0 ? (
         '<div class="cs-section">' +
-          '<div class="cs-label">STACK</div>' +
+          '<div class="cs-stack-header"><div class="cs-label">STACK</div><button class="cs-copy-btn" onclick="var t=this.parentNode.parentNode.querySelector(\'.cs-stack\').textContent;navigator.clipboard.writeText(t).catch(function(){var ta=document.createElement(\'textarea\');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand(\'copy\');document.body.removeChild(ta);});this.textContent=\'KOPYALANDI\';var s=this;setTimeout(function(){s.textContent=\'KOPYALA\';},1500);">KOPYALA</button></div>' +
           '<div class="cs-stack">' + compactStack.map(function(l) { return '<div class="cs-stack-line">' + _escapeHtml(l) + '</div>'; }).join('') + '</div>' +
         '</div>'
       ) : '') +
@@ -150,7 +150,10 @@ function crashGame(pluginId, phase, error) {
     '#crashFallback .cs-title{font-family:\'Fjalla One\',sans-serif;font-size:clamp(36px,5vw,64px);font-weight:400;letter-spacing:4px;color:#c62828;margin:0 0 4px;text-transform:uppercase;}' +
     '#crashFallback .cs-divider{width:40px;height:1px;background:rgba(255,255,255,.08);border:none;margin:20px 0;}' +
     '#crashFallback .cs-section{margin-bottom:12px;}' +
+    '#crashFallback .cs-stack-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}' +
     '#crashFallback .cs-label{font-size:clamp(9px,1vw,11px);letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:2px;}' +
+    '#crashFallback .cs-copy-btn{background:none;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.3);font-family:inherit;font-size:clamp(8px,0.9vw,10px);letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:3px;cursor:pointer;transition:all .2s;}' +
+    '#crashFallback .cs-copy-btn:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.6);}' +
     '#crashFallback .cs-value{font-size:clamp(12px,1.3vw,14px);color:rgba(255,255,255,.7);word-break:break-all;}' +
     '#crashFallback .cs-error{color:#ef5350;}' +
     '#crashFallback .cs-stack{margin-top:4px;max-height:160px;overflow-y:auto;background:rgba(255,255,255,.03);border-radius:4px;padding:8px 10px;}' +
@@ -186,6 +189,7 @@ window._targetHfov = 60;
 window._applyHfov = function() {
   var hfov = window._targetHfov || 60;
   var aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = aspect;
   var vfov = 2 * Math.atan(Math.tan(hfov * Math.PI / 360) / aspect) * 180 / Math.PI;
   camera.fov = vfov;
   camera.updateProjectionMatrix();
@@ -283,8 +287,11 @@ function init() {
       window.addEventListener('resize', function() {
         window._applyHfov();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         overlayCanvas.width = window.innerWidth;
         overlayCanvas.height = window.innerHeight;
+        var mt = PluginRegistry.get('ui_model_test');
+        if (mt && mt._vmCamera) { mt._vmCamera.aspect = window.innerWidth / window.innerHeight; mt._vmCamera.updateProjectionMatrix(); }
       });
 
       // ---------- Game Object ----------
@@ -309,21 +316,28 @@ function init() {
         overlayCtx: overlayCtx,
 
         shoot: function(owner) {
-          // Hotbar kontrolu — sadece secili slot'taki silah ates eder
+          var rl = PluginRegistry.get('system_reload');
+          if (rl && rl._reloading) return;
           if (game.hotbar) {
             var sel = game.hotbar.getSelected();
             if (sel && sel.slot && sel.slot.id) {
               var weapons = PluginRegistry.getByType('weapon');
               for (var i = 0; i < weapons.length; i++) {
                 if (weapons[i].id === sel.slot.id) {
-                  if (weapons[i].shoot) weapons[i].shoot(owner);
+                  if (weapons[i].shoot) {
+                    if (weapons[i].clip !== undefined && weapons[i].ammo !== undefined && weapons[i].ammo <= 0) {
+                      var ec = PluginRegistry.get('fx_empty_click');
+                      if (ec && ec.playClick) ec.playClick();
+                    } else {
+                      weapons[i].shoot(owner);
+                    }
+                  }
                   break;
                 }
               }
             }
             return;
           }
-          // Hotbar yoksa eski davranis (tum weapon pluginleri)
           var weapons = PluginRegistry.getByType('weapon');
           weapons.forEach(function(wp) {
             if (wp.shoot) wp.shoot(owner);
@@ -516,7 +530,7 @@ function init() {
           }
         });
 
-        var _subMinTime = Date.now() + 1000;
+        var _subMinTime = Date.now() + 70;
 
         function _checkSubDone() {
           if (!PluginLoader.hasPendingLoads() && Date.now() >= _subMinTime) {
@@ -544,6 +558,18 @@ function init() {
 function reloadPlugins() {
   try {
     var allPlugins = PluginRegistry.getAll();
+
+    // intro_sequence PluginStorageAPI tarafindan disabled edilmisse zorla ac
+    for (var pi = 0; pi < allPlugins.length; pi++) {
+      if (allPlugins[pi].id === 'intro_sequence') {
+        allPlugins[pi].enabled = true;
+        break;
+      }
+    }
+    try {
+      var _st = PluginStorageAPI.get('zombie3d_plugin_states', {});
+      if (_st['intro_sequence'] !== undefined) { delete _st['intro_sequence']; PluginStorageAPI.set('zombie3d_plugin_states', _st); }
+    } catch(e){}
 
     var order = { core: 0, map: 1, player: 2, weapon: 3, enemy: 4, graphics: 5, ui: 6, menu: 7, scene: 8 };
     var sorted = allPlugins
@@ -625,12 +651,20 @@ function startGame() {
       }
       if (weapons.length > 0) game.hotbar.selectSlot(0);
     }
-    weapons.forEach(function(w) {
-      w.ammo = 999;
-      w.maxAmmo = 999;
-    });
+    for (var wi = 0; wi < weapons.length; wi++) {
+      weapons[wi].reserve = 999;
+      if (game.hotbar) {
+        for (var si = 0; si < 5; si++) {
+          var s = game.hotbar.getSlot(si);
+          if (s && s.id === weapons[wi].id) s.reserve = 999;
+        }
+      }
+    }
     var sel = game.hotbar ? game.hotbar.getSelected() : null;
-    if (sel) PluginRegistry.emit('ammo:change', { ammo: 999, maxAmmo: 999, clip: 999 });
+    if (sel && sel.slot) {
+      var swp = plugin.get(sel.slot.id);
+      if (swp) PluginRegistry.emit('ammo:change', { ammo: swp.ammo, maxAmmo: swp.maxAmmo, clip: swp.clip, reserve: swp.reserve });
+    }
   } else {
     if (game.hotbar) {
       game.hotbar.clearAll();
@@ -719,8 +753,8 @@ function loop(time) {
       // First person: kamerayi oyuncu kafasina yerlestir
       var pos = game.player.mesh.position;
       camera.position.set(pos.x, pos.y + 0.6, pos.z);
-      var yaw = game.fpYaw || 0;
-      var pitch = game.fpPitch || 0;
+      var yaw = (game.fpYaw || 0) + (game._recoilYaw || 0);
+      var pitch = (game.fpPitch || 0) + (game._recoilPitch || 0);
       var euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
       camera.quaternion.setFromEuler(euler);
       game.player.mesh.rotation.y = yaw;
@@ -791,6 +825,13 @@ function loop(time) {
     }
   }
 
+  // FOV cvar'ini gameplay'de her frame uygula (intro/menu/death aninda camera_fov dokunma)
+  if (game && game.started && !game._dying) {
+    var _intr = PluginRegistry.get('intro_sequence');
+    var _mBg = PluginRegistry.get('fx_menu_background');
+    if ((!_intr || !_intr.playing) && (!_mBg || _mBg._destroyed)) window._applyHfov();
+  }
+
   // 3D ses listener'ini kamerayla senkronize et
   if (game && game.sound && game.sound.updateListener) {
     try { game.sound.updateListener(camera); } catch(e) {}
@@ -805,6 +846,15 @@ function loop(time) {
     renderer.autoClear = false;
     renderer.clear(false, true, false);
     renderer.render(fp._overlayScene, fp._overlayCamera);
+    renderer.autoClear = true;
+  }
+
+  // Model test odasi viewmodel overlay
+  var mt = PluginRegistry.get('ui_model_test');
+  if (mt && mt._vmActive && mt._vmScene && mt._vmCamera) {
+    renderer.autoClear = false;
+    renderer.clear(false, true, false);
+    renderer.render(mt._vmScene, mt._vmCamera);
     renderer.autoClear = true;
   }
 

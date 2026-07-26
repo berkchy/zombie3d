@@ -139,6 +139,7 @@ plugin.register({
 
   destroy() {
     if (this.area) this.area.remove();
+    plugin.off('game:over', this.id);
     plugin.removeStyles(this.id);
   }
 });

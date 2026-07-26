@@ -11,7 +11,7 @@ window.PluginLoader = (function() {
   var _nameToPath = {};
   var _scanDone = false;
 
-  var _subdirs = ['core', 'fx', 'input', 'models', 'ui', 'weapons', 'entities', 'pickups', 'menu', 'misc', 'maps'];
+  var _subdirs = ['core', 'dev', 'fx', 'input', 'models', 'ui', 'weapons', 'entities', 'pickups', 'menu', 'misc', 'maps', 'actions'];
 
   function _calcDisplayTime(bytes) {
     if (bytes <= 0) return 80;
@@ -142,7 +142,7 @@ window.PluginLoader = (function() {
     sizeXhr.onload = function() {
       var bytes = parseInt(sizeXhr.getResponseHeader('Content-Length')) || 0;
       var displayTime = _calcDisplayTime(bytes);
-      _loadPlugin(entries, idx, path, entry, displayTime, results, onComplete, onProgress);
+      _loadPlugin(entries, idx, path, entry, displayTime*0, results, onComplete, onProgress);
     };
     sizeXhr.onerror = function() {
       _loadPlugin(entries, idx, path, entry, 80, results, onComplete, onProgress);
@@ -185,13 +185,51 @@ window.PluginLoader = (function() {
       if (onProgress) onProgress(idx + 1, entries.length, path, null, 0);
       setTimeout(function() {
         _doLoad(entries, idx + 1, results, onComplete, onProgress);
-      }, 60);
+      }, 10);
     };
 
     document.body.appendChild(script);
   }
 
+  function _getPluginState() {
+    return store.get('zombie3d_plugin_states', null);
+  }
+
+  function _applyStoredStates() {
+    var stored = _getPluginState();
+    if (!stored) return;
+    _entries.forEach(function(entry) {
+      if (stored[entry.name] === undefined) return;
+      var plugin = PluginRegistry.get(entry.name);
+      if (!plugin) return;
+      var shouldBeEnabled = stored[entry.name];
+      if (plugin.forceEnabled) {
+        if (!shouldBeEnabled) {
+          console.warn('[Plugin] "' + entry.name + '" forceEnabled, stored state ignore ediliyor');
+        }
+        return;
+      }
+      if (plugin.enabled !== shouldBeEnabled) {
+        if (shouldBeEnabled) {
+          PluginRegistry.enable(entry.name);
+          PluginRegistry.emit('plugins:resume', { id: entry.name });
+        } else {
+          PluginRegistry.disable(entry.name);
+          PluginRegistry.emit('plugins:pause', { id: entry.name });
+        }
+      }
+    });
+  }
+
   function loadAll(onComplete, onProgress) {
+    var stored = _getPluginState();
+    if (stored) {
+      _entries.forEach(function(entry) {
+        if (stored[entry.name] !== undefined) {
+          entry._storedEnabled = stored[entry.name];
+        }
+      });
+    }
     var total = _entries.length;
     if (total === 0) {
       if (onComplete) onComplete({ loaded: [], errors: [] });
@@ -202,7 +240,10 @@ window.PluginLoader = (function() {
     _activeResults = results;
     _ensureErrorTracking();
 
-    _doLoad(_entries, 0, results, onComplete, onProgress);
+    _doLoad(_entries, 0, results, function(res) {
+      _applyStoredStates();
+      if (onComplete) onComplete(res);
+    }, onProgress);
   }
 
   // ---------- Tek script yükle (loadScript ile cagrilan sub-plugin'lar) ----------
@@ -262,7 +303,7 @@ window.PluginLoader = (function() {
       };
 
       document.body.appendChild(script);
-    }, 120);
+    }, 10);
   }
 
   function loadScript(name, callback) {

@@ -82,6 +82,15 @@ plugin.register({
     }
     if (!opts.variants) opts.variants = [];
     this._bank[id] = opts;
+
+    var saved = PluginStorageAPI.get('ss_vol_' + id, null);
+    if (saved !== null) {
+      var vol = Math.max(0, Math.min(1, parseInt(saved, 10) / 100));
+      for (var vi = 0; vi < opts.variants.length; vi++) {
+        if (opts.variants[vi]) opts.variants[vi].volume = vol;
+      }
+    }
+
     if (this._ready) this._createFromBank(id);
   },
 

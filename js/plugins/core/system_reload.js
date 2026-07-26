@@ -45,7 +45,7 @@ plugin.register({
 
     plugin.on('weapon:fire', this.id, function(data) {
       if (!self._reloading && data.weapon && data.weapon.ammo !== undefined && data.weapon.ammo <= 0) {
-        self._startReload();
+        if (!self._game.input.shoot) self._startReload();
       }
     });
 
@@ -67,13 +67,13 @@ plugin.register({
     var wp = this._getWeapon();
     if (!wp) return;
     if (wp.weaponType === 'knife') return;
-    if (wp.ammo >= wp.clip || wp.maxAmmo <= 0) return;
+    if (wp.ammo >= wp.clip || wp.reserve <= 0) return;
 
     this._reloading = true;
     this._wp = wp;
 
     if (wp.reloadMode === 'shell') {
-      this._shellTotal = Math.min(wp.clip - wp.ammo, wp.maxAmmo);
+      this._shellTotal = Math.min(wp.clip - wp.ammo, wp.reserve);
       this._shellLoaded = 0;
       this._shellTime = 0;
     } else {
@@ -88,8 +88,8 @@ plugin.register({
   update: function(dt) {
     if (!this._reloading) {
       var wp = this._getWeapon();
-      if (wp && wp.ammo !== undefined && wp.ammo <= 0 && wp.maxAmmo > 0 && wp.ammo < wp.clip) {
-        this._startReload();
+      if (wp && wp.ammo !== undefined && wp.ammo <= 0 && wp.reserve > 0 && wp.ammo < wp.clip) {
+        if (!this._game.input.shoot) this._startReload();
       }
     }
 
@@ -111,11 +111,11 @@ plugin.register({
         this._shellLoaded++;
 
         wp.ammo++;
-        wp.maxAmmo--;
+        wp.reserve--;
 
-        plugin.emit('ammo:change', { ammo: wp.ammo, maxAmmo: wp.maxAmmo, clip: wp.clip });
+        plugin.emit('ammo:change', { ammo: wp.ammo, maxAmmo: wp.maxAmmo, clip: wp.clip, reserve: wp.reserve });
 
-        if (this._shellLoaded >= this._shellTotal || wp.ammo >= wp.clip || wp.maxAmmo <= 0) {
+        if (this._shellLoaded >= this._shellTotal || wp.ammo >= wp.clip || wp.reserve <= 0) {
           this._reloading = false;
           this._wp = null;
           this._hideUI();
@@ -130,11 +130,11 @@ plugin.register({
 
       if (this._reloadTimer <= 0) {
         var needed = wp.clip - wp.ammo;
-        var taken = Math.min(needed, wp.maxAmmo);
+        var taken = Math.min(needed, wp.reserve);
         if (taken > 0) {
           wp.ammo += taken;
-          wp.maxAmmo -= taken;
-          plugin.emit('ammo:change', { ammo: wp.ammo, maxAmmo: wp.maxAmmo, clip: wp.clip });
+          wp.reserve -= taken;
+        plugin.emit('ammo:change', { ammo: wp.ammo, maxAmmo: wp.maxAmmo, clip: wp.clip, reserve: wp.reserve });
         }
         this._reloading = false;
         this._wp = null;

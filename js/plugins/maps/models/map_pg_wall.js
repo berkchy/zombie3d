@@ -19,6 +19,7 @@ plugin.register({
     mesh.position.set(p[0], p[1] + h / 2, p[2]);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.userData.walkable = false;
     group.add(mesh);
 
     var trimMat = new THREE.MeshStandardMaterial({ color: 0x666666, roughness: 0.4 });
@@ -28,11 +29,7 @@ plugin.register({
 
     return {
       mesh: group,
-      colliders: [{
-        min: [p[0] - sx / 2, p[1], p[2] - sz / 2],
-        max: [p[0] + sx / 2, p[1] + h, p[2] + sz / 2],
-        walkable: false
-      }]
+      colliders: ColliderHelper.extractColliders(group)
     };
   }
 });

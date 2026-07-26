@@ -9,13 +9,12 @@ plugin.register({
   createModel: function(config) {
     var group = new THREE.Group();
     var size = config.size || 60;
-    var half = size / 2;
-
     var gMat = new THREE.MeshStandardMaterial({ color: config.color || 0x9a8a6a, roughness: 0.95 });
     var ground = new THREE.Mesh(new THREE.PlaneGeometry(size, size), gMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
     ground.receiveShadow = true;
+    ground.userData.walkable = true;
     group.add(ground);
 
     var patMat = new THREE.MeshBasicMaterial({ color: 0x7a6a4a, transparent: true, opacity: 0.15, depthWrite: false });
@@ -35,11 +34,7 @@ plugin.register({
 
     return {
       mesh: group,
-      colliders: [{
-        min: [-half, -0.01, -half],
-        max: [half, 0, half],
-        walkable: true
-      }]
+      colliders: ColliderHelper.extractColliders(group)
     };
   }
 });

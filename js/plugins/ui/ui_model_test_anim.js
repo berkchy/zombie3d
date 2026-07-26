@@ -43,6 +43,7 @@ plugin.register({
       self._currentAnimName = null;
       self._currentAnimDef = null;
       self._updateButtons(data.modelDef);
+      self._updateHitboxUI(data.modelId, data.modelDef);
     });
 
     plugin.on('model_test:close', this.id, function() {
@@ -69,6 +70,10 @@ plugin.register({
         '<span class="mt-speed-label">Hız</span>' +
         '<input type="range" class="mt-speed-slider" id="mtSpeedSlider" min="0.1" max="3.0" step="0.1" value="1.0">' +
         '<span class="mt-speed-val" id="mtSpeedVal">1.00sn</span>' +
+      '</div>' +
+      '<div class="mt-speed-row" id="mtHitboxRow" style="padding:8px 12px 4px;align-items:center;gap:10px;display:none;">' +
+        '<input type="checkbox" id="mtHitboxToggle" style="accent-color:#4fc3f7;width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+        '<label for="mtHitboxToggle" style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.35);letter-spacing:.5px;cursor:pointer;user-select:none;">Hitboxları Göster</label>' +
       '</div>';
 
     var slider = document.getElementById('mtSpeedSlider');
@@ -93,6 +98,49 @@ plugin.register({
     var origDur = this._currentAnimDef ? this._currentAnimDef.duration : 0;
     var effective = origDur / speed;
     valEl.textContent = effective.toFixed(2) + 'sn';
+  },
+
+  _updateHitboxUI(modelId, modelDef) {
+    var row = document.getElementById('mtHitboxRow');
+    var cb = document.getElementById('mtHitboxToggle');
+    if (!row || !cb) return;
+
+    var hasHitboxes = modelDef && typeof modelDef.getHitboxDefs === 'function';
+    row.style.display = hasHitboxes ? 'flex' : 'none';
+    if (!hasHitboxes) return;
+
+    var testRoom = plugin.get('ui_model_test');
+    if (!testRoom || !testRoom.currentModel) return;
+    var model = testRoom.currentModel;
+
+    var hitbox = plugin.get('system_hitbox');
+    if (!hitbox || !hitbox.enabled) return;
+
+    if (cb._listener) {
+      cb.removeEventListener('change', cb._listener);
+      cb._listener = null;
+    }
+
+    hitbox.removeHitboxes(model);
+
+    var self = this;
+    cb._listener = function() {
+      var room = plugin.get('ui_model_test');
+      var mdl = room && room.currentModel;
+      if (!mdl) return;
+      var def = plugin.get(self._currentModelId);
+      if (cb.checked) {
+        if (def && typeof def.getHitboxDefs === 'function') {
+          hitbox.createHitboxes(mdl, def.getHitboxDefs());
+          hitbox.showHitboxes(mdl);
+        }
+      } else {
+        hitbox.removeHitboxes(mdl);
+      }
+    };
+    cb.addEventListener('change', cb._listener);
+
+    cb.checked = false;
   },
 
   _updateButtons(modelDef) {

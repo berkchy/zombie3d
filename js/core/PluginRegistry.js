@@ -13,30 +13,31 @@ window.PluginRegistry = (function() {
         return;
       }
       plugin.enabled = plugin.enabled !== false;
+      plugin.forceEnabled = plugin.forceEnabled || false;
       plugin.priority = plugin.priority || 0;
       plugin._loaded = false;
 
-      // localStorage'dan kayıtlı durumu varsa uygula
       try {
-        var stored = JSON.parse(localStorage.getItem('zombie3d_plugin_states') || '{}');
-        if (stored[plugin.id] !== undefined) {
-          plugin.enabled = stored[plugin.id];
+        var _stored = store.get('zombie3d_plugin_states', null);
+        if (_stored && _stored[plugin.id] !== undefined) {
+          plugin.enabled = _stored[plugin.id];
         }
       } catch(e) {}
 
-      // Ini yolunu script elementinden oku
+      if (plugin.forceEnabled) {
+        plugin.enabled = true;
+      }
+
       var script = document.currentScript;
       if (script && script.getAttribute) {
         var iniPath = script.getAttribute('data-ini-path');
         if (iniPath) plugin._iniPath = iniPath;
       }
 
-      // Debug flag — script elementinden oku
       if (script && script.getAttribute && script.getAttribute('data-debug') === 'true') {
         plugin._debug = true;
       }
 
-      // log() helper — debug aktifse konsola [pluginId] ile yazar
       if (plugin._debug) {
         plugin.log = function() {
           var args = ['[' + plugin.id + ']'];
@@ -48,16 +49,13 @@ window.PluginRegistry = (function() {
       }
 
       _plugins.set(plugin.id, plugin);
-      console.log('[Plugin] ' + plugin.id + ' (' + (plugin.type || 'generic') + ') kaydedildi');
+      console.log('[Plugin] ' + plugin.id + ' (' + (plugin.type || 'generic') + ') kaydedildi' + (plugin.forceEnabled ? ' [forceEnabled]' : ''));
 
-      // Stil enjekte et
       if (plugin.styles) {
         this._injectStyles(plugin.id, plugin.styles);
       }
 
-      if (window.PluginPanel && window.PluginPanel.addCard) {
-        window.PluginPanel.addCard(plugin);
-      }
+      
     },
 
     // ---------- Stil Yönetimi ----------
@@ -78,7 +76,20 @@ window.PluginRegistry = (function() {
     // ---------- Sorgulama ----------
     get: function(id) {
       var p = _plugins.get(id);
-      if (!p) return undefined;
+      if (!p) {
+        return new Proxy({ id: id, enabled: false, name: id, type: 'unknown', version: '0' }, {
+          get: function(target, prop) {
+            var safe = ['id', 'enabled', 'type', 'name', 'version', 'description', 'priority', '_iniPath', '_loaded', '_debug', 'toJSON'];
+            if (safe.indexOf(prop) !== -1) {
+              return prop === 'enabled' ? false : target[prop];
+            }
+            if (typeof prop === 'string' && prop.indexOf('_') !== 0) {
+              return function() { throw new TypeError("Plugin '" + id + "' not found."); };
+            }
+            return target[prop];
+          }
+        });
+      }
       if (!p.enabled) {
         var _safe = ['id', 'enabled', 'type', 'name', 'version', 'description', 'priority', '_iniPath', '_loaded', '_debug', 'toJSON'];
         return new Proxy(p, {
@@ -87,7 +98,7 @@ window.PluginRegistry = (function() {
               return prop === 'enabled' ? false : target[prop];
             }
             if (typeof prop === 'string' && prop.indexOf('_') !== 0) {
-              return function() { throw new TypeError(prop + ' is not a function'); };
+              return function() { throw new TypeError("Plugin '" + target.id + "' is disabled."); };
             }
             return target[prop];
           }
@@ -106,25 +117,50 @@ window.PluginRegistry = (function() {
     },
 
     // ---------- Aç/Kapa ----------
+
     enable: function(id) {
       var p = _plugins.get(id);
       if (!p) return;
+      if (p.forceEnabled) {
+        console.warn('[Plugin] "' + id + '" forceEnabled - zaten aktif');
+        return;
+      }
       p.enabled = true;
       if (p.onEnable) p.onEnable();
       if (window.Game && p._loaded && p.init) p.init(window.Game);
+      this._persistState();
     },
 
     disable: function(id) {
       var p = _plugins.get(id);
       if (!p) return;
+      if (p.forceEnabled) {
+        console.warn('[Plugin] "' + id + '" forceEnabled olarak tanimlanmistir, disable edilemez');
+        return;
+      }
       p.enabled = false;
       if (p.onDisable) p.onDisable();
+      this._persistState();
     },
 
     toggle: function(id) {
       var p = _plugins.get(id);
       if (!p) return;
+      if (p.forceEnabled) {
+        console.warn('[Plugin] "' + id + '" forceEnabled, toggle yapilamaz');
+        return;
+      }
       if (p.enabled) this.disable(id); else this.enable(id);
+    },
+
+    _persistState: function() {
+      try {
+        var state = {};
+        _plugins.forEach(function(p) {
+          state[p.id] = p.enabled;
+        });
+        store.set('zombie3d_plugin_states', state);
+      } catch(e) {}
     },
 
     // ---------- Hook Sistemi ----------
@@ -161,7 +197,6 @@ getCoreModule = function(name) {
     case 'commands': return window.PluginCommandsAPI || null;
     case 'map': return window.MapRegistry || null;
     case 'game': return window.Game || window.game || null;
-    case 'panel': return window.PluginPanel || null;
     default: return null;
   }
 };

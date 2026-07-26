@@ -12,8 +12,6 @@
   <div id="canvas2d">
     <canvas id="overlay"></canvas>
   </div>
-  <div id="panelToggle" title="Plugin Yönetimi">⚙</div>
-  <div id="modelTestToggle" title="Model Listesi">◈</div>
   <div id="gameOver">
     <div class="go-content">
       <div class="go-icon">☠</div>
@@ -37,23 +35,17 @@
   </div>
 </div>
 
-<div id="pluginPanel">
-  <div id="panelHeader">
-    <h2>Plugin Yönetimi</h2>
-    <span id="panelClose">×</span>
-  </div>
-  <div id="pluginList"></div>
-</div>
-
 <script src="js/lib/howler.min.js"></script>
 <script src="js/lib/three.min.js"></script>
 
+<script src="js/core/PluginStorageAPI.js"></script>
 <script src="js/core/PluginRegistry.js"></script>
 <script src="js/core/PluginLoader.js"></script>
-<script src="js/core/PluginPanel.js"></script>
 <script src="js/core/PluginCommandsAPI.js"></script>
 <script src="js/core/PluginCvarAPI.js"></script>
 <script src="js/core/MapRegistry.js"></script>
+<script src="js/core/ColliderHelper.js"></script>
+<script src="js/core/MeshCollider.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

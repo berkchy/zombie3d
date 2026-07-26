@@ -4,9 +4,10 @@ plugin.register({
   id: 'model_zombie',
   name: 'Zombi',
   type: 'model',
-  version: '1.2',
+  version: '1.3',
   description: 'Detayli zombi modeli + skeleton',
   enabled: true,
+  kg: 40,
 
   createModel() {
     var group = new THREE.Group();
@@ -268,6 +269,23 @@ plugin.register({
     torsoPivot.add(beltZ);
 
     return group;
+  },
+
+  getHitboxDefs() {
+    return [
+      { pivot: 'head', type: 'head', pos: [0, 0.05, 0], size: [0.32, 0.32, 0.28] },
+      { pivot: 'torso', type: 'chest', pos: [0, 0.08, 0], size: [0.44, 0.34, 0.28] },
+      { pivot: 'shoulderL', type: 'arm', pos: [0, 0, 0], size: [0.18, 0.18, 0.18] },
+      { pivot: 'shoulderR', type: 'arm', pos: [0, 0, 0], size: [0.18, 0.18, 0.18] },
+      { pivot: 'armL', type: 'arm', pos: [0, -0.13, 0], size: [0.14, 0.26, 0.14] },
+      { pivot: 'armR', type: 'arm', pos: [0, -0.13, 0], size: [0.14, 0.26, 0.14] },
+      { pivot: 'legL', type: 'leg', pos: [0, 0.05, 0], size: [0.20, 0.18, 0.20] },
+      { pivot: 'legR', type: 'leg', pos: [0, 0.05, 0], size: [0.20, 0.18, 0.20] },
+      { pivot: 'kneeL', type: 'leg', pos: [0, -0.06, 0], size: [0.18, 0.14, 0.18] },
+      { pivot: 'kneeR', type: 'leg', pos: [0, -0.06, 0], size: [0.18, 0.14, 0.18] },
+      { pivot: 'kneeL', type: 'foot', pos: [0, -0.09, -0.02], size: [0.14, 0.08, 0.18] },
+      { pivot: 'kneeR', type: 'foot', pos: [0, -0.09, 0.02], size: [0.14, 0.08, 0.18] }
+    ];
   },
 
   animations: {

@@ -41,8 +41,8 @@ plugin.register({
 
   _fixFov() {
     var aspect = window.innerWidth / window.innerHeight;
-    var targetHfov = typeof window._targetHfov !== 'undefined' ? window._targetHfov : 60;
-    var vfov = 2 * Math.atan(Math.tan(targetHfov * Math.PI / 360) / aspect) * 180 / Math.PI;
+    this.game.camera.aspect = aspect;
+    var vfov = 2 * Math.atan(Math.tan(60 * Math.PI / 360) / aspect) * 180 / Math.PI;
     this.game.camera.fov = vfov;
     this.game.camera.updateProjectionMatrix();
   },
@@ -60,21 +60,21 @@ plugin.register({
   _setupScene() {
     var scene = this.game.scene;
 
-    var ambient = new THREE.AmbientLight(0x8080aa, 1.2);
+    var ambient = new THREE.AmbientLight(0x667799, 0.35);
     scene.add(ambient);
     this._lights.push(ambient);
 
-    var hemi = new THREE.HemisphereLight(0x4466aa, 0x221111, 1.0);
+    var hemi = new THREE.HemisphereLight(0x335577, 0x1a0a0a, 0.25);
     scene.add(hemi);
     this._lights.push(hemi);
 
-    var dir = new THREE.DirectionalLight(0xffeedd, 1.5);
-    dir.position.set(5, 12, 5);
+    var dir = new THREE.DirectionalLight(0xffddaa, 0.6);
+    dir.position.set(8, 15, 6);
     scene.add(dir);
     this._lights.push(dir);
 
-    var fill = new THREE.DirectionalLight(0x8899cc, 0.6);
-    fill.position.set(-3, 4, -2);
+    var fill = new THREE.DirectionalLight(0x8899bb, 0.25);
+    fill.position.set(-4, 6, -3);
     scene.add(fill);
     this._lights.push(fill);
   },

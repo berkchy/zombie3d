@@ -209,23 +209,31 @@ plugin.register({
   },
 
   animations: {
+    idle: {
+      duration: 4.0,
+      loop: true,
+      tracks: [
+        { pivot: '__self__', prop: 'position.y', keys: [0, 0.003, -0.001, -0.003, 0] },
+        { pivot: '__self__', prop: 'position.x', keys: [0, -0.002, 0.002, 0.001, 0] }
+      ]
+    },
     fire: {
-      duration: 0.25,
+      duration: 0.4,
       loop: false,
       tracks: [
-        { pivot: '__self__', prop: 'position.z', keys: [0, 0.02, 0.005, 0] },
-        { pivot: '__self__', prop: 'position.y', keys: [0, 0.008, -0.002, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.06, -0.01, 0] }
+        { pivot: '__self__', prop: 'position.z', keys: [0, 0.05, 0.008, 0] },
+        { pivot: '__self__', prop: 'position.y', keys: [0, 0.02, -0.004, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.14, -0.02, 0] },
+        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.03, 0.008, 0] }
       ]
     },
     reload: {
-      duration: 1.5,
+      duration: 1.3,
       loop: false,
       tracks: [
-        { pivot: '__self__', prop: 'position.y', keys: [0, -0.05, -0.05, -0.03, -0.01, 0] },
-        { pivot: '__self__', prop: 'position.z', keys: [0, 0.015, 0.015, 0, -0.05, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.15, 0.18, 0.05, -0.04, 0] },
-        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.07, -0.09, -0.02, 0.02, 0] }
+        { pivot: '__self__', prop: 'position.y', keys: [0, -0.12, -0.12, -0.05, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.1, 0.08, 0.02, 0] },
+        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.15, -0.1, -0.03, 0] }
       ]
     },
     equip: {

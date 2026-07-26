@@ -14,7 +14,7 @@ plugin.register({
 
   init(game) {
     this.game = game;
-    game.input = { x: 0, y: 0, shoot: false, _kbx: 0, _kby: 0, _joyx: 0, _joyy: 0 };
+    game.input = { x: 0, y: 0, shoot: false, jump: false, _kbx: 0, _kby: 0, _joyx: 0, _joyy: 0 };
     game.mouse = { x: 0, y: 0 };
     this._keys = { w: false, a: false, s: false, d: false };
     var self = this;
@@ -23,7 +23,7 @@ plugin.register({
       if (self.game._consoleOpen) return;
       var k = e.key.toLowerCase();
       if (k in self._keys) { self._keys[k] = true; e.preventDefault(); }
-      if (k === ' ') { game.input.shoot = true; e.preventDefault(); }
+      if (k === ' ') { game.input.jump = true; e.preventDefault(); }
       if (e.key === 'Shift') {
         plugin.emit('player:dodge', { source: 'input_manager' });
       }
@@ -32,7 +32,7 @@ plugin.register({
       if (self.game._consoleOpen) return;
       var k = e.key.toLowerCase();
       if (k in self._keys) self._keys[k] = false;
-      if (k === ' ') game.input.shoot = false;
+      if (k === ' ') e.preventDefault();
     });
     document.addEventListener('mousedown', function(e) {
       if (self.game._consoleOpen) return;

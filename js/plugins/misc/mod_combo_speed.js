@@ -57,5 +57,6 @@ plugin.register({
   destroy() {
     const player = plugin.get('player_basic');
     if (player && player.enabled) player.speed = 6;
+    plugin.off('zombie:die', 'mod_combo_speed');
   }
 });

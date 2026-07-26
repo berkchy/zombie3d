@@ -83,6 +83,8 @@ plugin.register({
   destroy() {
     var el = document.getElementById('levelContainer');
     if (el) el.remove();
+    plugin.off('game:start', this.id);
+    plugin.off('game:over', this.id);
     plugin.off('player:levelup', this.id);
     plugin.off('player:xp', this.id);
     plugin.removeStyles(this.id);

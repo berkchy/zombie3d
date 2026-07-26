@@ -5,21 +5,18 @@ plugin.register({
   id: 'system_map_intro',
   name: 'Harita Giriş Animasyonu',
   type: 'scene',
-  version: '1.0',
-  description: 'Haritaya girerken yüklenme ekranı, kamera animasyonu ve oyuncuya geçiş',
+  version: '2.0',
+  description: 'Haritaya girerken yüklenme ekranı, kamera geçişleri ve oyuncuya geçiş',
   priority: 100,
 
   game: null,
   _state: 'idle',
   _activeMapId: null,
   _introData: null,
-  _timer: 0,
   _pathIdx: 0,
-  _pathT: 0,
-  _fromPos: null,
-  _fromTarget: null,
-  _toPos: null,
-  _toTarget: null,
+  _fadeTimer: 0,
+  _holdTimer: 0,
+  _fadeState: null,
 
   styles: '#introOverlay{position:fixed;inset:0;z-index:220;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;display:flex;align-items:center;justify-content:center;}' +
     '#introLoading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;}' +
@@ -35,7 +32,8 @@ plugin.register({
     '#introTitle.show{opacity:1;transform:translateY(0);}' +
     '#introTitle.hide{opacity:0;transform:translateY(-20px);transition:all .6s ease;}' +
     '#introTitle h1{font-size:clamp(36px,5vw,64px);font-weight:200;letter-spacing:10px;color:#fff;text-transform:uppercase;margin:0;text-shadow:0 0 60px rgba(0,0,0,.8);}' +
-    '#introTitle p{font-size:clamp(12px,1.3vw,16px);color:rgba(255,255,255,.3);letter-spacing:4px;margin-top:10px;text-transform:uppercase;}',
+    '#introTitle p{font-size:clamp(12px,1.3vw,16px);color:rgba(255,255,255,.3);letter-spacing:4px;margin-top:10px;text-transform:uppercase;}' +
+    '#introFade{position:fixed;inset:0;z-index:225;background:#000;opacity:0;pointer-events:none;}',
 
   init(game) {
     this.game = game;
@@ -49,9 +47,11 @@ plugin.register({
         '<div class="il-spinner"></div>' +
         '<div class="il-text">Harita yükleniyor</div>' +
       '</div>' +
-      '<div id="introTitle"></div>';
+      '<div id="introTitle"></div>' +
+      '<div id="introFade"></div>';
     document.body.appendChild(ov);
     this._overlay = ov;
+    this._fadeEl = document.getElementById('introFade');
 
     var self = this;
     plugin.on('map:entered', 'system_map_intro', function(data) {
@@ -73,22 +73,17 @@ plugin.register({
     var scenePlugin = plugin.get(mapDef.scenePluginId);
     this._introData = (scenePlugin && typeof scenePlugin.getIntroData === 'function') ? scenePlugin.getIntroData() : null;
 
-    // Loading ekranina harita adini yaz
     var nameEl = document.getElementById('ilName');
     if (nameEl) nameEl.textContent = mapDef.name || mapDef.id;
 
-    // Thumbnail render et
     map.renderThumbnail(mapId, 220, 165, function(url) {
       var thumb = document.getElementById('ilThumb');
-      if (thumb && url) {
-        thumb.innerHTML = '<img src="' + url + '" alt="">';
-      }
+      if (thumb && url) thumb.innerHTML = '<img src="' + url + '" alt="">';
     });
 
     this._state = 'loading';
     document.getElementById('introLoading').classList.remove('hidden');
 
-    // Plugin hazirsa kisa yukleme, degilse biraz bekle
     var ready = scenePlugin && (scenePlugin._ready || scenePlugin._loaded);
     var delay = ready ? 600 : 1500;
     setTimeout(function() {
@@ -96,68 +91,46 @@ plugin.register({
     }.bind(this), delay);
   },
 
-  _checkReady: function() {
-    var mapDef = map.get(this._activeMapId);
-    if (!mapDef) { this._finish(); return; }
-
-    var scenePlugin = plugin.get(mapDef.scenePluginId);
-    if (scenePlugin && (scenePlugin._ready || scenePlugin._loaded)) {
-      this._onReady();
-    } else {
-      setTimeout(this._checkReady.bind(this), 100);
-    }
-  },
-
   _onReady: function() {
-    // Loading ekranini kapat
     var loadEl = document.getElementById('introLoading');
     loadEl.classList.add('hidden');
-    setTimeout(function() {
-      loadEl.style.display = 'none';
-    }, 700);
+    setTimeout(function() { loadEl.style.display = 'none'; }, 700);
 
-    // Title + description goster
     var mapDef = map.get(this._activeMapId);
     var titleEl = document.getElementById('introTitle');
     if (mapDef) {
       titleEl.innerHTML = '<h1>' + (mapDef.name || mapDef.id) + '</h1>' +
         (mapDef.modeDescription ? '<p>' + mapDef.modeDescription + '</p>' : '');
     }
-    setTimeout(function() {
-      titleEl.classList.add('show');
-    }, 100);
+    setTimeout(function() { titleEl.classList.add('show'); }, 100);
 
-    // Kamera path'ini baslat
     setTimeout(function() {
       titleEl.classList.remove('show');
       titleEl.classList.add('hide');
       this._startCameraPath();
-    }.bind(this), 3500);
+    }.bind(this), 2500);
   },
 
   _startCameraPath: function() {
     var data = this._introData;
     if (!data || !data.cameraPath || data.cameraPath.length === 0) {
-      this._startAbovePlayer();
+      this._finish();
       return;
     }
 
-    this._state = 'camera_path';
     this._pathIdx = 0;
-    this._pathT = 0;
-    this._timer = data.cameraPath[0].duration || 2;
-    this._setupPathSegment(0);
+    this._state = 'camera_fade_out';
+    this._fadeTimer = 0;
   },
 
-  _setupPathSegment: function(idx) {
-    var seg = this._introData.cameraPath[idx];
-    if (!seg) return;
-    this._fromPos = this._fromPos || new THREE.Vector3().copy(this.game.camera.position);
-    this._fromTarget = this._fromTarget || new THREE.Vector3(0, 0, 0);
-    this._toPos = new THREE.Vector3(seg.pos[0], seg.pos[1], seg.pos[2]);
-    this._toTarget = new THREE.Vector3(seg.target[0], seg.target[1], seg.target[2]);
-    this._timer = seg.duration || 2;
-    this._pathT = 0;
+  _nextCamera: function() {
+    this._pathIdx++;
+    if (this._pathIdx >= this._introData.cameraPath.length) {
+      this._finish();
+    } else {
+      this._state = 'camera_fade_out';
+      this._fadeTimer = 0;
+    }
   },
 
   update: function(dt) {
@@ -165,83 +138,49 @@ plugin.register({
 
     var cam = this.game.camera;
 
-    if (this._state === 'camera_path') {
-      this._pathT += dt;
+    if (this._state === 'camera_fade_out') {
       var seg = this._introData.cameraPath[this._pathIdx];
-      var dur = seg.duration || 2;
-      var t = Math.min(this._pathT / dur, 1);
-      var et = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease in-out
-
-      cam.position.lerpVectors(this._fromPos, this._toPos, et);
-      var tgt = new THREE.Vector3().lerpVectors(this._fromTarget, this._toTarget, et);
-      cam.lookAt(tgt);
-
+      var fadeTime = (seg.fadeTime || seg.fadeIn || 0.5);
+      this._fadeTimer += dt;
+      var t = Math.min(this._fadeTimer / fadeTime, 1);
+      this._fadeEl.style.opacity = t;
       if (t >= 1) {
-        this._pathIdx++;
-        if (this._pathIdx >= this._introData.cameraPath.length) {
-          this._startAbovePlayer();
-        } else {
-          this._fromPos.copy(this._toPos);
-          this._fromTarget.copy(this._toTarget);
-          this._setupPathSegment(this._pathIdx);
-        }
+        // Snap camera to position
+        cam.position.set(seg.pos[0], seg.pos[1], seg.pos[2]);
+        cam.lookAt(seg.target[0], seg.target[1], seg.target[2]);
+        this._state = 'camera_hold';
+        this._holdTimer = 0;
+        // Start fade in
+        this._fadeState = 'fade_in';
+        this._fadeTimer = 0;
       }
       return;
     }
 
-    if (this._state === 'above_player') {
-      var mapDef = map.get(this._activeMapId);
-      var spawn = (mapDef && mapDef.playerSpawn) || [0, 0, 0];
-      var ah = (this._introData && this._introData.aboveHeight) || 4;
-      var abovePos = new THREE.Vector3(spawn[0], spawn[1] + ah, spawn[2] + 4);
+    if (this._state === 'camera_hold') {
+      var seg = this._introData.cameraPath[this._pathIdx];
+      var fadeTime = (seg.fadeTime || seg.fadeOut || 0.5);
 
-      // Yukaridan player'a bak
-      cam.position.copy(abovePos);
-      cam.lookAt(spawn[0], spawn[1] + 0.5, spawn[2]);
+      if (this._fadeState === 'fade_in') {
+        this._fadeTimer += dt;
+        var t = Math.min(this._fadeTimer / fadeTime, 1);
+        this._fadeEl.style.opacity = 1 - t;
+        if (t >= 1) this._fadeState = 'idle';
+      }
 
-      this._aboveTimer -= dt;
-      if (this._aboveTimer <= 0) {
-        this._startZoom();
+      this._holdTimer += dt;
+      var dur = seg.duration || 2;
+      if (this._holdTimer >= dur) {
+        this._fadeState = null;
+        this._nextCamera();
       }
       return;
     }
-
-    if (this._state === 'zoom') {
-      var mapDef = map.get(this._activeMapId);
-      var spawn = (mapDef && mapDef.playerSpawn) || [0, 0, 0];
-      var ah = (this._introData && this._introData.aboveHeight) || 4;
-      var fromY = spawn[1] + ah;
-      var toY = spawn[1] + 0.6;
-
-      this._zoomTimer -= dt;
-      var t = Math.max(0, this._zoomTimer / this._zoomDuration);
-      var et = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease in-out
-      et = 1 - et; // reverse: slow first then fast
-
-      var y = fromY + (toY - fromY) * et;
-      cam.position.set(spawn[0], y, spawn[2] + 4 * (1 - et));
-      cam.lookAt(spawn[0], spawn[1] + 0.5, spawn[2]);
-
-      if (this._zoomTimer <= 0) {
-        this._finish();
-      }
-      return;
-    }
-  },
-
-  _startAbovePlayer: function() {
-    this._state = 'above_player';
-    this._aboveTimer = 2;
-  },
-
-  _startZoom: function() {
-    this._state = 'zoom';
-    this._zoomDuration = 1.8;
-    this._zoomTimer = this._zoomDuration;
   },
 
   _finish: function() {
     this._state = 'idle';
+    this._fadeEl.style.opacity = 0;
     var titleEl = document.getElementById('introTitle');
     if (titleEl) { titleEl.classList.remove('show', 'hide'); titleEl.innerHTML = ''; }
     var ov = document.getElementById('introOverlay');

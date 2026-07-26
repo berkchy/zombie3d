@@ -13,6 +13,8 @@ plugin.register({
   init(game) {
     cvar.register('sensitivity',        1.0,    'number',  'Fare hassasiyeti carpan\u0131 (0.1 - 5.0)');
     cvar.register('camera_fov',         60,     'number',  'Yatay g\u00f6r\u00fc\u015f a\u00e7\u0131s\u0131 (40 - 120)');
+    var initFov = cvar.get('camera_fov');
+    if (initFov && typeof _targetHfov !== 'undefined') { _targetHfov = initFov; if (typeof _applyHfov === 'function') _applyHfov(); }
     cvar.register('invert_y',           false,  'boolean', 'Fare Y eksenini ters \u00e7evir');
 
     cvar.register('master_volume',      1.0,    'number',  'Ses seviyesi (0.0 - 1.0)');

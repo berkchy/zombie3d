@@ -16,6 +16,7 @@ plugin.register({
     var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 1.2, 6), tMat);
     pole.position.set(cx, cy + 0.6, cz);
     pole.castShadow = true;
+    pole.userData.walkable = false;
     group.add(pole);
 
     var fireMat = new THREE.MeshStandardMaterial({ color: 0xff8800, emissive: 0xff4400, emissiveIntensity: 0.6 });
@@ -29,11 +30,7 @@ plugin.register({
 
     return {
       mesh: group,
-      colliders: [{
-        min: [cx - 0.08, cy, cz - 0.08],
-        max: [cx + 0.08, cy + 1.3, cz + 0.08],
-        walkable: false
-      }]
+      colliders: ColliderHelper.extractColliders(group)
     };
   }
 });

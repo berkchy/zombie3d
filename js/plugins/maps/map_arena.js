@@ -156,6 +156,14 @@ plugin.register({
       thumbnailCamera: {
         position: [0, 22, 22],
         target: [0, 0, 0]
+      },
+      dropbox: {
+        zones: [
+          { center: [0, 0, 0], radius: 6 }
+        ],
+        dropInterval: 45,
+        fallSpeed: 2.5,
+        minHeight: 16
       }
     };
   },
@@ -163,13 +171,10 @@ plugin.register({
   getIntroData: function() {
     return {
       cameraPath: [
-        { pos: [0, 22, 28], target: [0, 0, 0], duration: 4 },
-        { pos: [24, 10, 10], target: [11, 0, 11], duration: 3.5 },
-        { pos: [18, 7, -18], target: [-14, 0, -14], duration: 3.5 },
-        { pos: [-20, 9, -14], target: [-8, 0, 18], duration: 3.5 },
-        { pos: [-14, 14, 22], target: [8, 0, -8], duration: 3 }
-      ],
-      aboveHeight: 5
+        { pos: [0, 0.6, 10], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
+        { pos: [10, 0.6, 5], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
+        { pos: [-8, 0.6, -8], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 }
+      ]
     };
   },
 

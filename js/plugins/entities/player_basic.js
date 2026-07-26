@@ -47,11 +47,6 @@ plugin.register({
   _modelReady: false,
 
   init(game) {
-    var self = this;
-    loader.loadScript('model_player', function(){
-      self._initPlayerMesh();
-    });
-
     this.game = game;
     this.hp = this.maxHp;
     this.xp = 0;
@@ -61,7 +56,7 @@ plugin.register({
 
     if (game.sound) {
       game.sound.addSound('player_hit', {
-        randomPlay: true, currentIndex: 0,
+        randomPlay: true, currentIndex: 0, label: 'Oyuncu Hasar', cat: 'oyuncu',
         variants: [
           { src: ['audio/player_hit_1.mp3'], volume: 0.7 },
           { src: ['audio/player_hit_2.mp3'], volume: 0.7 }
@@ -81,6 +76,11 @@ plugin.register({
     game.scene.add(this.mesh);
     game.player = this;
     game.playerMesh = this.mesh;
+
+    var self = this;
+    loader.loadScript('model_player', function(){
+      self._initPlayerMesh();
+    });
 
     // Dodge event — input_manager'dan gelir
     var self = this;
@@ -285,6 +285,9 @@ plugin.register({
     if (this.invincible) return;
     if (this.game && this.game._dying) return;
     if (this.game && this.game.sound) this.game.sound.playAt('player_hit', this.mesh ? this.mesh.position : null);
+    var ev = { damage: amount };
+    plugin.emit('player:takeDamage', ev);
+    amount = ev.damage;
     this.hp = Math.max(0, this.hp - amount);
     document.getElementById('hpFill').style.width = (this.hp / this.maxHp * 100) + '%';
     plugin.emit('player:hit', { player: this, damage: amount, hp: this.hp });

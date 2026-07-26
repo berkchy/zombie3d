@@ -43,5 +43,7 @@ plugin.register({
     ctx.restore();
   },
 
-  destroy() {}
+  destroy() {
+    plugin.off('player:hit', 'ui_blood_overlay');
+  }
 });

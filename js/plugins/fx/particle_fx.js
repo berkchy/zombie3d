@@ -20,8 +20,15 @@ plugin.register({
       this.burst(pos, 0x4a7c3f, 15);
     }.bind(this));
 
-    plugin.on('bullet:hit', 'particle_fx', function(pos) {
-      this.burst(pos, 0xffaa00, 5);
+    plugin.on('bullet:hit', 'particle_fx', function(data) {
+      if (data && data.position) this.burst(data.position, 0xffaa00, 5);
+    }.bind(this));
+
+    plugin.on('bullet:impact', 'particle_fx', function(data) {
+      if (data && data.position) {
+        var col = data.type === 'wall' ? 0x88aacc : 0xff4444;
+        this.burst(data.position, col, 8);
+      }
     }.bind(this));
   },
 
@@ -31,7 +38,7 @@ plugin.register({
       const speed = 1 + Math.random() * 3;
       this.particles.push({
         x: position.x,
-        y: 0.2,
+        y: position.y,
         z: position.z,
         vx: Math.cos(angle) * speed,
         vy: 1 + Math.random() * 2,
@@ -92,5 +99,8 @@ plugin.register({
       if (p.mesh && scene) scene.remove(p.mesh);
     });
     this.particles = [];
+    plugin.off('zombie:die', 'particle_fx');
+    plugin.off('bullet:hit', 'particle_fx');
+    plugin.off('bullet:impact', 'particle_fx');
   }
 });

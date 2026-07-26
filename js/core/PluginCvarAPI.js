@@ -1,21 +1,16 @@
 window.PluginCvarAPI = (function() {
   var _cvars = {};
-  var LS_PREFIX = 'cvar_';
 
   function _loadSaved(id, fallback) {
-    try {
-      var raw = localStorage.getItem(LS_PREFIX + id);
-      if (raw !== null) return JSON.parse(raw);
-    } catch(e) {}
-    return fallback;
+    return PluginStorageAPI.get('cvar_' + id, fallback);
   }
 
   function _save(id, value) {
-    try { localStorage.setItem(LS_PREFIX + id, JSON.stringify(value)); } catch(e) {}
+    PluginStorageAPI.set('cvar_' + id, value);
   }
 
   function _remove(id) {
-    try { localStorage.removeItem(LS_PREFIX + id); } catch(e) {}
+    PluginStorageAPI.remove('cvar_' + id);
   }
 
   function validate(cvar, rawValue) {

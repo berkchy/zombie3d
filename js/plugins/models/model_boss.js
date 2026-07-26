@@ -4,8 +4,9 @@ plugin.register({
   id: 'model_boss',
   name: 'Boss Zombi',
   type: 'model',
-  version: '1.0',
+  version: '1.1',
   description: 'Boss zombi — iri, zırhlı, korkunç',
+  kg: 200,
 
   createModel() {
     var group = new THREE.Group();
@@ -325,6 +326,24 @@ plugin.register({
     return group;
   },
 
+  getHitboxDefs() {
+    var s = 1.6;
+    return [
+      { pivot: 'head', type: 'head', pos: [0, 0.05 * s, 0], size: [0.4 * s, 0.4 * s, 0.35 * s] },
+      { pivot: 'torso', type: 'chest', pos: [0, 0.1 * s, 0], size: [0.6 * s, 0.45 * s, 0.4 * s] },
+      { pivot: 'shoulderL', type: 'arm', pos: [0, 0, 0], size: [0.25 * s, 0.25 * s, 0.25 * s] },
+      { pivot: 'shoulderR', type: 'arm', pos: [0, 0, 0], size: [0.25 * s, 0.25 * s, 0.25 * s] },
+      { pivot: 'armL', type: 'arm', pos: [0, -0.08 * s, 0], size: [0.2 * s, 0.3 * s, 0.2 * s] },
+      { pivot: 'armR', type: 'arm', pos: [0, -0.08 * s, 0], size: [0.2 * s, 0.3 * s, 0.2 * s] },
+      { pivot: 'legL', type: 'leg', pos: [0, 0.08 * s, 0], size: [0.28 * s, 0.22 * s, 0.28 * s] },
+      { pivot: 'legR', type: 'leg', pos: [0, 0.08 * s, 0], size: [0.28 * s, 0.22 * s, 0.28 * s] },
+      { pivot: 'kneeL', type: 'leg', pos: [0, -0.09 * s, 0], size: [0.24 * s, 0.18 * s, 0.24 * s] },
+      { pivot: 'kneeR', type: 'leg', pos: [0, -0.09 * s, 0], size: [0.24 * s, 0.18 * s, 0.24 * s] },
+      { pivot: 'kneeL', type: 'foot', pos: [0, -0.1 * s, -0.02 * s], size: [0.2 * s, 0.1 * s, 0.24 * s] },
+      { pivot: 'kneeR', type: 'foot', pos: [0, -0.1 * s, 0.02 * s], size: [0.2 * s, 0.1 * s, 0.24 * s] }
+    ];
+  },
+
   animations: {
     idle: {
       duration: 6,
@@ -375,38 +394,38 @@ plugin.register({
       ]
     },
     roar: {
-      duration: 3,
+      duration: 3.0,
       loop: false,
       tracks: [
-        { pivot: 'head', prop: 'rotation.x', keys: [-0.05, 0.3, -0.05, -0.05] },
-        { pivot: 'head', prop: 'rotation.y', keys: [0, 0, 0, 0] },
-        { pivot: 'armL', prop: 'rotation.x', keys: [-0.1, -0.8, -0.1, -0.1] },
-        { pivot: 'armR', prop: 'rotation.x', keys: [-0.2, -1.0, -0.2, -0.2] },
-        { pivot: 'armL', prop: 'rotation.z', keys: [0.08, 0.3, 0.08, 0.08] },
-        { pivot: 'armR', prop: 'rotation.z', keys: [-0.06, -0.35, -0.06, -0.06] },
-        { pivot: 'torso', prop: 'rotation.x', keys: [0.01, -0.2, 0.01, 0.01] },
-        { pivot: 'torso', prop: 'rotation.z', keys: [0.08, 0.25, 0.08, 0.08] },
-        { pivot: 'hip', prop: 'position.y', keys: [0.56, 0.6, 0.56, 0.56] }
+        { pivot: 'head', prop: 'rotation.x', keys: [-0.05, -0.8, -1.0, 0.3] },
+        { pivot: 'head', prop: 'rotation.y', keys: [0, 0.15, 0, -0.1] },
+        { pivot: 'armL', prop: 'rotation.x', keys: [-0.1, 0.4, 0.6, -0.6] },
+        { pivot: 'armR', prop: 'rotation.x', keys: [-0.2, 0.3, 0.5, -0.7] },
+        { pivot: 'armL', prop: 'rotation.z', keys: [0.08, 0.7, 1.0, -0.3] },
+        { pivot: 'armR', prop: 'rotation.z', keys: [-0.06, -0.7, -1.0, 0.3] },
+        { pivot: 'torso', prop: 'rotation.x', keys: [0.01, -0.4, -0.5, 0.4] },
+        { pivot: 'torso', prop: 'rotation.z', keys: [0.08, 0.2, 0.25, 0.08] },
+        { pivot: 'hip', prop: 'position.y', keys: [0.56, 0.64, 0.68, 0.56] }
       ]
     },
     die: {
-      duration: 3.5,
+      duration: 2.5,
       loop: false,
       tracks: [
-        { pivot: 'head', prop: 'rotation.x', keys: [-0.05, 0.1, 0.5, 0.5] },
-        { pivot: 'head', prop: 'rotation.y', keys: [0, 0.3, -0.5, 0.5] },
-        { pivot: 'armL', prop: 'rotation.x', keys: [-0.1, 0.8, -0.3, -0.3] },
-        { pivot: 'armR', prop: 'rotation.x', keys: [-0.2, 0.6, -0.3, -0.3] },
-        { pivot: 'armL', prop: 'rotation.z', keys: [0.08, 0.3, 0.5, 0.5] },
-        { pivot: 'armR', prop: 'rotation.z', keys: [-0.06, -0.25, -0.5, -0.5] },
-        { pivot: 'legL', prop: 'rotation.x', keys: [0, 0.3, 0.3, 0.3] },
-        { pivot: 'legR', prop: 'rotation.x', keys: [0, -0.3, -0.3, -0.3] },
-        { pivot: 'kneeL', prop: 'rotation.x', keys: [0, 0.4, 0.4, 0.4] },
-        { pivot: 'kneeR', prop: 'rotation.x', keys: [0, 0.4, 0.4, 0.4] },
-        { pivot: 'torso', prop: 'rotation.x', keys: [0.01, -0.5, -1.5, -1.5] },
-        { pivot: 'torso', prop: 'rotation.z', keys: [0.08, 0.1, 0.2, 0.2] },
-        { pivot: 'hip', prop: 'rotation.x', keys: [0.08, 0.3, 0.3, 0.3] },
-        { pivot: 'hip', prop: 'position.y', keys: [0.56, 0.56, 0.05, 0.05] }
+        { pivot: 'head', prop: 'rotation.x', keys: [-0.05, 0.2, 0.9, 0.7] },
+        { pivot: 'head', prop: 'rotation.y', keys: [0, 0.2, 0.4, 0.15] },
+        { pivot: 'armL', prop: 'rotation.x', keys: [-0.1, -0.7, -2.0, -1.7] },
+        { pivot: 'armR', prop: 'rotation.x', keys: [-0.2, -0.6, -2.0, -1.7] },
+        { pivot: 'armL', prop: 'rotation.z', keys: [0.08, 0.4, 0.5, 0.35] },
+        { pivot: 'armR', prop: 'rotation.z', keys: [-0.06, -0.4, -0.5, -0.35] },
+        { pivot: 'legL', prop: 'rotation.x', keys: [0, 0.4, 0.5, 0.3] },
+        { pivot: 'legR', prop: 'rotation.x', keys: [0, 0.4, 0.5, 0.3] },
+        { pivot: 'kneeL', prop: 'rotation.x', keys: [0, -0.4, -1.6, -1.3] },
+        { pivot: 'kneeR', prop: 'rotation.x', keys: [0, -0.4, -1.6, -1.3] },
+        { pivot: 'torso', prop: 'rotation.x', keys: [0.01, -0.6, -2.2, -1.9] },
+        { pivot: 'torso', prop: 'rotation.z', keys: [0.08, 0.15, 0.25, 0.2] },
+        { pivot: 'hip', prop: 'rotation.x', keys: [0, -0.3, -0.7, -0.5] },
+        { pivot: 'hip', prop: 'position.y', keys: [0.56, 0.4, 0.03, 0.03] }
       ]
     }
   }

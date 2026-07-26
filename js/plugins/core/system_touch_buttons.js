@@ -105,6 +105,21 @@ plugin.register({
       }
     });
 
+    this.touchAdd('jump', {
+      label: 'ZIPLA',
+      html: '<svg viewBox="0 0 40 40" width="26" height="26"><path d="M20 32 L20 12 M12 20 L20 12 L28 20" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      x: 73, y: 78,
+      width: 68, height: 68,
+      shape: 'circle',
+      bgColor: 'rgba(33,150,243,.5)',
+      color: '#fff',
+      fontSize: 11,
+      zIndex: 200,
+      onTouchStart: function() {
+        if (game) game.input.jump = true;
+      }
+    });
+
     var self = this;
     plugin.on('game:start', this.id, function() {
       self._gearBtn.style.display = 'flex';
@@ -606,17 +621,16 @@ plugin.register({
       var b = this._buttons[id];
       data[id] = {x: b.x, y: b.y, width: b.width, height: b.height, bgColor: b.bgColor, alpha: b.alpha, hidden: b.hidden, label: b.label};
     }
-    try { localStorage.setItem('touch_buttons_positions', JSON.stringify(data)); } catch(e) {}
+    PluginStorageAPI.set('touch_buttons_positions', data);
   },
 
   _loadPositions: function() {
     this._savedPositions = {};
     try {
-      var raw = localStorage.getItem('touch_buttons_positions');
+      var raw = PluginStorageAPI.get('touch_buttons_positions', null);
       if (raw) {
-        var data = JSON.parse(raw);
-        for (var id in data) {
-          this._savedPositions[id] = data[id];
+        for (var id in raw) {
+          this._savedPositions[id] = raw[id];
         }
       }
     } catch(e) {}

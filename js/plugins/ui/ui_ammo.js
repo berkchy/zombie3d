@@ -38,7 +38,7 @@ plugin.register({
     plugin.on('ammo:change', this.id, function(data) {
       self.currentAmmo = data.ammo;
       self._clip = data.clip || 0;
-      self._reserve = data.maxAmmo || 0;
+      self._reserve = data.reserve !== undefined ? data.reserve : (data.maxAmmo || 0);
       self._update();
     });
 
@@ -54,7 +54,7 @@ plugin.register({
       }
       self.currentAmmo = wp.ammo !== undefined ? wp.ammo : 0;
       self._clip = wp.clip || 0;
-      self._reserve = wp.maxAmmo || 0;
+      self._reserve = wp.reserve !== undefined ? wp.reserve : (wp.maxAmmo || 0);
       self._elType.textContent = typeLabels[wp.weaponType] || wp.weaponType.toUpperCase();
       if (wp.weaponType === 'knife') {
         self.el.style.display = 'none';
@@ -68,7 +68,7 @@ plugin.register({
       if (data.weapon) {
         self.currentAmmo = data.ammo !== undefined ? data.ammo : 0;
         self._clip = data.weapon.clip || 0;
-        self._reserve = data.weapon.maxAmmo || 0;
+        self._reserve = data.weapon.reserve !== undefined ? data.weapon.reserve : (data.weapon.maxAmmo || 0);
         self._update();
       }
     });

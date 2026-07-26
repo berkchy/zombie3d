@@ -18,6 +18,7 @@ plugin.register({
 
     if (game.sound) {
       game.sound.addSound('pickup', {
+        label: 'Item Toplama', cat: 'pickup',
         variants: [{ src: ['audio/item_pickup.mp3'], volume: 0.7 }]
       });
     }

@@ -2,115 +2,192 @@ var plugin = include('registry');
 
 plugin.register({
   id: 'model_logo',
-  name: 'Logo Modeli',
+  name: 'Deadwake Logosu',
   type: 'model',
-  version: '3.0',
-  description: '3D logo — ince yuvarlak uzerinde zombi kafasi',
+  version: '5.0',
+  description: 'Deadwake amblemi — kirik halka, uyanan goz, DEADWAKE yazisi',
   enabled: true,
 
   createModel() {
-    var group = new THREE.Group();
+    var g = new THREE.Group();
 
-    // Malzemeler
-    var baseMat = new THREE.MeshStandardMaterial({
-      color: 0x3a3a3a, metalness: 0.5, roughness: 0.6
-    });
-    var skullMat = new THREE.MeshStandardMaterial({
-      color: 0x6a6a6a, roughness: 0.7, metalness: 0.2
-    });
-    var skullDarkMat = new THREE.MeshStandardMaterial({
-      color: 0x4a4a4a, roughness: 0.8, metalness: 0.1
-    });
-    var socketMat = new THREE.MeshStandardMaterial({
-      color: 0x050505, roughness: 1, metalness: 0
-    });
-    var eyeMat = new THREE.MeshStandardMaterial({
-      color: 0xff2200, emissive: 0xff4400, emissiveIntensity: 0.8
-    });
-    var toothMat = new THREE.MeshStandardMaterial({
-      color: 0xcccccc, roughness: 0.8, metalness: 0
-    });
-    var woundMat = new THREE.MeshStandardMaterial({
-      color: 0x2a0a0a, roughness: 0.9, metalness: 0
-    });
+    var darkMat = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.3, metalness: 0.7 });
+    var metalMat = new THREE.MeshStandardMaterial({ color: 0x3a3a44, roughness: 0.3, metalness: 0.8 });
+    var glowMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, emissive: 0xff3333, emissiveIntensity: 1.2, roughness: 0.2, metalness: 0.1 });
+    var dimGlowMat = new THREE.MeshStandardMaterial({ color: 0x661111, emissive: 0x882222, emissiveIntensity: 0.4, roughness: 0.5, metalness: 0.3 });
+    var crackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 1, metalness: 0 });
+    var innerMat = new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.6, metalness: 0.2, emissive: 0x110000, emissiveIntensity: 0.1 });
 
-    // === TABAN (ince yuvarlak) ===
-    var disc = new THREE.Mesh(new THREE.CircleGeometry(0.75, 36), baseMat);
-    disc.position.z = -0.15;
+    // === DIS CEVRE ISINLARI (spikes) ===
+    for (var i = 0; i < 8; i++) {
+      var angle = (i / 8) * Math.PI * 2;
+      var spike = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.08, 4), metalMat);
+      spike.position.set(Math.sin(angle) * 0.48, Math.cos(angle) * 0.48, 0);
+      spike.rotation.z = -angle;
+      spike.name = 'spike_' + i;
+      g.add(spike);
+    }
+
+    // === IC ZEMIN (karanlik disk) ===
+    var disc = new THREE.Mesh(new THREE.CircleGeometry(0.38, 24), innerMat);
+    disc.rotation.x = -Math.PI / 2;
+    disc.position.z = -0.02;
     disc.name = 'disc';
-    group.add(disc);
+    g.add(disc);
 
-    // === ZOMBI KAFATASI ===
-    var skull = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), skullMat);
-    skull.position.set(0, 0.02, 0.15);
-    skull.scale.set(0.95, 0.85, 0.7);
-    skull.name = 'skull';
-    group.add(skull);
+    // === UYANAN GOZ (stylized half-open eye) ===
+    // Goz yuvasi (elipsoid)
+    var socketMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 1, metalness: 0 });
+    var eyeSocket = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), socketMat);
+    eyeSocket.position.set(0, 0.04, 0.12);
+    eyeSocket.scale.set(1, 0.7, 0.4);
+    eyeSocket.name = 'eyeSocket';
+    g.add(eyeSocket);
 
-    var jawBase = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), skullDarkMat);
-    jawBase.position.set(0, -0.15, 0.15);
-    jawBase.scale.set(0.9, 0.5, 0.6);
-    jawBase.name = 'jawBase';
-    group.add(jawBase);
+    // Goz beyazi
+    var whiteMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 0.8, metalness: 0 });
+    var eyeball = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), whiteMat);
+    eyeball.position.set(0, 0.04, 0.16);
+    eyeball.scale.set(0.9, 0.65, 0.3);
+    eyeball.name = 'eyeball';
+    g.add(eyeball);
 
-    var socketGeo = new THREE.SphereGeometry(0.12, 8, 8);
-    var socketL = new THREE.Mesh(socketGeo, socketMat);
-    socketL.position.set(-0.16, 0.1, 0.6);
-    socketL.scale.set(0.9, 0.8, 0.5);
-    socketL.name = 'socketL';
-    group.add(socketL);
+    // Goz bebegi (kirmizi parlayan)
+    var pupil = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), glowMat);
+    pupil.position.set(0, 0.035, 0.19);
+    pupil.scale.set(1, 1.2, 0.5);
+    pupil.userData.isEye = true;
+    pupil._isEye = true;
+    pupil.name = 'pupil';
+    g.add(pupil);
 
-    var socketR = new THREE.Mesh(socketGeo, socketMat);
-    socketR.position.set(0.16, 0.1, 0.6);
-    socketR.scale.set(0.9, 0.8, 0.5);
-    socketR.name = 'socketR';
-    group.add(socketR);
+    // Goz glowu (disari yayilan isik)
+    var eyeGlow = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0.15 }));
+    eyeGlow.position.copy(pupil.position);
+    eyeGlow.scale.set(1.5, 1.5, 0.8);
+    eyeGlow.name = 'eyeGlow';
+    g.add(eyeGlow);
 
-    var eyeGeo = new THREE.SphereGeometry(0.05, 6, 6);
-    var eyeL = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeL.position.set(-0.16, 0.1, 0.64);
-    eyeL.name = 'eyeL';
-    group.add(eyeL);
+    // Goz kapagi (ust yarim daire - uyanma hissi)
+    var lidMat = new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.8, metalness: 0.1 });
+    var lid = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2), lidMat);
+    lid.position.set(0, 0.075, 0.17);
+    lid.scale.set(1, 0.4, 0.5);
+    lid.name = 'eyelid';
+    g.add(lid);
 
-    var eyeR = new THREE.Mesh(eyeGeo, eyeMat);
-    eyeR.position.set(0.16, 0.1, 0.64);
-    eyeR.name = 'eyeR';
-    group.add(eyeR);
+    // === GOZ KAPAGI (disk — perde gibi acilir, scale.y=1 kapali, scale.y=0 acik) ===
+    var lidLower = new THREE.Mesh(new THREE.CircleGeometry(0.09, 16), lidMat);
+    lidLower.position.set(0, 0.04, 0.19);
+    lidLower.scale.set(1, 1, 1);
+    lidLower.name = 'eyelidLower';
+    g.add(lidLower);
 
-    var nose = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.03), socketMat);
-    nose.position.set(0, -0.02, 0.62);
-    nose.name = 'nose';
-    group.add(nose);
-
-    for (var i = 0; i < 4; i++) {
-      var tooth = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.02), toothMat);
-      tooth.position.set(-0.09 + i * 0.06, -0.15, 0.62);
-      tooth.name = 'tooth_' + i;
-      group.add(tooth);
+    // === CIZGILER / ISINLAR (gozden yayilan) ===
+    var lineMat = new THREE.MeshBasicMaterial({ color: 0xff4422, transparent: true, opacity: 0.15 });
+    for (var li = 0; li < 5; li++) {
+      var lAngle = -0.6 + li * 0.3;
+      var line = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.12, 0.002), lineMat);
+      line.position.set(Math.sin(lAngle) * 0.05, 0.04, 0.15 + Math.cos(lAngle) * 0.06);
+      line.rotation.z = lAngle;
+      line.name = 'ray_' + li;
+      g.add(line);
     }
 
-    for (var i = 0; i < 2; i++) {
-      var t2 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.03, 0.02), toothMat);
-      t2.position.set(-0.04 + i * 0.08, -0.25, 0.58);
-      t2.name = 'tooth_bot_' + i;
-      group.add(t2);
-    }
+    // === CATLAKLAR ===
+    var crack1 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.07, 0.005), crackMat);
+    crack1.position.set(0.10, -0.08, 0.12);
+    crack1.rotation.z = 0.6;
+    crack1.name = 'crack1';
+    g.add(crack1);
 
-    var crackMat = new THREE.MeshStandardMaterial({
-      color: 0x554444, roughness: 0.9, metalness: 0
+    var crack2 = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.04, 0.005), crackMat);
+    crack2.position.set(-0.08, -0.06, 0.12);
+    crack2.rotation.z = -0.4;
+    crack2.name = 'crack2';
+    g.add(crack2);
+
+    var crack3 = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.03, 0.004), crackMat);
+    crack3.position.set(-0.12, -0.02, 0.12);
+    crack3.rotation.z = -0.8;
+    crack3.name = 'crack3';
+    g.add(crack3);
+
+    // === ALT GLOW HALKASI ===
+    var glowRing = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.50, 32), new THREE.MeshBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0.04, side: THREE.DoubleSide }));
+    glowRing.rotation.x = -Math.PI / 2;
+    glowRing.position.z = -0.01;
+    glowRing.name = 'glowRing';
+    g.add(glowRing);
+
+    // === "DEADWAKE" YAZISI (canvas texture, Fjalla One font) ===
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 96;
+    var ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, 512, 96);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Glow
+    ctx.shadowColor = 'rgba(200, 30, 30, 0.6)';
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '400 54px "Fjalla One", sans-serif';
+    ctx.letterSpacing = '4px';
+    ctx.fillText('DEADWAKE', 256, 48);
+
+    // Red outline layer
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = '#cc3333';
+    ctx.font = '400 54px "Fjalla One", sans-serif';
+    ctx.fillText('DEADWAKE', 256, 48);
+
+    // White core
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '400 52px "Fjalla One", sans-serif';
+    ctx.fillText('DEADWAKE', 256, 48);
+
+    var textMat = new THREE.MeshStandardMaterial({
+      map: new THREE.CanvasTexture(canvas),
+      transparent: true,
+      emissive: 0xff4422,
+      emissiveIntensity: 0.2,
+      emissiveMap: new THREE.CanvasTexture(canvas),
+      side: THREE.DoubleSide,
+      depthWrite: false
     });
-    var crack = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.02), crackMat);
-    crack.position.set(0.12, 0.3, 0.55);
-    crack.rotation.z = 0.4;
-    crack.name = 'crack';
-    group.add(crack);
+    textMat.map.needsUpdate = true;
+    textMat.emissiveMap.needsUpdate = true;
 
-    var wound = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), woundMat);
-    wound.position.set(0.2, 0.0, 0.55);
-    wound.scale.set(0.8, 0.6, 0.3);
-    wound.name = 'wound';
-    group.add(wound);
+    var textPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.13), textMat);
+    textPlane.position.set(0, -0.32, 0.05);
+    textPlane.name = 'textDeadwake';
+    g.add(textPlane);
 
-    return group;
+    // === YAN GLOW TÜPLERI (textin iki yaninda) ===
+    var tubeMat = new THREE.MeshBasicMaterial({ color: 0xff3311, transparent: true, opacity: 0.2 });
+    var lTube = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.06, 4), tubeMat);
+    lTube.position.set(-0.40, -0.32, 0.05);
+    lTube.name = 'glowTubeL';
+    g.add(lTube);
+
+    var rTube = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.06, 4), tubeMat);
+    rTube.position.set(0.40, -0.32, 0.05);
+    rTube.name = 'glowTubeR';
+    g.add(rTube);
+
+    // === GOZ ALTINDAKI DAMLA/KAN (stylized) ===
+    var dripMat = new THREE.MeshStandardMaterial({ color: 0x440000, emissive: 0x661111, emissiveIntensity: 0.1, roughness: 0.9 });
+    var drip = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), dripMat);
+    drip.position.set(0.02, -0.06, 0.13);
+    drip.scale.set(1, 1.5, 0.5);
+    drip.name = 'drip';
+    g.add(drip);
+
+    return g;
   }
 });

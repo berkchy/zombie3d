@@ -59,6 +59,14 @@ plugin.register({
   listEl: null,
   toggleBtn: null,
   _previews: null,
+  _childMode: false,
+  _childList: null,
+  _highlightedChild: null,
+  _savedMat: null,
+  _labelEl: null,
+  _subModels: null,
+  _subModelActive: null,
+  _subModelMode: false,
 
   _savedBg: null,
   _savedFog: null,
@@ -74,16 +82,24 @@ plugin.register({
   init(game) {
     this.game = game;
 
+    // Toggle button
+    var toggleBtn = document.createElement('div');
+    toggleBtn.id = 'modelTestToggle';
+    toggleBtn.title = 'Model Listesi';
+    toggleBtn.textContent = '\u25C8';
+    document.body.appendChild(toggleBtn);
+    this.toggleBtn = toggleBtn;
+
     // Overlay
     var overlay = document.createElement('div');
     overlay.id = 'modelTestOverlay';
     overlay.innerHTML =
       '<div id="modelTestPanel">' +
         '<div class="mt-header">' +
-          '<h2>Modeller</h2>' +
+          '<h2 id="mtPanelTitle">Modeller</h2>' +
           '<span class="mt-close" id="mtClose">Gizle</span>' +
         '</div>' +
-        '<div class="mt-label" style="padding-left:12px;padding-top:12px;">Yüklü Modeller</div>' +
+        '<div id="mtSubLabel" class="mt-label" style="padding-left:12px;padding-top:12px;display:none;">Yüklü Modeller</div>' +
         '<div id="modelTestList"></div>' +
         '<div id="modelTestExtra"></div>' +
         '<div id="mtRotateRow">' +
@@ -96,13 +112,22 @@ plugin.register({
     document.body.appendChild(overlay);
     this.overlay = overlay;
     this.listEl = document.getElementById('modelTestList');
+    this._labelEl = document.getElementById('mtSubLabel');
 
     var self = this;
     document.getElementById('mtClose').addEventListener('click', function() { self.hidePanel(); });
-    document.getElementById('mtBackBtn').addEventListener('click', function() { self.close(); });
+    document.getElementById('mtBackBtn').addEventListener('click', function() {
+      if (self._childMode) { self._exitChildMode(); return; }
+      if (self._subModelMode) { self._exitSubModelMode(); return; }
+      if (self._subModelActive) {
+        self._subModelActive = null;
+        self._enterSubModelMode();
+        return;
+      }
+      self.close();
+    });
 
     // Toggle button
-    this.toggleBtn = document.getElementById('modelTestToggle');
     this.toggleBtn.addEventListener('click', function() {
       if (self.panelOpen) self.hidePanel(); else self.showPanel();
     });
@@ -396,17 +421,34 @@ plugin.register({
       this._modelWrapper = null;
     }
     this.currentModel = null;
+    this._clearHighlight();
     this._userRotY = 0;
     this._userRotX = 0;
     this._dragMode = false;
 
     var modelDef = plugin.get(id);
-    if (!modelDef || !modelDef.enabled || typeof modelDef.createModel !== 'function') return;
+    if (!modelDef || !modelDef.enabled) return;
 
-    var mesh = modelDef.createModel();
+    // Alt-modelleri varsa onlari listele
+    if (modelDef.subModels && modelDef.subModels.length > 0) {
+      this._childMode = false;
+      this._subModels = modelDef.subModels;
+      this._subModelActive = null;
+      this._enterSubModelMode();
+      return;
+    }
+    this._subModels = null;
+    this._subModelActive = null;
+
+    if (typeof modelDef.createModel !== 'function') return;
+
+    this._displayModel(modelDef.createModel(), id);
+  },
+
+  _displayModel(mesh, id) {
     var wrapper = new THREE.Group();
 
-    // Boyutu normalize et (scale, mesh.position'u degistirme)
+    // Boyutu normalize et
     var box = new THREE.Box3().setFromObject(mesh);
     var size = box.getSize(new THREE.Vector3());
     var maxDim = Math.max(size.x, size.y, size.z);
@@ -415,6 +457,10 @@ plugin.register({
       var scale = targetSize / maxDim;
       mesh.scale.set(scale, scale, scale);
     }
+    // Scale sonrasi yeniden box alip ortala
+    var box2 = new THREE.Box3().setFromObject(mesh);
+    var center = box2.getCenter(new THREE.Vector3());
+    mesh.position.sub(center);
 
     wrapper.add(mesh);
     wrapper.position.y = 0.4;
@@ -422,24 +468,271 @@ plugin.register({
     this._modelWrapper = wrapper;
     this.currentModel = mesh;
 
-    var cards = this.listEl.querySelectorAll('.mt-card');
-    for (var i = 0; i < cards.length; i++) {
-      cards[i].classList.toggle('active', cards[i].dataset.modelId === id);
+    if (id) {
+      var cards = this.listEl.querySelectorAll('.mt-card');
+      for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.toggle('active', cards[i].dataset.modelId === id);
+      }
     }
 
     // Rotation slider goster
     var rotRow = document.getElementById('mtRotateRow');
     if (rotRow) rotRow.classList.add('show');
 
-    plugin.emit('model_test:select', { modelId: id, modelDef: modelDef, mesh: mesh });
+    // Cocuk mesh'leri tara
+    this._childList = [];
+    this._collectChildren(mesh, 0, this._childList);
+    this._highlightedChild = null;
+    this._savedMat = null;
+
+    if (this._childList.length > 0) {
+      this._enterChildMode();
+    } else {
+      if (this._labelEl) this._labelEl.style.display = 'none';
+      var btn = document.getElementById('mtBackBtn');
+      btn.textContent = this._subModelActive ? '← GERİ' : 'ANA MENÜ';
+    }
+
+    var modelDef = plugin.get(this.currentModelId);
+    plugin.emit('model_test:select', { modelId: this.currentModelId, modelDef: modelDef, mesh: mesh });
+  },
+
+  _collectChildren(group, depth, results) {
+    if (!group) return;
+    for (var i = 0; i < group.children.length; i++) {
+      var c = group.children[i];
+      var name = c.name || 'Unnamed ' + (c.type || 'object');
+      if (c.isMesh || c.isGroup) {
+        results.push({ mesh: c, name: name, depth: depth, type: c.type });
+      }
+      if (c.children && c.children.length > 0) {
+        this._collectChildren(c, depth + 1, results);
+      }
+    }
+  },
+
+  _enterChildMode() {
+    this._childMode = true;
+    var title = document.getElementById('mtPanelTitle');
+    if (title) title.textContent = this.currentModelId.toUpperCase();
+    this._labelEl.style.display = 'block';
+    this._labelEl.textContent = 'Alt Parçalar';
+    var btn = document.getElementById('mtBackBtn');
+    if (btn) btn.textContent = '← GERİ';
+    this.buildChildList();
+  },
+
+  _exitChildMode() {
+    this._childMode = false;
+    this._clearHighlight();
+    // Sub-model'den geldiysek sub-model listesine don
+    if (this._subModels && this._subModelActive) {
+      this._subModelActive = null;
+      this._enterSubModelMode();
+      return;
+    }
+    var title = document.getElementById('mtPanelTitle');
+    if (title) title.textContent = 'Modeller';
+    this._labelEl.style.display = 'none';
+    var btn = document.getElementById('mtBackBtn');
+    if (btn) btn.textContent = 'ANA MENÜ';
+    this.buildList();
+  },
+
+  _enterSubModelMode() {
+    this._subModelMode = true;
+    var title = document.getElementById('mtPanelTitle');
+    if (title) title.textContent = this.currentModelId.toUpperCase();
+    this._labelEl.style.display = 'block';
+    this._labelEl.textContent = 'Alt Modeller';
+    var btn = document.getElementById('mtBackBtn');
+    if (btn) btn.textContent = '← GERİ';
+    this.buildSubModelList();
+  },
+
+  _exitSubModelMode() {
+    this._subModelMode = false;
+    this._subModels = null;
+    this._subModelActive = null;
+    var title = document.getElementById('mtPanelTitle');
+    if (title) title.textContent = 'Modeller';
+    this._labelEl.style.display = 'none';
+    var btn = document.getElementById('mtBackBtn');
+    if (btn) btn.textContent = 'ANA MENÜ';
+    this.buildList();
+  },
+
+  buildSubModelList() {
+    if (!this.listEl) return;
+    this.listEl.innerHTML = '';
+    var self = this;
+
+    if (!this._subModels || this._subModels.length === 0) {
+      this.listEl.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(255,255,255,0.2);font-size:12px;">Alt model bulunamadı</div>';
+      return;
+    }
+
+    this._subModels.forEach(function(item, idx) {
+      var card = document.createElement('div');
+      card.className = 'mt-card' + (item.id === self._subModelActive ? ' active' : '');
+      card.dataset.subIdx = idx;
+
+      var icon = document.createElement('div');
+      icon.className = 'mt-icon';
+      icon.textContent = '◈';
+
+      var info = document.createElement('div');
+      info.className = 'mt-info';
+      info.innerHTML = '<div class="mt-name">' + item.name + '</div>' +
+        '<div class="mt-desc">' + (item.desc || '') + '</div>';
+
+      var check = document.createElement('div');
+      check.className = 'mt-check';
+
+      card.appendChild(icon);
+      card.appendChild(info);
+      card.appendChild(check);
+
+      card.addEventListener('click', function() {
+        self._selectSubModel(idx);
+      });
+
+      self.listEl.appendChild(card);
+    });
+  },
+
+  _selectSubModel(idx) {
+    if (!this._subModels || idx < 0 || idx >= this._subModels.length) return;
+    var item = this._subModels[idx];
+    this._subModelActive = item.id;
+    this._subModelMode = false;
+
+    // Onceki modeli kaldir
+    if (this._modelWrapper) {
+      this.roomGroup.remove(this._modelWrapper);
+      this._modelWrapper = null;
+    }
+    this.currentModel = null;
+    this._clearHighlight();
+    this._childMode = false;
+    this._childList = [];
+
+    var modelDef = plugin.get(this.currentModelId);
+    if (!modelDef) return;
+
+    var mesh;
+    if (typeof modelDef.createSubModel === 'function') {
+      mesh = modelDef.createSubModel(item.id);
+    } else if (typeof modelDef.createModel === 'function') {
+      mesh = modelDef.createModel();
+    } else {
+      this._subModelActive = null;
+      return;
+    }
+    if (!mesh) {
+      this._subModelActive = null;
+      return;
+    }
+
+    this._displayModel(mesh);
+  },
+
+  _clearHighlight() {
+    if (this._highlightedChild && this._savedMat) {
+      var old = this._savedMat;
+      var h = this._highlightedChild;
+      if (h.isMesh && h.material) {
+        if (Array.isArray(h.material)) {
+          for (var i = 0; i < h.material.length && i < old.length; i++) {
+            h.material[i].emissive.setHex(old[i].emissive);
+            h.material[i].emissiveIntensity = old[i].intensity;
+          }
+        } else {
+          h.material.emissive.setHex(old.emissive);
+          h.material.emissiveIntensity = old.intensity;
+        }
+      }
+    }
+    this._highlightedChild = null;
+    this._savedMat = null;
+  },
+
+  _highlightMesh(mesh) {
+    this._clearHighlight();
+    if (!mesh || !mesh.isMesh) return;
+    this._highlightedChild = mesh;
+    if (mesh.material) {
+      if (Array.isArray(mesh.material)) {
+        this._savedMat = [];
+        for (var i = 0; i < mesh.material.length; i++) {
+          this._savedMat.push({ emissive: mesh.material[i].emissive.getHex(), intensity: mesh.material[i].emissiveIntensity });
+          mesh.material[i].emissive.setHex(0x4fc3f7);
+          mesh.material[i].emissiveIntensity = 0.5;
+        }
+      } else {
+        this._savedMat = { emissive: mesh.material.emissive.getHex(), intensity: mesh.material.emissiveIntensity };
+        mesh.material.emissive.setHex(0x4fc3f7);
+        mesh.material.emissiveIntensity = 0.5;
+      }
+    }
+  },
+
+  buildChildList() {
+    if (!this.listEl) return;
+    this.listEl.innerHTML = '';
+    var self = this;
+
+    if (!this._childList || this._childList.length === 0) {
+      this.listEl.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(255,255,255,0.2);font-size:12px;">Alt parça bulunamadı</div>';
+      return;
+    }
+
+    this._childList.forEach(function(item, idx) {
+      var card = document.createElement('div');
+      card.className = 'mt-card' + (item.mesh === self._highlightedChild ? ' active' : '');
+      card.dataset.childIdx = idx;
+
+      var icon = document.createElement('div');
+      icon.className = 'mt-icon';
+      icon.textContent = item.type === 'Group' ? '📁' : '◆';
+
+      var info = document.createElement('div');
+      info.className = 'mt-info';
+      info.innerHTML = '<div class="mt-name">' + item.name + '</div>' +
+        '<div class="mt-desc">' + item.type + (item.depth > 0 ? ' · seviye ' + item.depth : '') + '</div>';
+
+      var check = document.createElement('div');
+      check.className = 'mt-check';
+
+      card.appendChild(icon);
+      card.appendChild(info);
+      card.appendChild(check);
+
+      card.addEventListener('click', function() {
+        self._selectChild(idx);
+      });
+
+      self.listEl.appendChild(card);
+    });
+  },
+
+  _selectChild(idx) {
+    if (!this._childList || idx < 0 || idx >= this._childList.length) return;
+    var item = this._childList[idx];
+    this._highlightMesh(item.mesh);
+
+    var cards = this.listEl.querySelectorAll('.mt-card');
+    for (var i = 0; i < cards.length; i++) {
+      cards[i].classList.toggle('active', parseInt(cards[i].dataset.childIdx) === idx);
+    }
   },
 
   update(dt) {
     if (!this.visible) return;
     if (this.currentModel) {
       if (this._isDragging) {
-        this.currentModel.rotation.y = this._userRotY;
-        this.currentModel.rotation.x = this._userRotX;
+          this.currentModel.rotation.y = this._userRotY;
+          this.currentModel.rotation.x = this._userRotX;
       } else {
         this.currentModel.rotation.y += dt * this._rotSpeed;
         this._userRotY = this.currentModel.rotation.y;
@@ -469,6 +762,12 @@ plugin.register({
       this.roomGroup.remove(this._modelWrapper);
       this._modelWrapper = null;
     }
+    this._clearHighlight();
+    this._childMode = false;
+    this._childList = null;
+    this._subModelMode = false;
+    this._subModels = null;
+    this._subModelActive = null;
     this.currentModel = null;
     this.currentModelId = null;
 

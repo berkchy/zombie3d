@@ -148,7 +148,7 @@ plugin.register({
     var g = new THREE.Group();
     g.name = 'fp_viewmodel';
     g.visible = true;
-    g.position.set(0.15, -0.12, -0.28);
+    g.position.set(0, -0.12, -0.28);
 
     var armsPlugin = plugin.get('model_viewmodel_arms');
     if (armsPlugin && armsPlugin.enabled && armsPlugin.createArms) {
@@ -172,6 +172,8 @@ plugin.register({
     if (this._modelReady) return;
     this._modelReady = true;
     this._createViewModel();
+    var sel = this.game && this.game.hotbar && this.game.hotbar.getSelected();
+    this._updateViewWeapon(sel && sel.slot ? sel.slot.id : null);
   },
 
   _updateViewWeapon: function(weaponId) {
@@ -195,13 +197,55 @@ plugin.register({
     }
     this._viewWeapon = null;
 
-    if (!weaponId) return;
+    if (!weaponId) {
+      this._setViewmodelPosition(0, -0.12, -0.28);
+      if (this._arms && this._arms.setPose) {
+        this._arms.setPose('fist');
+        this._setArmsHeight(0);
+      }
+      if (this._arms && this._arms.group) {
+        var a = plugin.get('core_animation');
+        var am = plugin.get('model_viewmodel_arms');
+        if (a && a.enabled && am && am.animations && am.animations.equip) {
+          var g = this._arms.group;
+          g.position.set(0, -0.5, 0.3);
+          g.rotation.set(0, 0, 0);
+          a.stopAll(g);
+          a.play(g, am.animations.equip);
+        }
+      }
+      return;
+    }
 
     var wp = plugin.get(weaponId);
-    if (!wp || !wp.enabled || !wp.modelId) return;
+    if (!wp || !wp.enabled || !wp.modelId) {
+      this._setViewmodelPosition(0, -0.12, -0.28);
+      if (this._arms && this._arms.setPose) {
+        this._arms.setPose('fist');
+        this._setArmsHeight(0);
+      }
+      if (this._arms && this._arms.group) {
+        var a = plugin.get('core_animation');
+        var am = plugin.get('model_viewmodel_arms');
+        if (a && a.enabled && am && am.animations && am.animations.equip) {
+          var g = this._arms.group;
+          g.position.set(0, -0.5, 0.3);
+          g.rotation.set(0, 0, 0);
+          a.stopAll(g);
+          a.play(g, am.animations.equip);
+        }
+      }
+      return;
+    }
 
+    this._setViewmodelPosition(0.15, 0, -0.28);
     if (this._arms && this._arms.setPose) {
-      this._arms.setPose(this._poseForWeapon(wp.weaponType));
+      this._arms.setPose(wp.viewArmPose || this._poseForWeapon(wp.weaponType));
+      this._setArmsHeight(-0.06);
+    }
+    if (this._arms && this._arms.group) {
+      this._arms.group.position.set(0, 0, 0);
+      this._arms.group.rotation.set(0, 0, 0);
     }
 
     var mp = plugin.get(wp.modelId);
@@ -216,19 +260,40 @@ plugin.register({
     model.rotation.order = 'YXZ';
 
     if (wp.weaponType === 'knife') {
-      // CS:GO tarzi — namlu capraz yukari/sola donuk
-      model.rotation.set(-0.6, Math.PI, 0.25);
+      // Bıçağı sağ bileğe bağla — kol animasyonu ile senkronize
+      model.position.set(0, 0, 0);
+      model.rotation.set(-0.6, 0, 0.25);
+      var rWrist = this._arms.group.getObjectByName('right_wrist');
+      if (rWrist) {
+        rWrist.add(model);
+      } else {
+        slot.add(model);
+      }
     } else {
-      // Normal silahlar — hafif sag FOV acisi
-      model.rotation.set(-0.1, Math.PI, 0.08);
+      model.rotation.set(-0.12, Math.PI + 0.06, 0.005);
+      slot.add(model);
     }
-
-    slot.add(model);
     this._viewWeapon = model;
     this._applyOverlay();
 
-    if (wp.setModelRef) wp.setModelRef(model);
     if (wp.setArmsRef && this._arms) wp.setArmsRef(this._arms.group);
+    if (wp.setModelRef) wp.setModelRef(model);
+  },
+
+  _setViewmodelPosition: function(x, y, z) {
+    if (!this._viewGroup) return;
+    this._viewGroup.position.set(x, y, z);
+
+    var sway = plugin.get('fx_viewmodel_sway');
+    if (sway && sway.enabled && typeof sway.setBasePosition === 'function') {
+      sway.setBasePosition(x, y);
+    }
+  },
+
+  _setArmsHeight: function(offset) {
+    if (!this._arms) return;
+    if (this._arms.leftGroup) this._arms.leftGroup.position.y += offset;
+    if (this._arms.rightGroup) this._arms.rightGroup.position.y += offset;
   },
 
   _clampPitch() {
@@ -244,6 +309,12 @@ plugin.register({
     this._overlayCamera.near = mainCam.near;
     this._overlayCamera.far = mainCam.far;
     this._overlayCamera.updateProjectionMatrix();
+  },
+
+  update(dt) {
+    if (this.game && this.game.camera) {
+      this.syncMainCamera(this.game.camera);
+    }
   },
 
   _applyOverlay: function() {
