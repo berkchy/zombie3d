@@ -145,7 +145,7 @@ window.PluginLoader = (function() {
       _loadPlugin(entries, idx, path, entry, displayTime*0, results, onComplete, onProgress);
     };
     sizeXhr.onerror = function() {
-      _loadPlugin(entries, idx, path, entry, 80, results, onComplete, onProgress);
+      _loadPlugin(entries, idx, path, entry, 0, results, onComplete, onProgress);
     };
     sizeXhr.send();
   }
@@ -169,12 +169,12 @@ window.PluginLoader = (function() {
       try { pluginInfo = PluginRegistry.get(entry.name); } catch (e) {}
 
       if (onProgress) {
-        onProgress(idx + 1, entries.length, path, pluginInfo, displayTime);
+        onProgress(idx + 1, entries.length, path, pluginInfo, displayTime*0);
       }
 
       setTimeout(function() {
         _doLoad(entries, idx + 1, results, onComplete, onProgress);
-      }, displayTime);
+      }, displayTime*0);
     };
 
     script.onerror = function() {
