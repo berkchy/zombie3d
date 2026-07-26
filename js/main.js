@@ -749,7 +749,19 @@ function loop(time) {
   // --- KAMERA ---
   if (game.player && game.player.mesh && gameStarted && !game._dying) {
     var fp = PluginRegistry.get('fx_firstperson');
-    if (fp && fp.enabled) {
+    var tp = PluginRegistry.get('camera_thirdperson');
+    if (game.cameraMode === 'thirdperson' && tp && tp.enabled) {
+      // TP kamera — plugin kendi update'inde pozisyonu ayarlar
+      game.player.mesh.rotation.y = game.fpYaw || 0;
+
+      // Oyuncu govdesini goster
+      var hip = game.player.mesh.getObjectByName('hip');
+      if (hip && hip.visible !== true) hip.visible = true;
+
+      // View modeli gizle
+      var vm = camera.getObjectByName('fp_viewmodel');
+      if (vm && vm.visible) vm.visible = false;
+    } else {
       // First person: kamerayi oyuncu kafasina yerlestir
       var pos = game.player.mesh.position;
       camera.position.set(pos.x, pos.y + 0.6, pos.z);
@@ -764,21 +776,7 @@ function loop(time) {
       if (hip && hip.visible !== false) hip.visible = false;
 
       // View model overlay kamerasi ana kamerayla senkronize edilir
-      if (fp.syncMainCamera) fp.syncMainCamera(camera);
-    } else {
-      // Third person
-      var pos = game.player.mesh.position;
-      camera.position.x += (pos.x - camera.position.x) * 0.08;
-      camera.position.z += (pos.z + 12 - camera.position.z) * 0.08;
-      camera.lookAt(pos.x, 0, pos.z);
-
-      // Oyuncu govdesini goster
-      var hip = game.player.mesh.getObjectByName('hip');
-      if (hip && hip.visible !== true) hip.visible = true;
-
-      // View modeli gizle
-      var vm = camera.getObjectByName('fp_viewmodel');
-      if (vm && vm.visible) vm.visible = false;
+      if (fp && fp.enabled && fp.syncMainCamera) fp.syncMainCamera(camera);
     }
   }
 
@@ -789,7 +787,18 @@ function loop(time) {
     var zoomLen = 1.5;
 
     var fp = PluginRegistry.get('fx_firstperson');
-    if (fp && fp.enabled) {
+    var tp = PluginRegistry.get('camera_thirdperson');
+    if (game.cameraMode === 'thirdperson' && tp && tp.enabled) {
+      if (game._dyingTimer > dieLen) {
+        var t = Math.min((game._dyingTimer - dieLen) / zoomLen, 1);
+        var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        var ppos = game.player.mesh.position;
+        camera.position.x += (ppos.x - camera.position.x) * 0.06;
+        camera.position.y = (ppos.y + 1.0) + ease;
+        camera.position.z += (ppos.z - camera.position.z) * 0.06;
+        camera.lookAt(ppos.x, ppos.y + 0.6, ppos.z);
+      }
+    } else if (fp && fp.enabled) {
       // First person: kamera basi egilsin (yere dussun)
       if (game._dyingTimer > dieLen) {
         var t = Math.min((game._dyingTimer - dieLen) / zoomLen, 1);
