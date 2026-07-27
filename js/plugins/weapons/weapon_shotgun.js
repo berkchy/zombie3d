@@ -36,9 +36,10 @@ plugin.register({
       { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, 0.01, 0] }
     ]},
     reload: { duration: 0.5, loop: true, tracks: [
-      { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.02, 0.04, 0.02, 0] },
-      { pivot: 'left_elbow', prop: 'rotation.x', keys: [0, 0.06, 0.12, 0.06, 0] },
-      { pivot: 'left_wrist', prop: 'rotation.y', keys: [0, 0.04, 0.08, 0.04, 0] }
+      { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.04, -0.02, 0] },
+      { pivot: 'left_arm', prop: 'position.y', keys: [0, -0.04, -0.08, -0.04, 0] },
+      { pivot: 'left_arm', prop: 'position.z', keys: [0, 0.02, 0.06, 0.03, 0] },
+      { pivot: 'left_arm', prop: 'rotation.x', keys: [0, 0.05, 0.1, 0.05, 0] }
     ]},
     equip: { duration: 1.2, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.y', keys: [-0.5, -0.3, -0.08, 0] },
@@ -112,12 +113,24 @@ plugin.register({
   setArmsRef: function(group) {
     this._armsRef = group;
     this._armRestQ = {};
+    this._armRestPos = {};
+    this._armRestRot = {};
     var elbows = [group.getObjectByName('right_elbow'), group.getObjectByName('left_elbow')];
     var wrists = [group.getObjectByName('right_wrist'), group.getObjectByName('left_wrist')];
     if (elbows[0]) this._armRestQ.right_elbow = elbows[0].quaternion.clone();
     if (elbows[1]) this._armRestQ.left_elbow = elbows[1].quaternion.clone();
     if (wrists[0]) this._armRestQ.right_wrist = wrists[0].quaternion.clone();
     if (wrists[1]) this._armRestQ.left_wrist = wrists[1].quaternion.clone();
+    var leftArm = group.getObjectByName('left_arm');
+    var rightArm = group.getObjectByName('right_arm');
+    if (leftArm) {
+      this._armRestPos.left_arm = leftArm.position.clone();
+      this._armRestRot.left_arm = leftArm.rotation.clone();
+    }
+    if (rightArm) {
+      this._armRestPos.right_arm = rightArm.position.clone();
+      this._armRestRot.right_arm = rightArm.rotation.clone();
+    }
   },
 
   _resetToRestPose: function() {
@@ -137,6 +150,12 @@ plugin.register({
     if (elbows[1] && this._armRestQ && this._armRestQ.left_elbow) elbows[1].quaternion.copy(this._armRestQ.left_elbow);
     if (wrists[0] && this._armRestQ && this._armRestQ.right_wrist) wrists[0].quaternion.copy(this._armRestQ.right_wrist);
     if (wrists[1] && this._armRestQ && this._armRestQ.left_wrist) wrists[1].quaternion.copy(this._armRestQ.left_wrist);
+    var leftArm = this._armsRef.getObjectByName('left_arm');
+    var rightArm = this._armsRef.getObjectByName('right_arm');
+    if (leftArm && this._armRestPos && this._armRestPos.left_arm) leftArm.position.copy(this._armRestPos.left_arm);
+    if (leftArm && this._armRestRot && this._armRestRot.left_arm) leftArm.rotation.copy(this._armRestRot.left_arm);
+    if (rightArm && this._armRestPos && this._armRestPos.right_arm) rightArm.position.copy(this._armRestPos.right_arm);
+    if (rightArm && this._armRestRot && this._armRestRot.right_arm) rightArm.rotation.copy(this._armRestRot.right_arm);
   },
 
   _playAnim: function(name) {
