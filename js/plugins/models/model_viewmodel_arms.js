@@ -80,8 +80,8 @@ plugin.register({
       rEl: [ 0.115,  0.02, -0.05],  // Sag dirsek
       rHa: [ 0.08,   0.03, -0.20],  // Sag el
       wp:  [ 0.08,   0.03, -0.20],  // Silah slotu
-      lXU: 0.95, lYU: 1.0,          // Sol kol X/Y olcek
-      rXU: 1.0,  rYU: 1.0           // Sag kol X/Y olcek
+      lXU: 0.35, lYU: 1.0,          // Sol kol X/Y olcek
+      rXU: 1.25,  rYU: 1.0           // Sag kol X/Y olcek
     }
   },
 
