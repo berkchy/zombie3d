@@ -29,6 +29,9 @@ plugin.register({
   _animArmId: null,
   _idleAnimId: null,
   _lastReloadAmmo: 0,
+  _flashSprite: null,
+  _flashTimer: 0,
+  _casings: [],
   _modelRef: null,
   _armsRef: null,
   _restPose: null,
@@ -83,6 +86,9 @@ plugin.register({
     this._armsRef = null;
     this._restPose = null;
     this._lastReloadAmmo = 0;
+    this._flashSprite = null;
+    this._flashTimer = 0;
+    this._casings = [];
 
     this._armAnims.reload.duration = 1.1;
 
@@ -298,18 +304,99 @@ plugin.register({
       bs.spawn({ position: pos, direction: dir, speed: 500, damage: this.pelletDamage, knockback: this.knockback, knockbackDistance: this.knockbackDistance, count: this.pelletsPerShot, spread: this.spreadAngle, life: 1.5, size: 0.05 });
     }
 
+    this._showMuzzleFlash();
+    this._ejectCasing(dir);
+
     plugin.emit('weapon:fire', {
       weapon: this,
       position: pos,
       direction: dir,
       pellets: this.pelletsPerShot,
+      spread: this.spreadAngle,
       ammo: this.ammo
     });
     plugin.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo, clip: this.clip, reserve: this.reserve });
   },
 
+  _showMuzzleFlash: function() {
+    if (!this._modelRef) return;
+    var tip = this._modelRef.getObjectByName('barrel_tip');
+    if (!tip) return;
+    var scene = this._modelRef.parent;
+    while (scene && scene.parent && scene.parent !== scene) {
+      if (scene.parent && scene.parent.type === 'Scene') break;
+      scene = scene.parent;
+    }
+
+    if (!this._flashSprite) {
+      var canvas = document.createElement('canvas');
+      canvas.width = 64; canvas.height = 64;
+      var ctx = canvas.getContext('2d');
+      var g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, 'rgba(255,255,200,1)');
+      g.addColorStop(0.2, 'rgba(255,200,100,0.9)');
+      g.addColorStop(0.5, 'rgba(255,100,20,0.5)');
+      g.addColorStop(1, 'rgba(255,50,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 64, 64);
+      var tex = new THREE.CanvasTexture(canvas);
+      var mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true });
+      this._flashSprite = new THREE.Sprite(mat);
+      this._flashSprite.scale.set(0.3, 0.3, 1);
+    }
+    tip.add(this._flashSprite);
+    this._flashTimer = 0.06;
+  },
+
+  _ejectCasing: function(dir) {
+    if (!this.game || !this.game.scene) return;
+    var mat = new THREE.MeshStandardMaterial({ color: 0xcc8844, metalness: 0.4, roughness: 0.6 });
+    var casing = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.01, 0.025, 6), mat);
+    casing.rotation.x = Math.random() * Math.PI;
+    var pos = this.game.camera ? this.game.camera.position.clone() : this.game.player.mesh.position.clone();
+    pos.y += 0.3;
+    var right = new THREE.Vector3(1, 0, 0);
+    if (this.game.camera) right.applyQuaternion(this.game.camera.quaternion);
+    var up = new THREE.Vector3(0, 1, 0);
+    casing.position.copy(pos).add(right.clone().multiplyScalar(0.15)).add(up.clone().multiplyScalar(-0.1));
+    var fwd = dir.clone();
+    var vel = right.clone().multiplyScalar(1.5 + Math.random() * 0.5).add(up.clone().multiplyScalar(1 + Math.random() * 0.5)).add(fwd.multiplyScalar(0.3));
+    this.game.scene.add(casing);
+    this._casings.push({ mesh: casing, vel: vel, rot: new THREE.Vector3(Math.random() * 10, Math.random() * 10, Math.random() * 10), life: 2.0 });
+  },
+
   update(dt) {
     if (this.cooldown > 0) this.cooldown -= dt;
+
+    if (this._flashTimer > 0) {
+      this._flashTimer -= dt;
+      if (this._flashTimer <= 0 && this._flashSprite && this._flashSprite.parent) {
+        this._flashSprite.parent.remove(this._flashSprite);
+      }
+    }
+
+    for (var i = this._casings.length - 1; i >= 0; i--) {
+      var c = this._casings[i];
+      c.life -= dt;
+      if (c.life <= 0) {
+        if (this.game && this.game.scene) this.game.scene.remove(c.mesh);
+        this._casings.splice(i, 1);
+        continue;
+      }
+      c.vel.y -= 9.8 * dt;
+      c.mesh.position.x += c.vel.x * dt;
+      c.mesh.position.y += c.vel.y * dt;
+      c.mesh.position.z += c.vel.z * dt;
+      c.mesh.rotation.x += c.rot.x * dt;
+      c.mesh.rotation.y += c.rot.y * dt;
+      c.mesh.rotation.z += c.rot.z * dt;
+      if (c.mesh.position.y < -0.1) {
+        c.mesh.position.y = -0.1;
+        c.vel.multiplyScalar(0.3);
+        c.rot.multiplyScalar(0.5);
+      }
+    }
+
     if (this._reloading) {
       var sys = plugin.get('system_reload');
       if (!sys || !sys._reloading || sys._wp !== this) {
@@ -354,6 +441,15 @@ plugin.register({
     this._animArmId = null;
     this._idleAnimId = null;
     this._restPose = null;
+    if (this._flashSprite) {
+      if (this._flashSprite.parent) this._flashSprite.parent.remove(this._flashSprite);
+      if (this._flashSprite.material) { this._flashSprite.material.dispose(); if (this._flashSprite.material.map) this._flashSprite.material.map.dispose(); }
+      this._flashSprite = null;
+    }
+    for (var i = 0; i < this._casings.length; i++) {
+      if (this._casings[i].mesh && this.game && this.game.scene) this.game.scene.remove(this._casings[i].mesh);
+    }
+    this._casings = [];
     plugin.off('game:loaded', this.id + '_sounds');
     plugin.off('reload:start', this.id);
     plugin.off('hotbar:select', this.id);

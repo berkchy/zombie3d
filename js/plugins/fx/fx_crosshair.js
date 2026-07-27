@@ -18,6 +18,8 @@ plugin.register({
   _shape: 'cross',
   _dot: false,
   _alpha: 0.8,
+  _spreadPx: 0,
+  _lastSpreadTime: 0,
 
   init(game) {
     if (!cvar) return;
@@ -49,6 +51,23 @@ plugin.register({
     ids.forEach(function(id) {
       cvar.onChange(id, readCvars);
     });
+
+    var self = this;
+    plugin.on('weapon:fire', this.id, function(data) {
+      if (data && data.spread !== undefined) {
+        self._spreadPx = Math.min(data.spread, 0.5) * 300;
+      } else if (data && data.weapon && data.weapon.spreadAngle !== undefined) {
+        self._spreadPx = Math.min(data.weapon.spreadAngle, 0.5) * 300;
+      }
+      self._lastSpreadTime = Date.now();
+    });
+  },
+
+  update(dt) {
+    if (this._spreadPx > 0.5) {
+      this._spreadPx *= Math.exp(-dt * 8);
+      if (this._spreadPx < 0.5) this._spreadPx = 0;
+    }
   },
 
   render2d(ctx, w, h) {
@@ -59,7 +78,7 @@ plugin.register({
     var cy = h / 2;
     var size = this._size;
     var thick = this._thickness;
-    var gap = this._gap;
+    var gap = this._gap + this._spreadPx;
     var alpha = this._alpha;
     var half = thick / 2;
 
