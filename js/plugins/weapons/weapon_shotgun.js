@@ -35,11 +35,14 @@ plugin.register({
       { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.006, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, 0.01, 0] }
     ]},
-    reload: { duration: 0.5, loop: true, tracks: [
-      { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.04, -0.02, 0] },
-      { pivot: 'left_arm', prop: 'position.y', keys: [0, -0.04, -0.08, -0.04, 0] },
-      { pivot: 'left_arm', prop: 'position.z', keys: [0, 0.02, 0.06, 0.03, 0] },
-      { pivot: 'left_arm', prop: 'rotation.x', keys: [0, 0.05, 0.1, 0.05, 0] }
+    reload: { duration: 0.7, loop: true, tracks: [
+      { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },
+      { pivot: 'left_arm', prop: 'position.y', keys: [0, -0.04, -0.1, -0.04, 0] },
+      { pivot: 'left_arm', prop: 'position.z', keys: [0, 0.03, 0.1, 0.03, 0] },
+      { pivot: 'left_arm', prop: 'rotation.x', keys: [0, 0.04, 0.08, 0.04, 0] },
+      { pivot: 'hand_shell', prop: 'position.z', keys: [0.04, 0.04, 0.18, 0.04, 0.04] },
+      { pivot: 'hand_shell', prop: 'position.y', keys: [0, 0, -0.02, 0, 0] },
+      { pivot: 'hand_shell_rim', prop: 'position.z', keys: [0.025, 0.025, 0.16, 0.025, 0.025] }
     ]},
     equip: { duration: 1.2, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.y', keys: [-0.5, -0.3, -0.08, 0] },
@@ -79,8 +82,8 @@ plugin.register({
     plugin.on('reload:start', this.id, function(data) {
       if (!self._modelRef) return;
       if (data && data.weapon && data.weapon.id === self.id) {
-        var shell = self._modelRef.getObjectByName('reload_shell');
-        if (shell) { shell.visible = true; shell.scale.set(1, 1, 1); }
+        if (self._handShell) self._handShell.visible = true;
+        if (self._handShellRim) self._handShellRim.visible = true;
         self._reloading = true;
         self._playAnim('reload');
         if (game.sound) game.sound.play('shotgun_reload');
@@ -93,6 +96,9 @@ plugin.register({
       self._animId = null;
       self._animArmId = null;
       self._resetToRestPose();
+      self._resetArmsAnimationPose();
+      if (self._handShell) self._handShell.visible = false;
+      if (self._handShellRim) self._handShellRim.visible = false;
       self._equipping = false;
     });
     plugin.on('bullet:hit', this.id, function(data) {
@@ -115,6 +121,7 @@ plugin.register({
     this._armRestQ = {};
     this._armRestPos = {};
     this._armRestRot = {};
+    this._handShell = null;
     var elbows = [group.getObjectByName('right_elbow'), group.getObjectByName('left_elbow')];
     var wrists = [group.getObjectByName('right_wrist'), group.getObjectByName('left_wrist')];
     if (elbows[0]) this._armRestQ.right_elbow = elbows[0].quaternion.clone();
@@ -130,6 +137,23 @@ plugin.register({
     if (rightArm) {
       this._armRestPos.right_arm = rightArm.position.clone();
       this._armRestRot.right_arm = rightArm.rotation.clone();
+    }
+    if (wrists[1]) {
+      var handMat = new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.3 });
+      var shell = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.06, 10), handMat);
+      shell.rotation.x = Math.PI / 2;
+      shell.position.set(0, 0, 0.04);
+      shell.name = 'hand_shell';
+      shell.visible = false;
+      wrists[1].add(shell);
+      var rim = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.014, 0.006, 10), new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.5 }));
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(0, 0, 0.025);
+      rim.name = 'hand_shell_rim';
+      rim.visible = false;
+      wrists[1].add(rim);
+      this._handShell = shell;
+      this._handShellRim = rim;
     }
   },
 
@@ -267,8 +291,8 @@ plugin.register({
         this._animArmId = null;
         this._resetToRestPose();
         this._resetArmsAnimationPose();
-        var shell = this._modelRef && this._modelRef.getObjectByName('reload_shell');
-        if (shell) shell.visible = false;
+        if (this._handShell) this._handShell.visible = false;
+        if (this._handShellRim) this._handShellRim.visible = false;
       }
     }
   },
