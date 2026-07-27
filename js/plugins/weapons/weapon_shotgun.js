@@ -31,9 +31,11 @@ plugin.register({
   _armsRef: null,
   _restPose: null,
   _armAnims: {
-    fire: { duration: 0.15, loop: false, tracks: [
-      { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.006, 0] },
-      { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, 0.01, 0] }
+    fire: { duration: 0.9, loop: false, tracks: [
+      { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.02, 0.01, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, -0.04, -0.01, 0] },
+      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.08, -0.08, -0.04] },
+      { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.03, 0.08, 0.08, 0.03] }
     ]},
     reload: { duration: 1.15, loop: true, tracks: [
       { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },
@@ -87,9 +89,13 @@ plugin.register({
           label: 'Pompali Atesi', cat: 'silahlar',
           variants: [{ src: ['audio/shotgun_fire.mp3'], volume: 0.9 }]
         });
+        game.sound.addSound('shotgun_pump', {
+          label: 'Pompali Pompa', cat: 'silahlar',
+          variants: [{ src: ['audio/shotgun_pump.mp3'], volume: 0.8 }]
+        });
         game.sound.addSound('shotgun_reload', {
-          label: 'Pompali Doldurma', cat: 'silahlar',
-          variants: [{ src: ['audio/ump45_reload.mp3'], volume: 0.8 }]
+          label: 'Pompali Sarjor', cat: 'silahlar',
+          variants: [{ src: ['audio/shotgun_reload.mp3'], volume: 0.7 }]
         });
       }
     });
@@ -102,7 +108,6 @@ plugin.register({
         if (self._handShellRim) self._handShellRim.visible = true;
         self._reloading = true;
         self._playAnim('reload');
-        if (game.sound) game.sound.play('shotgun_reload');
       }
     });
     plugin.on('hotbar:select', this.id, function() {
@@ -278,6 +283,10 @@ plugin.register({
 
     this._playAnim('fire');
     if (this.game.sound) this.game.sound.playAt('shotgun_fire', this.game.camera ? this.game.camera.position : null);
+    var self = this;
+    setTimeout(function() {
+      if (self.game && self.game.sound) self.game.sound.play('shotgun_pump');
+    }, 250);
 
     var bs = plugin.get('system_bullet');
     if (bs && bs.enabled) {
@@ -310,6 +319,14 @@ plugin.register({
         if (this._handShell) this._handShell.visible = false;
         if (this._handShellRim) this._handShellRim.visible = false;
       }
+      if (this.ammo !== this._lastReloadAmmo) {
+        if (this._lastReloadAmmo !== undefined && this.ammo > this._lastReloadAmmo) {
+          if (this.game && this.game.sound) this.game.sound.play('shotgun_reload');
+        }
+        this._lastReloadAmmo = this.ammo;
+      }
+    } else {
+      this._lastReloadAmmo = undefined;
     }
   },
 
