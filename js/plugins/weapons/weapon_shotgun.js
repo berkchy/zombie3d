@@ -14,7 +14,7 @@ plugin.register({
   cooldownTime: 0.9,
   pelletsPerShot: 6,
   pelletDamage: 10,
-  knockback: 160,
+  knockback: 400,
   shake: 0.12,
   spreadAngle: 0.07,
   clip: 6,
@@ -55,7 +55,7 @@ plugin.register({
     loader.loadScript('model_shotgun', function(){
       var mp = plugin.get('model_shotgun');
       if (mp && mp.animations && mp.animations.reload) {
-        mp.animations.reload.duration = self.reloadTime;
+        mp.animations.reload.duration = 1.5;
       }
     });
     this.game = game;
@@ -70,7 +70,7 @@ plugin.register({
     this._armsRef = null;
     this._restPose = null;
 
-    this._armAnims.reload.duration = this.reloadTime;
+    this._armAnims.reload.duration = 1.5;
 
     plugin.off('game:loaded', this.id + '_sounds');
     plugin.on('game:loaded', this.id + '_sounds', function() {
