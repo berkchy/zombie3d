@@ -11,7 +11,7 @@ plugin.register({
   description: 'Pompali tufek — 6 sacma atar, yavas ates eder, animasyonlu',
 
   cooldown: 0,
-  cooldownTime: 0.9,
+  cooldownTime: 1.2,
   pelletsPerShot: 6,
   pelletDamage: 10,
   knockback: 400,
@@ -34,8 +34,9 @@ plugin.register({
     fire: { duration: 1.2, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.03, 0.01, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, -0.05, -0.01, 0] },
-      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.04, -0.14, -0.04] },
-      { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.03, 0.03, 0.14, 0.03] }
+      { pivot: 'left_arm', prop: 'position.x', keys: [-0.07, -0.07, -0.07, 0, -0.07], playMs: 800 },
+      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.04, -0.18, -0.04], playMs: 800 },
+      { pivot: 'left_arm', prop: 'position.z', keys: [0.01, 0.01, 0.01, -0.06, 0.01], playMs: 800 }
     ]},
     reload: { duration: 1.1, loop: true, tracks: [
       { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },

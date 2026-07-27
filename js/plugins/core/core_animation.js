@@ -52,7 +52,8 @@ plugin.register({
         obj: obj,
         prop: propName,
         keys: tr.keys,
-        startVal: obj[propName]
+        startVal: obj[propName],
+        playMs: tr.playMs || 0
       });
     }
 
@@ -84,10 +85,26 @@ plugin.register({
       for (var i = 0; i < s.tracks.length; i++) {
         var tr = s.tracks[i];
         if (!tr.pivot) continue;
+
+        var trackT = t;
+        if (tr.playMs > 0) {
+          var playDelay = tr.playMs / 1000;
+          if (playDelay >= s.duration) {
+            tr.obj[tr.prop] = tr.keys[tr.keys.length - 1];
+            continue;
+          }
+          var trackElapsed = s.elapsed - playDelay;
+          if (trackElapsed < 0) {
+            tr.obj[tr.prop] = tr.startVal;
+            continue;
+          }
+          trackT = Math.min(trackElapsed / (s.duration - playDelay), 1);
+        }
+
         var keys = tr.keys;
         var len = keys.length;
 
-        var idx = t * (len - 1);
+        var idx = trackT * (len - 1);
         var idxA = Math.floor(idx);
         var idxB = Math.min(idxA + 1, len - 1);
         var frac = idx - idxA;
