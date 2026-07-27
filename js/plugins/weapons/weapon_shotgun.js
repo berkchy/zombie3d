@@ -38,9 +38,8 @@ plugin.register({
     reload: { duration: 1.8, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.y', keys: [0, -0.03, -0.07, -0.05, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.04, 0.1, 0.06, 0] },
-      { pivot: 'left_elbow', prop: 'rotation.x', keys: [0, -0.4, -0.8, -0.3, 0] },
-      { pivot: 'left_elbow', prop: 'rotation.z', keys: [0, 0.15, 0.3, 0.1, 0] },
-      { pivot: 'left_wrist', prop: 'rotation.x', keys: [0, 0.1, 0.2, 0.05, 0] },
+      { pivot: 'left_elbow', prop: 'rotation.x', keys: [0, 0.15, 0.35, 0.12, 0] },
+      { pivot: 'left_wrist', prop: 'rotation.y', keys: [0, 0.08, 0.2, 0.05, 0] },
       { pivot: 'right_elbow', prop: 'rotation.x', keys: [0, 0.05, 0.1, 0.04, 0] },
       { pivot: 'right_wrist', prop: 'rotation.x', keys: [0, -0.02, -0.05, -0.01, 0] }
     ]},
