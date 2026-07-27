@@ -31,11 +31,11 @@ plugin.register({
   _armsRef: null,
   _restPose: null,
   _armAnims: {
-    fire: { duration: 0.9, loop: false, tracks: [
+    fire: { duration: 1.2, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.03, 0.01, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, -0.05, -0.01, 0] },
-      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.04, -0.12, -0.04] },
-      { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.03, 0.03, 0.1, 0.03] }
+      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.04, -0.14, -0.04] },
+      { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.03, 0.03, 0.14, 0.03] }
     ]},
     reload: { duration: 1.1, loop: true, tracks: [
       { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },
