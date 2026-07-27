@@ -4,14 +4,15 @@ plugin.register({
   id: 'fx_blood_splatter',
   name: 'Kan Sıçraması',
   type: 'graphics',
-  version: '2.0',
-  description: 'Gerçekçi kan sıçraması (sprite damlalar + yerde havuz)',
+  version: '3.0',
+  description: 'Mermi carpiği konumdan kan damlalari + havuz (hitType miktar)',
   priority: 11,
 
   _drops: [],
   _pools: [],
   _tex: null,
   _poolTex: null,
+  _lastHitType: null,
 
   init() {
     this._drops = [];
@@ -21,16 +22,30 @@ plugin.register({
 
     var self = this;
 
+    // zombie:hit fires BEFORE bullet:hit — store hitType for exact position spray
+    plugin.on('zombie:hit', this.id, function(data) {
+      if (!data) return;
+      self._lastHitType = data.hitType || 'body';
+    });
+
+    // bullet:hit = exact impact position from system_bullet
+    plugin.on('bullet:hit', this.id, function(data) {
+      if (!data || !data.position) return;
+      var ht = self._lastHitType || 'body';
+      self._spray(data.position, ht === 'head' ? 22 : 12);
+      self._lastHitType = null;
+    });
+
+    // enemy:hit — small blood at zombie center (fallback for boss, no bullet:hit)
     plugin.on('enemy:hit', this.id, function(data) {
       if (!data || !data.position || data.damage <= 0) return;
-      var pos = data.position;
-      var count = data.hitType === 'head' ? 20 : 10;
-      self._spray(pos, count, data.hitType === 'head');
+      self._lastHitType = null; // clear stale hitType from previous cycle
+      self._spray(data.position, 5);
     });
 
     plugin.on('zombie:die', this.id, function(pos) {
       if (!pos) return;
-      self._spray(pos, 15, true);
+      self._spray(pos, 25);
       self._pool(pos);
     });
   },
@@ -68,13 +83,13 @@ plugin.register({
     return tex;
   },
 
-  _spray(pos, count, isDeath) {
+  _spray(pos, count) {
     if (!game || !game.scene) return;
     for (var i = 0; i < count; i++) {
       var angle = Math.random() * Math.PI * 2;
-      var speed = 1 + Math.random() * 3;
+      var speed = 1 + Math.random() * 3.5;
       var color = new THREE.Color(Math.random() < 0.6 ? 0xdd2222 : 0x88bb22);
-      var s = 0.04 + Math.random() * 0.06;
+      var s = 0.03 + Math.random() * 0.05;
 
       var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
         map: this._tex,
@@ -86,9 +101,9 @@ plugin.register({
         blending: THREE.NormalBlending
       }));
       sprite.position.set(
-        pos.x + (Math.random() - 0.5) * 0.3,
-        pos.y + 0.3 + Math.random() * 0.6,
-        pos.z + (Math.random() - 0.5) * 0.3
+        pos.x + (Math.random() - 0.5) * 0.15,
+        pos.y + Math.random() * 0.3,
+        pos.z + (Math.random() - 0.5) * 0.15
       );
       sprite.scale.set(s * 2, s * 2, 1);
       sprite.renderOrder = 998;
@@ -97,7 +112,7 @@ plugin.register({
       this._drops.push({
         sprite: sprite,
         vx: Math.cos(angle) * speed,
-        vy: 1 + Math.random() * 3,
+        vy: 0.5 + Math.random() * 3,
         vz: Math.sin(angle) * speed,
         life: 0.5 + Math.random() * 0.5,
         maxLife: 1.0,
@@ -188,6 +203,8 @@ plugin.register({
     this._pools = [];
     if (this._tex) this._tex.dispose();
     if (this._poolTex) this._poolTex.dispose();
+    plugin.off('zombie:hit', this.id);
+    plugin.off('bullet:hit', this.id);
     plugin.off('enemy:hit', this.id);
     plugin.off('zombie:die', this.id);
   }

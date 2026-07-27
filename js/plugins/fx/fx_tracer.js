@@ -4,8 +4,8 @@ plugin.register({
   id: 'fx_tracer',
   name: 'Mermi Tracer',
   type: 'graphics',
-  version: '1.1',
-  description: 'Mermi yolunu gosteren isin',
+  version: '2.0',
+  description: 'Namlu ucundan cikan smooth tracer',
   priority: 11,
 
   _tracers: [],
@@ -24,19 +24,33 @@ plugin.register({
   _add(pos, dir, len) {
     if (!game || !game.scene) return;
 
-    var end = new THREE.Vector3().copy(pos).add(dir.clone().multiplyScalar(len));
+    // FP'de namlu ucuna kaydir (kamera agzidan degil barrel tip'den ciksin)
+    var start = pos.clone();
+    var fp = plugin.get('fx_firstperson');
+    if (fp && fp.enabled) {
+      // barrel yaklasik: sag 0.12, yukari -0.06, ileri -0.35
+      var right = new THREE.Vector3(1, 0, 0).applyQuaternion(game.camera.quaternion);
+      var up = new THREE.Vector3(0, 1, 0).applyQuaternion(game.camera.quaternion);
+      var fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(game.camera.quaternion);
+      start.add(right.clone().multiplyScalar(0.12));
+      start.add(up.clone().multiplyScalar(-0.06));
+      start.add(fwd.clone().multiplyScalar(-0.35));
+    }
 
+    var end = new THREE.Vector3().copy(start).add(dir.clone().multiplyScalar(len));
+
+    // Use growing line: start with 0 length, grow to full
     var geo = new THREE.BufferGeometry();
     var verts = new Float32Array([
-      pos.x, pos.y + 0.05, pos.z,
-      end.x, end.y + 0.05, end.z
+      start.x, start.y + 0.04, start.z,
+      start.x, start.y + 0.04, start.z
     ]);
     geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
 
     var mat = new THREE.LineBasicMaterial({
       color: 0xffcc66,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
       linewidth: 1
     });
 
@@ -45,8 +59,10 @@ plugin.register({
 
     this._tracers.push({
       line: line,
-      life: 0.1,
-      maxLife: 0.1
+      start: start.clone(),
+      end: end.clone(),
+      life: 0.12,
+      maxLife: 0.12
     });
   },
 
@@ -56,8 +72,21 @@ plugin.register({
     for (var i = this._tracers.length - 1; i >= 0; i--) {
       var t = this._tracers[i];
       t.life -= dt;
-      var alpha = Math.max(0, t.life / t.maxLife);
-      t.line.material.opacity = alpha;
+      var progress = 1 - t.life / t.maxLife;
+
+      // Line grows from start to end over lifetime (smooth)
+      var grow = Math.min(progress * 1.5, 1);
+      var curEnd = new THREE.Vector3().copy(t.start).lerp(t.end, grow);
+      var posAttr = t.line.geometry.attributes.position;
+      var arr = posAttr.array;
+      arr[3] = curEnd.x;
+      arr[4] = curEnd.y + 0.04;
+      arr[5] = curEnd.z;
+      posAttr.needsUpdate = true;
+
+      var alpha = Math.sin(progress * Math.PI) * 0.9;
+      t.line.material.opacity = Math.max(0, alpha);
+
       if (t.life <= 0) {
         scene.remove(t.line);
         t.line.geometry.dispose();
