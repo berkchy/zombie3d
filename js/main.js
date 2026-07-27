@@ -374,6 +374,7 @@ function init() {
           this.elapsed = 0;
           this.gameOverFlag = false;
           this._dying = false;
+          this._deathCamStart = null;
           this.paused = false;
           this._tickTimer = 0;
           this._lastScore = 0;
@@ -779,50 +780,33 @@ function loop(time) {
     }
   }
 
-  // Olum ani zoom
+  // Olum kamerasi: FP/TP fark etmez, olen karakterin uzerinde yuksel
   if (game && game._dying && game.player && game.player.mesh) {
     game._dyingTimer += dt;
-    var dieLen = 0.7;
-    var zoomLen = 1.5;
+    var dur = 2.0;
+    var t = Math.min(game._dyingTimer / dur, 1);
+    var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
-    var fp = PluginRegistry.get('fx_firstperson');
-    var tp = PluginRegistry.get('camera_thirdperson');
-    if (game.cameraMode === 'thirdperson' && tp && tp.enabled) {
-      if (game._dyingTimer > dieLen) {
-        var t = Math.min((game._dyingTimer - dieLen) / zoomLen, 1);
-        var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        var ppos = game.player.mesh.position;
-        camera.position.x += (ppos.x - camera.position.x) * 0.06;
-        camera.position.y = (ppos.y + 1.0) + ease;
-        camera.position.z += (ppos.z - camera.position.z) * 0.06;
-        camera.lookAt(ppos.x, ppos.y + 0.6, ppos.z);
-      }
-    } else if (fp && fp.enabled) {
-      // First person: kamera basi egilsin (yere dussun)
-      if (game._dyingTimer > dieLen) {
-        var t = Math.min((game._dyingTimer - dieLen) / zoomLen, 1);
-        var ppos = game.player.mesh.position;
-        camera.position.set(ppos.x, (ppos.y + 0.6) * (1 - t * 0.8), ppos.z);
-        camera.quaternion.slerp(new THREE.Quaternion().setFromEuler(
-          new THREE.Euler(-Math.PI / 4, 0, 0)
-        ), t * 0.5);
-        fp.syncMainCamera(camera);
-      }
-    } else {
-      var total = dieLen + zoomLen;
-      if (game._dyingTimer > dieLen) {
-        var t = (game._dyingTimer - dieLen) / zoomLen;
-        if (t > 1) t = 1;
-        var ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        var ppos = game.player.mesh.position;
-        camera.position.x += (ppos.x - camera.position.x) * 0.05;
-        camera.position.y = 18 + (1.2 - 18) * ease;
-        camera.position.z = ppos.z + 12 + (2.8 - 12) * ease;
-        camera.lookAt(ppos.x, 0.4, ppos.z);
-      }
+    if (!game._deathCamStart) {
+      game._deathCamStart = camera.position.clone();
+      game._deathCamTarget = game.player.mesh.position.clone();
+      var hip = game.player.mesh.getObjectByName('hip');
+      if (hip) hip.visible = true;
+      var vm = camera.getObjectByName('fp_viewmodel');
+      if (vm) vm.visible = false;
     }
 
-    if (game._dyingTimer >= dieLen + zoomLen) {
+    var ppos = game.player.mesh.position;
+    var endPos = new THREE.Vector3(ppos.x, ppos.y + 4.5, ppos.z + 3);
+    var endTarget = new THREE.Vector3(ppos.x, ppos.y + 0.8, ppos.z);
+    camera.position.lerpVectors(game._deathCamStart, endPos, ease);
+    camera.lookAt(endTarget);
+
+    var fp = PluginRegistry.get('fx_firstperson');
+    if (fp && fp.enabled && fp.syncMainCamera) fp.syncMainCamera(camera);
+
+    if (t >= 1) {
+      game._deathCamStart = null;
       game._dying = false;
       game.gameOver();
     }
