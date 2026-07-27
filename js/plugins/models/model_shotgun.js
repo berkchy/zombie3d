@@ -296,7 +296,8 @@ plugin.register({
         { pivot: '__self__', prop: 'position.y', keys: [-0.6, -0.35, -0.08, 0.15, 0.05, 0] },
         { pivot: '__self__', prop: 'position.z', keys: [0.3, 0.25, 0.18, 0.06, 0.02, 0] },
         { pivot: '__self__', prop: 'position.x', keys: [0.06, 0.03, 0.01, 0, 0, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.15, 0.08, -0.02, 0.01, 0] }
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.12, 0.06, -0.01, 0.01, 0] },
+        { pivot: '__self__', prop: 'rotation.z', keys: [-0.5, -0.35, -0.15, -0.05, -0.02, 0] }
       ]
     }
   }

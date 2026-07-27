@@ -47,7 +47,8 @@ plugin.register({
     ]},
     equip: { duration: 1.2, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.y', keys: [-0.5, -0.3, -0.08, 0] },
-      { pivot: '__self__', prop: 'position.z', keys: [0.35, 0.18, 0.04, 0] }
+      { pivot: '__self__', prop: 'position.z', keys: [0.35, 0.18, 0.04, 0] },
+      { pivot: '__self__', prop: 'rotation.z', keys: [-0.3, -0.2, -0.08, 0] }
     ]}
   },
 
