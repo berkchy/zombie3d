@@ -398,13 +398,17 @@ plugin.register({
       this._introCamera = null;
     }
 
-    this.game.camera = this._savedCamera;
-    window.camera = this._savedCamera;
+    if (this._savedCamera) {
+      this.game.camera = this._savedCamera;
+      window.camera = this._savedCamera;
+    }
     this._savedCamera = null;
 
     if (!this.game.started) {
-      this.game.camera.position.set(0, 18, 12);
-      this.game.camera.lookAt(0, 0, 0);
+      if (this.game.camera) {
+        this.game.camera.position.set(0, 18, 12);
+        this.game.camera.lookAt(0, 0, 0);
+      }
     }
 
     if (this.container) {
