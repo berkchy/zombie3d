@@ -279,7 +279,7 @@ plugin.register({
         { pivot: '__self__', prop: 'position.y', keys: [0, 0.03, 0, 0, 0] },
         { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.18, -0.06, -0.01, 0] },
         { pivot: '__self__', prop: 'rotation.z', keys: [0, 0.04, 0.01, 0, 0] },
-        { pivot: 'pump', prop: 'position.z', keys: [0.28, 0.28, 0.12, 0.12, 0.28] }
+        { pivot: 'pump', prop: 'position.z', keys: [0.28, 0.28, 0.28, 0.12, 0.28] }
       ]
     },
     reload: {
