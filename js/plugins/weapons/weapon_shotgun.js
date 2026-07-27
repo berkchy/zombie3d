@@ -32,10 +32,10 @@ plugin.register({
   _restPose: null,
   _armAnims: {
     fire: { duration: 0.9, loop: false, tracks: [
-      { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.02, 0.01, 0] },
-      { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, -0.04, -0.01, 0] },
-      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.08, -0.08, -0.04] },
-      { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.03, 0.08, 0.08, 0.03] }
+      { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.03, 0.01, 0] },
+      { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, -0.05, -0.01, 0] },
+      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.12, -0.12, -0.04] },
+      { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.03, 0.1, 0.1, 0.03] }
     ]},
     reload: { duration: 1.15, loop: true, tracks: [
       { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },
@@ -65,7 +65,7 @@ plugin.register({
     loader.loadScript('model_shotgun', function(){
       var mp = plugin.get('model_shotgun');
       if (mp && mp.animations && mp.animations.reload) {
-        mp.animations.reload.duration = 1.15;
+        mp.animations.reload.duration = 1.3;
       }
     });
     this.game = game;
@@ -80,7 +80,7 @@ plugin.register({
     this._armsRef = null;
     this._restPose = null;
 
-    this._armAnims.reload.duration = 1.15;
+    this._armAnims.reload.duration = 1.3;
 
     plugin.off('game:loaded', this.id + '_sounds');
     plugin.on('game:loaded', this.id + '_sounds', function() {
@@ -286,7 +286,7 @@ plugin.register({
     var self = this;
     setTimeout(function() {
       if (self.game && self.game.sound) self.game.sound.play('shotgun_pump');
-    }, 250);
+    }, 350);
 
     var bs = plugin.get('system_bullet');
     if (bs && bs.enabled) {
@@ -318,15 +318,20 @@ plugin.register({
         this._resetArmsAnimationPose();
         if (this._handShell) this._handShell.visible = false;
         if (this._handShellRim) this._handShellRim.visible = false;
-      }
-      if (this.ammo !== this._lastReloadAmmo) {
-        if (this._lastReloadAmmo !== undefined && this.ammo > this._lastReloadAmmo) {
-          if (this.game && this.game.sound) this.game.sound.play('shotgun_reload');
+      } else {
+        var coreAnim = plugin.get('core_animation');
+        if (coreAnim && coreAnim.playing && this._animArmId) {
+          var st = coreAnim.playing[this._animArmId];
+          if (st) {
+            var dur = this._armAnims.reload.duration;
+            var prevT = st.elapsed >= dt ? (st.elapsed - dt) / dur : (st.elapsed + dur - dt) / dur;
+            var curT = st.elapsed / dur;
+            if (prevT < 0.63 && curT >= 0.63) {
+              if (this.game && this.game.sound) this.game.sound.play('shotgun_reload');
+            }
+          }
         }
-        this._lastReloadAmmo = this.ammo;
       }
-    } else {
-      this._lastReloadAmmo = undefined;
     }
   },
 
