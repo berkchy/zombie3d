@@ -34,9 +34,9 @@ plugin.register({
     fire: { duration: 2.0, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.03, 0.01, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, -0.05, -0.01, 0] },
-      { pivot: 'left_arm', prop: 'position.x', keys: [-0.07, -0.07, -0.07, 0, -0.07], playMs: 800 },
-      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.04, -0.24, -0.04], playMs: 800 },
-      { pivot: 'left_arm', prop: 'position.z', keys: [0.01, 0.01, 0.01, -0.06, 0.01], playMs: 800 }
+      { pivot: 'left_arm', prop: 'position.x', keys: [-0.07, -0.07, 0, 0, -0.07], playMs: 800 },
+      { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.24, -0.24, -0.04], playMs: 800 },
+      { pivot: 'left_arm', prop: 'position.z', keys: [0.01, 0.01, -0.10, 0.05, 0.01], playMs: 800 }
     ]},
     reload: { duration: 1.1, loop: true, tracks: [
       { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },
