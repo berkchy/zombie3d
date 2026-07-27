@@ -28,6 +28,7 @@ plugin.register({
   _animId: null,
   _animArmId: null,
   _idleAnimId: null,
+  _reloadSfxTimer: 0,
   _modelRef: null,
   _armsRef: null,
   _restPose: null,
@@ -81,6 +82,7 @@ plugin.register({
     this._modelRef = null;
     this._armsRef = null;
     this._restPose = null;
+    this._reloadSfxTimer = 0;
 
     this._armAnims.reload.duration = 1.1;
 
@@ -109,6 +111,7 @@ plugin.register({
         if (self._handShell) self._handShell.visible = true;
         if (self._handShellRim) self._handShellRim.visible = true;
         self._reloading = true;
+        self._reloadSfxTimer = 0;
         self._playAnim('reload');
       }
     });
@@ -257,10 +260,9 @@ plugin.register({
   },
 
   shoot(owner) {
-    console.log('shoot called, cooldown:', this.cooldown, 'equip:', this._equipping, 'ammo:', this.ammo);
-    if (this.cooldown > 0) { console.log('block: cooldown'); return; }
-    if (this._equipping) { console.log('block: equipping'); return; }
-    if (this.ammo <= 0) { console.log('block: ammo'); return; }
+    if (this.cooldown > 0) return;
+    if (this._equipping) return;
+    if (this.ammo <= 0) return;
     this.cooldown = this.cooldownTime;
     this.ammo--;
 
@@ -322,17 +324,10 @@ plugin.register({
         if (this._handShell) this._handShell.visible = false;
         if (this._handShellRim) this._handShellRim.visible = false;
       } else {
-        var coreAnim = plugin.get('core_animation');
-        if (coreAnim && coreAnim.playing && this._animArmId) {
-          var st = coreAnim.playing[this._animArmId];
-          if (st) {
-            var dur = this._armAnims.reload.duration;
-            var prevT = st.elapsed >= dt ? (st.elapsed - dt) / dur : (st.elapsed + dur - dt) / dur;
-            var curT = st.elapsed / dur;
-            if (prevT < 0.63 && curT >= 0.63) {
-              if (this.game && this.game.sound) this.game.sound.play('shotgun_reload');
-            }
-          }
+        this._reloadSfxTimer += dt;
+        if (this._reloadSfxTimer >= 0.72) {
+          this._reloadSfxTimer -= 1.1;
+          if (this.game && this.game.sound) this.game.sound.play('shotgun_reload');
         }
       }
     }
