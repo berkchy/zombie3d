@@ -50,12 +50,15 @@ plugin.register({
   _addHole(pos) {
     if (this._decals.length >= this.MAX_DECALS) this._removeOldest();
     var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: this._holeTex, transparent: true, opacity: 0.8, depthTest: true, depthWrite: false
+      map: this._holeTex, transparent: true, opacity: 0.8, depthTest: false, depthWrite: false
     }));
     sprite.position.copy(pos);
-    sprite.position.x += (Math.random() - 0.5) * 0.05;
-    sprite.position.z += (Math.random() - 0.5) * 0.05;
-    sprite.scale.set(0.08, 0.08, 1);
+    // Biraz kameraya dogru cek (mermi collider'in icinde kaliyor)
+    if (game && game.camera) {
+      var dir = new THREE.Vector3().subVectors(game.camera.position, pos).normalize();
+      sprite.position.add(dir.multiplyScalar(0.08));
+    }
+    sprite.scale.set(0.1, 0.1, 1);
     sprite.renderOrder = 2;
     if (game && game.scene) game.scene.add(sprite);
     this._decals.push({ sprite: sprite, life: 25, maxLife: 25 });
