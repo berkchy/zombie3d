@@ -182,6 +182,11 @@ plugin.register({
 
   render(renderer, scene, camera) {
     if (!scene || !camera) return;
+    // Intro/menu'de post-processing yapma
+    if (!window.gameStarted || !window.game) {
+      renderer.render(scene, camera);
+      return;
+    }
     this._scene = scene;
     this._camera = camera;
     this._renderer = renderer;
@@ -194,10 +199,10 @@ plugin.register({
       this._ppCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     }
 
-    // Fog
-    if (cvar.get('gfx_fog') && scene) {
+    // Fog — sadece gameplay'de dokun (intro kendi fog'unu yonetir)
+    if (window.gameStarted && cvar.get('gfx_fog') && scene) {
       scene.fog = new THREE.FogExp2(0x111122, cvar.get('gfx_fog_density') || 0.008);
-    } else if (scene) {
+    } else if (window.gameStarted && scene) {
       scene.fog = null;
     }
 
