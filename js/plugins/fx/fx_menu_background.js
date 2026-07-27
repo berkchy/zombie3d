@@ -19,6 +19,7 @@ plugin.register({
     this._destroyed = false;
     this._skyboxHandled = false;
     this._zombiesSpawned = false;
+    if (!this.game.camera) return;
     this._savedFov = this.game.camera.fov;
 
     this._fixFov();
