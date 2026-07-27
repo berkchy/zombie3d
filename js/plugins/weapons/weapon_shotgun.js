@@ -322,47 +322,52 @@ plugin.register({
     if (!this._modelRef) return;
     var tip = this._modelRef.getObjectByName('barrel_tip');
     if (!tip) return;
-    var scene = this._modelRef.parent;
-    while (scene && scene.parent && scene.parent !== scene) {
-      if (scene.parent && scene.parent.type === 'Scene') break;
-      scene = scene.parent;
-    }
-
     if (!this._flashSprite) {
       var canvas = document.createElement('canvas');
       canvas.width = 64; canvas.height = 64;
       var ctx = canvas.getContext('2d');
       var g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
       g.addColorStop(0, 'rgba(255,255,200,1)');
-      g.addColorStop(0.2, 'rgba(255,200,100,0.9)');
-      g.addColorStop(0.5, 'rgba(255,100,20,0.5)');
-      g.addColorStop(1, 'rgba(255,50,0,0)');
+      g.addColorStop(0.15, 'rgba(255,220,120,0.9)');
+      g.addColorStop(0.4, 'rgba(255,120,30,0.5)');
+      g.addColorStop(1, 'rgba(255,30,0,0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, 64, 64);
       var tex = new THREE.CanvasTexture(canvas);
-      var mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, transparent: true });
+      var mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, transparent: true });
       this._flashSprite = new THREE.Sprite(mat);
-      this._flashSprite.scale.set(0.3, 0.3, 1);
+      this._flashSprite.scale.set(0.6, 0.6, 1);
+      this._flashSprite.renderOrder = 999;
     }
     tip.add(this._flashSprite);
-    this._flashTimer = 0.06;
+    this._flashTimer = 0.05;
   },
 
   _ejectCasing: function(dir) {
     if (!this.game || !this.game.scene) return;
     var mat = new THREE.MeshStandardMaterial({ color: 0xcc8844, metalness: 0.4, roughness: 0.6 });
-    var casing = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.01, 0.025, 6), mat);
+    var casing = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.018, 0.04, 6), mat);
     casing.rotation.x = Math.random() * Math.PI;
-    var pos = this.game.camera ? this.game.camera.position.clone() : this.game.player.mesh.position.clone();
-    pos.y += 0.3;
-    var right = new THREE.Vector3(1, 0, 0);
-    if (this.game.camera) right.applyQuaternion(this.game.camera.quaternion);
-    var up = new THREE.Vector3(0, 1, 0);
-    casing.position.copy(pos).add(right.clone().multiplyScalar(0.15)).add(up.clone().multiplyScalar(-0.1));
-    var fwd = dir.clone();
-    var vel = right.clone().multiplyScalar(1.5 + Math.random() * 0.5).add(up.clone().multiplyScalar(1 + Math.random() * 0.5)).add(fwd.multiplyScalar(0.3));
-    this.game.scene.add(casing);
-    this._casings.push({ mesh: casing, vel: vel, rot: new THREE.Vector3(Math.random() * 10, Math.random() * 10, Math.random() * 10), life: 2.0 });
+    var fp = plugin.get('fx_firstperson');
+    if (fp && fp.enabled && this.game.camera) {
+      var right = new THREE.Vector3(1, 0, 0);
+      right.applyQuaternion(this.game.camera.quaternion);
+      var fwd = new THREE.Vector3(0, 0, -1);
+      fwd.applyQuaternion(this.game.camera.quaternion);
+      casing.position.copy(this.game.camera.position).add(right.clone().multiplyScalar(0.25)).add(fwd.clone().multiplyScalar(0.1));
+      casing.position.y -= 0.05;
+      var vel = right.clone().multiplyScalar(2.5 + Math.random()).add(fwd.clone().multiplyScalar(0.5));
+      vel.y = 1.5 + Math.random() * 0.5;
+      this.game.scene.add(casing);
+      this._casings.push({ mesh: casing, vel: vel, rot: new THREE.Vector3(Math.random() * 15, Math.random() * 15, Math.random() * 15), life: 3.0 });
+    } else {
+      casing.position.copy(this.game.player ? this.game.player.mesh.position : new THREE.Vector3());
+      casing.position.y += 0.5;
+      casing.position.x += 0.2;
+      var vel = new THREE.Vector3(0.5 + Math.random(), 1.5 + Math.random() * 0.5, 0);
+      this.game.scene.add(casing);
+      this._casings.push({ mesh: casing, vel: vel, rot: new THREE.Vector3(Math.random() * 15, Math.random() * 15, Math.random() * 15), life: 3.0 });
+    }
   },
 
   update(dt) {
@@ -392,8 +397,10 @@ plugin.register({
       c.mesh.rotation.z += c.rot.z * dt;
       if (c.mesh.position.y < -0.1) {
         c.mesh.position.y = -0.1;
-        c.vel.multiplyScalar(0.3);
+        c.vel.x *= 0.4; c.vel.z *= 0.4;
+        c.vel.y = Math.abs(c.vel.y) * 0.25;
         c.rot.multiplyScalar(0.5);
+        if (Math.abs(c.vel.y) < 0.2) c.vel.y = 0;
       }
     }
 

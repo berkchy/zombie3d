@@ -24,6 +24,8 @@ plugin.register({
   reloadTime: 1.5,
   _equipping: false,
   _modelRef: null,
+  _flashSprite: null,
+  _flashTimer: 0,
   _animId: null,
   _idleAnimId: null,
   _armsRef: null,
@@ -200,6 +202,8 @@ plugin.register({
       bs.spawn({ position: pos, direction: dir, speed: 500, damage: this.damage, knockback: this.knockback, knockbackDistance: this.knockbackDistance, count: 1, life: 2.0, size: 0.05, spread: this.spreadAngle });
     }
 
+    this._showMuzzleFlash();
+
     plugin.emit('weapon:fire', {
       weapon: this,
       position: pos,
@@ -210,8 +214,39 @@ plugin.register({
     plugin.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.maxAmmo, clip: this.clip, reserve: this.reserve });
   },
 
+  _showMuzzleFlash: function() {
+    if (!this._modelRef) return;
+    var tip = this._modelRef.getObjectByName('barrel_tip');
+    if (!tip) return;
+    if (!this._flashSprite) {
+      var canvas = document.createElement('canvas');
+      canvas.width = 64; canvas.height = 64;
+      var ctx = canvas.getContext('2d');
+      var g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, 'rgba(255,255,200,1)');
+      g.addColorStop(0.15, 'rgba(255,220,120,0.9)');
+      g.addColorStop(0.4, 'rgba(255,120,30,0.5)');
+      g.addColorStop(1, 'rgba(255,30,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 64, 64);
+      var tex = new THREE.CanvasTexture(canvas);
+      var mat = new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, transparent: true });
+      this._flashSprite = new THREE.Sprite(mat);
+      this._flashSprite.scale.set(0.25, 0.25, 1);
+      this._flashSprite.renderOrder = 999;
+    }
+    tip.add(this._flashSprite);
+    this._flashTimer = 0.04;
+  },
+
   update(dt) {
     if (this.cooldown > 0) this.cooldown -= dt;
+    if (this._flashTimer > 0) {
+      this._flashTimer -= dt;
+      if (this._flashTimer <= 0 && this._flashSprite && this._flashSprite.parent) {
+        this._flashSprite.parent.remove(this._flashSprite);
+      }
+    }
   },
 
   addAmmo: function(amount) {
@@ -236,6 +271,11 @@ plugin.register({
     this._animArmId = null;
     this._idleAnimId = null;
     this._restPose = null;
+    if (this._flashSprite) {
+      if (this._flashSprite.parent) this._flashSprite.parent.remove(this._flashSprite);
+      if (this._flashSprite.material) { this._flashSprite.material.dispose(); if (this._flashSprite.material.map) this._flashSprite.material.map.dispose(); }
+      this._flashSprite = null;
+    }
     plugin.off('game:loaded', this.id + '_sounds');
     plugin.off('reload:start', this.id);
     plugin.off('hotbar:select', this.id);
