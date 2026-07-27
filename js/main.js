@@ -806,6 +806,7 @@ function loop(time) {
         camera.quaternion.slerp(new THREE.Quaternion().setFromEuler(
           new THREE.Euler(-Math.PI / 4, 0, 0)
         ), t * 0.5);
+        fp.syncMainCamera(camera);
       }
     } else {
       var total = dieLen + zoomLen;
