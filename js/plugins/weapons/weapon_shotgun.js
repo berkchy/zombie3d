@@ -35,15 +35,21 @@ plugin.register({
       { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.006, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, 0.01, 0] }
     ]},
-    reload: { duration: 1.7, loop: true, tracks: [
+    reload: { duration: 1.48, loop: true, tracks: [
       { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },
       { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.06, -0.12, -0.06, -0.04] },
       { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.05, 0.1, 0.05, 0.03] },
       { pivot: 'left_arm', prop: 'rotation.x', keys: [0.02, 0.04, 0.08, 0.04, 0.02] },
-      { pivot: 'hand_shell', prop: 'position.y', keys: [0, -0.03, -0.08, -0.03, 0] },
-      { pivot: 'hand_shell', prop: 'position.z', keys: [0.03, 0.03, 0.06, 0.03, 0.03] },
-      { pivot: 'hand_shell_rim', prop: 'position.y', keys: [0, -0.03, -0.08, -0.03, 0] },
-      { pivot: 'hand_shell_rim', prop: 'position.z', keys: [0.015, 0.015, 0.04, 0.015, 0.015] }
+      { pivot: 'hand_shell', prop: 'position.y', keys: [0.01, -0.02, -0.09, -0.02, 0.01] },
+      { pivot: 'hand_shell', prop: 'position.z', keys: [0.02, 0.02, 0.05, 0.02, 0.02] },
+      { pivot: 'hand_shell', prop: 'scale.x', keys: [1, 1, 0.01, 0.01, 1] },
+      { pivot: 'hand_shell', prop: 'scale.y', keys: [1, 1, 0.01, 0.01, 1] },
+      { pivot: 'hand_shell', prop: 'scale.z', keys: [1, 1, 0.01, 0.01, 1] },
+      { pivot: 'hand_shell_rim', prop: 'position.y', keys: [0.01, -0.02, -0.09, -0.02, 0.01] },
+      { pivot: 'hand_shell_rim', prop: 'position.z', keys: [0.01, 0.01, 0.03, 0.01, 0.01] },
+      { pivot: 'hand_shell_rim', prop: 'scale.x', keys: [1, 1, 0.01, 0.01, 1] },
+      { pivot: 'hand_shell_rim', prop: 'scale.y', keys: [1, 1, 0.01, 0.01, 1] },
+      { pivot: 'hand_shell_rim', prop: 'scale.z', keys: [1, 1, 0.01, 0.01, 1] }
     ]},
     equip: { duration: 1.2, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.y', keys: [-0.5, -0.3, -0.08, 0] },
@@ -57,7 +63,7 @@ plugin.register({
     loader.loadScript('model_shotgun', function(){
       var mp = plugin.get('model_shotgun');
       if (mp && mp.animations && mp.animations.reload) {
-        mp.animations.reload.duration = 1.7;
+        mp.animations.reload.duration = 1.48;
       }
     });
     this.game = game;
@@ -72,7 +78,7 @@ plugin.register({
     this._armsRef = null;
     this._restPose = null;
 
-    this._armAnims.reload.duration = 1.7;
+    this._armAnims.reload.duration = 1.48;
 
     plugin.off('game:loaded', this.id + '_sounds');
     plugin.on('game:loaded', this.id + '_sounds', function() {
@@ -152,13 +158,13 @@ plugin.register({
       var handMat = new THREE.MeshStandardMaterial({ color: 0xcc3333, roughness: 0.3 });
       var shell = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.022, 0.075, 10), handMat);
       shell.rotation.x = Math.PI / 2;
-      shell.position.set(0, -0.005, 0.015);
+      shell.position.set(0, 0.01, 0.015);
       shell.name = 'hand_shell';
       shell.visible = false;
       wrists[1].add(shell);
       var rim = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.02, 0.008, 10), new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.4 }));
       rim.rotation.x = Math.PI / 2;
-      rim.position.set(0, -0.005, 0.0);
+      rim.position.set(0, 0.01, 0.0);
       rim.name = 'hand_shell_rim';
       rim.visible = false;
       wrists[1].add(rim);
