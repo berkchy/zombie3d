@@ -291,17 +291,17 @@ plugin.register({
       ]
     },
     reload: {
-      duration: 1.4,
-      loop: false,
+      duration: 0.5,
+      loop: true,
       tracks: [
-        { pivot: '__self__', prop: 'position.y', keys: [0, -0.04, -0.06, -0.06, -0.02, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.05, 0.1, 0.08, 0.02, 0] },
-        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.18, -0.22, -0.18, -0.06, 0] },
-        { pivot: 'reload_shell', prop: 'position.x', keys: [-0.06, -0.06, -0.03, 0, 0] },
-        { pivot: 'reload_shell', prop: 'position.y', keys: [-0.12, -0.12, -0.07, -0.035, -0.035] },
-        { pivot: 'reload_shell', prop: 'position.z', keys: [0.02, 0.02, 0.06, 0.1, 0.1] },
-        { pivot: 'shell', prop: 'position.y', keys: [-0.035, -0.035, -0.035, -0.035, -0.03, -0.035] },
-        { pivot: 'shell', prop: 'position.z', keys: [0.1, 0.1, 0.1, 0.1, 0.08, 0.1] }
+        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.25, -0.25, -0.25, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.02, 0.02, 0.02, 0] },
+        { pivot: 'reload_shell', prop: 'position.y', keys: [-0.12, -0.08, -0.035, -0.035, -0.12] },
+        { pivot: 'reload_shell', prop: 'position.z', keys: [0.02, 0.06, 0.1, 0.1, 0.02] },
+        { pivot: 'reload_shell', prop: 'position.x', keys: [-0.06, -0.03, 0, 0, -0.06] },
+        { pivot: 'reload_shell', prop: 'scale.x', keys: [1, 1, 0.3, 0.3, 1] },
+        { pivot: 'reload_shell', prop: 'scale.y', keys: [1, 1, 0.3, 0.3, 1] },
+        { pivot: 'reload_shell', prop: 'scale.z', keys: [1, 1, 0.1, 0.1, 1] }
       ]
     },
     equip: {

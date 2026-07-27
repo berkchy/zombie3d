@@ -35,9 +35,10 @@ plugin.register({
       { pivot: '__self__', prop: 'position.z', keys: [0, 0.03, 0.006, 0] },
       { pivot: '__self__', prop: 'rotation.x', keys: [0, -0.08, 0.01, 0] }
     ]},
-    reload: { duration: 1.8, loop: false, tracks: [
-      { pivot: '__self__', prop: 'position.y', keys: [0, -0.03, -0.06, -0.04, 0] },
-      { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.04, 0.08, 0.04, 0] }
+    reload: { duration: 0.5, loop: true, tracks: [
+      { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.02, 0.04, 0.02, 0] },
+      { pivot: 'left_elbow', prop: 'rotation.x', keys: [0, 0.06, 0.12, 0.06, 0] },
+      { pivot: 'left_wrist', prop: 'rotation.y', keys: [0, 0.04, 0.08, 0.04, 0] }
     ]},
     equip: { duration: 1.2, loop: false, tracks: [
       { pivot: '__self__', prop: 'position.y', keys: [-0.5, -0.3, -0.08, 0] },
@@ -78,7 +79,8 @@ plugin.register({
       if (!self._modelRef) return;
       if (data && data.weapon && data.weapon.id === self.id) {
         var shell = self._modelRef.getObjectByName('reload_shell');
-        if (shell) shell.visible = true;
+        if (shell) { shell.visible = true; shell.scale.set(1, 1, 1); }
+        self._reloading = true;
         self._playAnim('reload');
         if (game.sound) game.sound.play('shotgun_reload');
       }
@@ -235,6 +237,21 @@ plugin.register({
 
   update(dt) {
     if (this.cooldown > 0) this.cooldown -= dt;
+    if (this._reloading) {
+      var sys = plugin.get('system_reload');
+      if (!sys || !sys._reloading || sys._wp !== this) {
+        this._reloading = false;
+        var a = plugin.get('core_animation');
+        if (this._animId && a && a.stop) a.stop(this._animId);
+        if (this._animArmId && a && a.stop) a.stop(this._animArmId);
+        this._animId = null;
+        this._animArmId = null;
+        this._resetToRestPose();
+        this._resetArmsAnimationPose();
+        var shell = this._modelRef && this._modelRef.getObjectByName('reload_shell');
+        if (shell) shell.visible = false;
+      }
+    }
   },
 
   addAmmo: function(amount) {
