@@ -10,13 +10,17 @@ plugin.register({
 
   _decals: [],
   _holeTex: null,
-  _bloodTex: null,
+  _poolTex: null,
   MAX_DECALS: 80,
 
   init() {
     this._decals = [];
     this._holeTex = this._makeHoleTex();
     this._poolTex = this._makePoolTex();
+
+    this._holeMat = new THREE.SpriteMaterial({
+      map: this._holeTex, transparent: true, opacity: 1, depthTest: false, depthWrite: false
+    });
 
     var self = this;
 
@@ -34,48 +38,42 @@ plugin.register({
 
   _makeHoleTex() {
     var c = document.createElement('canvas');
-    c.width = 64; c.height = 64;
+    c.width = 32; c.height = 32;
     var ctx = c.getContext('2d');
 
-    // Temizle
-    ctx.clearRect(0, 0, 64, 64);
+    ctx.clearRect(0, 0, 32, 32);
 
-    // Koyu lekelenme (sicaklik yanigi)
-    var burn = ctx.createRadialGradient(32, 32, 0, 32, 32, 16);
-    burn.addColorStop(0, 'rgba(10,10,10,0.9)');
-    burn.addColorStop(0.4, 'rgba(30,25,20,0.7)');
-    burn.addColorStop(0.7, 'rgba(50,40,30,0.3)');
-    burn.addColorStop(1, 'rgba(60,50,40,0)');
-    ctx.fillStyle = burn;
-    ctx.fillRect(0, 0, 64, 64);
-
-    // Delik
-    ctx.save();
+    // Sadece opak koyu benek + delik
+    // Dis halka (yanik)
     ctx.beginPath();
-    ctx.ellipse(32, 32, 3 + Math.random() * 1.5, 2 + Math.random() * 1.5, Math.random() * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.arc(16, 16, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(10,8,5,1)';
     ctx.fill();
 
-    // Delik etrafinda yirtik/catlak
-    ctx.strokeStyle = 'rgba(15,15,15,0.7)';
+    // Ic halka (koyu gri)
+    ctx.beginPath();
+    ctx.arc(16, 16, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(30,25,20,1)';
+    ctx.fill();
+
+    // Merkezde delik (saydam)
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(16, 16, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // Catlaklar
+    ctx.strokeStyle = 'rgba(5,5,5,0.6)';
     ctx.lineWidth = 0.5;
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < 4; i++) {
       var a = Math.random() * Math.PI * 2;
-      var len = 4 + Math.random() * 10;
+      var len = 2 + Math.random() * 3;
       ctx.beginPath();
-      ctx.moveTo(32, 32);
-      ctx.lineTo(32 + Math.cos(a) * len, 32 + Math.sin(a) * len);
+      ctx.moveTo(16, 16);
+      ctx.lineTo(16 + Math.cos(a) * len, 16 + Math.sin(a) * len);
       ctx.stroke();
     }
-
-    // Kenarlarda hafif aydinlanma (isik)
-    var light = ctx.createRadialGradient(28, 28, 0, 32, 32, 20);
-    light.addColorStop(0, 'rgba(80,75,65,0)');
-    light.addColorStop(1, 'rgba(80,75,65,0.15)');
-    ctx.fillStyle = light;
-    ctx.fillRect(0, 0, 64, 64);
-
-    ctx.restore();
 
     var tex = new THREE.CanvasTexture(c);
     tex.needsUpdate = true;
@@ -102,16 +100,14 @@ plugin.register({
 
   _addHole(pos) {
     if (this._decals.length >= this.MAX_DECALS) this._removeOldest();
-    var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: this._holeTex, transparent: true, opacity: 0.8, depthTest: false, depthWrite: false
-    }));
+    var sprite = new THREE.Sprite(this._holeMat.clone());
     sprite.position.copy(pos);
     // Biraz kameraya dogru cek (mermi collider'in icinde kaliyor)
     if (game && game.camera) {
       var dir = new THREE.Vector3().subVectors(game.camera.position, pos).normalize();
       sprite.position.add(dir.multiplyScalar(0.08));
     }
-    sprite.scale.set(0.1, 0.1, 1);
+    sprite.scale.set(0.06, 0.06, 1);
     sprite.renderOrder = 2;
     if (game && game.scene) game.scene.add(sprite);
     this._decals.push({ sprite: sprite, life: 25, maxLife: 25 });
