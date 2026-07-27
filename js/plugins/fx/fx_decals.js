@@ -23,7 +23,7 @@ plugin.register({
     plugin.on('bullet:impact', this.id, function(data) {
       if (!data || !data.position) return;
       if (data.type === 'wall') self._addHole(data.position);
-      else self._addBlood(data.position);
+      // flesh impact'te decal ekleme — zombie hareket eder, havada kalir
     });
 
     plugin.on('zombie:die', this.id, function(pos) {
@@ -59,19 +59,6 @@ plugin.register({
     sprite.renderOrder = 2;
     if (game && game.scene) game.scene.add(sprite);
     this._decals.push({ sprite: sprite, life: 25, maxLife: 25 });
-  },
-
-  _addBlood(pos) {
-    if (this._decals.length >= this.MAX_DECALS) this._removeOldest();
-    var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: this._bloodTex, transparent: true, opacity: 0.7, depthTest: true, depthWrite: false
-    }));
-    sprite.position.copy(pos);
-    sprite.position.y += 0.02;
-    sprite.scale.set(0.12, 0.12, 1);
-    sprite.renderOrder = 2;
-    if (game && game.scene) game.scene.add(sprite);
-    this._decals.push({ sprite: sprite, life: 20, maxLife: 20 });
   },
 
   _addPool(pos) {
