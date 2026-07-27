@@ -52,17 +52,17 @@ plugin.register({
     var self = this;
 
     // Cvarlar
-    cvar.register('gfx_bloom', 1, 'Bloom efekti ac/kapa');
-    cvar.register('gfx_bloom_intensity', 0.8, 'Bloom siddeti (0.0-2.0)');
-    cvar.register('gfx_bloom_threshold', 0.2, 'Bloom esik degeri');
-    cvar.register('gfx_vignette', 1, 'Vignette (kenar kararmasi)');
-    cvar.register('gfx_vignette_amount', 0.35, 'Vignette miktari');
-    cvar.register('gfx_saturation', 1.0, 'Renk doygunlugu');
-    cvar.register('gfx_contrast', 1.0, 'Kontrast');
-    cvar.register('gfx_fog', 1, 'Sis efekti');
-    cvar.register('gfx_fog_density', 0.008, 'Sis yogunlugu');
-    cvar.register('gfx_shadows', 0, 'Golge kalitesi 0=off 1=low 2=high');
-    cvar.register('gfx_quality', 'medium', 'Grafik kalitesi low/medium/ultra');
+    cvar.register('gfx_bloom', 1, 'number', 'Bloom efekti ac/kapa');
+    cvar.register('gfx_bloom_intensity', 0.8, 'number', 'Bloom siddeti (0.0-2.0)');
+    cvar.register('gfx_bloom_threshold', 0.2, 'number', 'Bloom esik degeri');
+    cvar.register('gfx_vignette', 1, 'number', 'Vignette (kenar kararmasi)');
+    cvar.register('gfx_vignette_amount', 0.35, 'number', 'Vignette miktari');
+    cvar.register('gfx_saturation', 1.0, 'number', 'Renk doygunlugu');
+    cvar.register('gfx_contrast', 1.0, 'number', 'Kontrast');
+    cvar.register('gfx_fog', 1, 'number', 'Sis efekti');
+    cvar.register('gfx_fog_density', 0.008, 'number', 'Sis yogunlugu');
+    cvar.register('gfx_shadows', 0, 'number', 'Golge kalitesi 0=off 1=low 2=high');
+    cvar.register('gfx_quality', 'medium', 'string', 'Grafik kalitesi low/medium/ultra');
 
     this.active = true;
 
@@ -182,8 +182,10 @@ plugin.register({
 
   render(renderer, scene, camera) {
     if (!scene || !camera) return;
-    // Intro/menu'de post-processing yapma
-    if (!window.gameStarted || !window.game) {
+    // game baslamadiysa normal render
+    var g = window.game || game;
+    var gs = window.gameStarted || (typeof gameStarted !== 'undefined' ? gameStarted : false);
+    if (!gs) {
       renderer.render(scene, camera);
       return;
     }
