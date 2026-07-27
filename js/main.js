@@ -824,7 +824,13 @@ function loop(time) {
     try { game.sound.updateListener(camera); } catch(e) {}
   }
 
-  renderer.render(scene, camera);
+  // Post-processing motoru (varsa render'i intercept eder)
+  var gfx = PluginRegistry.get('gfx_postprocessing');
+  if (gfx && gfx.enabled && gfx.active) {
+    gfx.render(renderer, scene, camera);
+  } else {
+    renderer.render(scene, camera);
+  }
 
   // View model overlay pass — ayri sahne, depth temizlenip uste bindirilir
   var fp = PluginRegistry.get('fx_firstperson');
