@@ -37,7 +37,7 @@ plugin.register({
       { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.04, -0.12, -0.12, -0.04] },
       { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.03, 0.1, 0.1, 0.03] }
     ]},
-    reload: { duration: 1.15, loop: true, tracks: [
+    reload: { duration: 1.1, loop: true, tracks: [
       { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.02, -0.03, -0.02, 0] },
       { pivot: 'left_arm', prop: 'position.y', keys: [-0.04, -0.1, -0.2, -0.08, -0.04] },
       { pivot: 'left_arm', prop: 'position.z', keys: [0.03, 0.06, 0.12, 0.05, 0.03] },
@@ -65,7 +65,7 @@ plugin.register({
     loader.loadScript('model_shotgun', function(){
       var mp = plugin.get('model_shotgun');
       if (mp && mp.animations && mp.animations.reload) {
-        mp.animations.reload.duration = 1.3;
+        mp.animations.reload.duration = 1.1;
       }
     });
     this.game = game;
@@ -80,7 +80,7 @@ plugin.register({
     this._armsRef = null;
     this._restPose = null;
 
-    this._armAnims.reload.duration = 1.3;
+    this._armAnims.reload.duration = 1.1;
 
     plugin.off('game:loaded', this.id + '_sounds');
     plugin.on('game:loaded', this.id + '_sounds', function() {

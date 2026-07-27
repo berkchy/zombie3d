@@ -283,7 +283,7 @@ plugin.register({
       ]
     },
     reload: {
-      duration: 1.3,
+      duration: 1.1,
       loop: true,
       tracks: [
         { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.2, -0.22, -0.2, 0] }
