@@ -272,7 +272,7 @@ plugin.register({
       ]
     },
     fire: {
-      duration: 1.2,
+      duration: 2.0,
       loop: false,
       tracks: [
         { pivot: '__self__', prop: 'position.z', keys: [0, 0.06, 0.03, 0.01, 0] },
