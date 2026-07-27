@@ -4,15 +4,17 @@ plugin.register({
   id: 'fx_impact_sparks',
   name: 'Kıvılcım',
   type: 'graphics',
-  version: '2.0',
-  description: 'Mermi duvara carparsa kivilcim (yavas smooth)',
+  version: '3.0',
+  description: 'Duvara carpan mermiden kivilcim + isik sacmasi',
   priority: 11,
 
   _particles: [],
+  _lights: [],
   _tex: null,
 
   init() {
     this._particles = [];
+    this._lights = [];
     this._tex = this._makeTex();
 
     var self = this;
@@ -27,9 +29,10 @@ plugin.register({
     c.width = 32; c.height = 32;
     var ctx = c.getContext('2d');
     var g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-    g.addColorStop(0, 'rgba(255,255,220,1)');
-    g.addColorStop(0.2, 'rgba(255,220,100,0.9)');
-    g.addColorStop(0.5, 'rgba(255,160,40,0.5)');
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.1, 'rgba(255,240,180,0.9)');
+    g.addColorStop(0.3, 'rgba(255,200,80,0.6)');
+    g.addColorStop(0.6, 'rgba(255,140,30,0.2)');
     g.addColorStop(1, 'rgba(180,80,0,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 32, 32);
@@ -40,6 +43,17 @@ plugin.register({
 
   _spark(pos) {
     if (!game || !game.scene) return;
+
+    // PointLight at impact
+    var light = new THREE.PointLight(0xffaa44, 1.5, 2);
+    light.position.copy(pos);
+    game.scene.add(light);
+    this._lights.push({
+      light: light,
+      life: 0.15,
+      maxLife: 0.15
+    });
+
     for (var i = 0; i < 8; i++) {
       var angle = Math.random() * Math.PI * 2;
       var speed = 1.5 + Math.random() * 2.5;
@@ -54,9 +68,9 @@ plugin.register({
         blending: THREE.AdditiveBlending
       }));
       sprite.position.copy(pos);
-      sprite.position.x += (Math.random() - 0.5) * 0.08;
-      sprite.position.z += (Math.random() - 0.5) * 0.08;
-      sprite.scale.set(0.04, 0.04, 1);
+      sprite.position.x += (Math.random() - 0.5) * 0.06;
+      sprite.position.z += (Math.random() - 0.5) * 0.06;
+      sprite.scale.set(0.05, 0.05, 1);
       sprite.renderOrder = 997;
       game.scene.add(sprite);
 
@@ -72,8 +86,19 @@ plugin.register({
   },
 
   update(dt) {
-    if (!game || !game.scene || !this._particles.length) return;
+    if (!game || !game.scene) return;
     var scene = game.scene;
+
+    for (var i = this._lights.length - 1; i >= 0; i--) {
+      var l = this._lights[i];
+      l.life -= dt;
+      l.light.intensity = (l.life / l.maxLife) * 1.5;
+      if (l.life <= 0) {
+        scene.remove(l.light);
+        this._lights.splice(i, 1);
+      }
+    }
+
     for (var i = this._particles.length - 1; i >= 0; i--) {
       var p = this._particles[i];
       p.life -= dt;
@@ -90,16 +115,20 @@ plugin.register({
       p.sprite.position.z += p.vz * dt;
       if (p.sprite.position.y < 0) p.sprite.position.y = 0;
       p.sprite.material.opacity = t * t;
-      var sc = 0.04 * (0.3 + t * 0.7);
+      var sc = 0.05 * (0.3 + t * 0.7);
       p.sprite.scale.set(sc, sc, 1);
     }
   },
 
   destroy() {
     var scene = game ? game.scene : null;
+    for (var i = 0; i < this._lights.length; i++) {
+      if (this._lights[i].light && scene) scene.remove(this._lights[i].light);
+    }
     for (var i = 0; i < this._particles.length; i++) {
       if (this._particles[i].sprite && scene) scene.remove(this._particles[i].sprite);
     }
+    this._lights = [];
     this._particles = [];
     if (this._tex) this._tex.dispose();
     plugin.off('bullet:impact', this.id);
