@@ -310,7 +310,7 @@ plugin.register({
       if (kbSys && kbSys.enabled) {
         var kbDir = (extra && extra.direction) ? extra.direction.clone().normalize() : new THREE.Vector3().copy(z.mesh.position).sub(bulletPos).normalize();
         var kbOrigin = (extra && extra.origin) || bulletPos;
-        kbSys.applyAt(z.mesh, kbOrigin, kbVal, kbDir, 70, kbDist);
+        kbSys.applyAt(z.mesh, kbOrigin, kbVal, kbDir, 70, kbDist, hitType);
       }
     }
 

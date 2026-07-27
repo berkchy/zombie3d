@@ -307,7 +307,7 @@ plugin.register({
       if (kbSys && kbSys.enabled) {
         var kbDir = (extra && extra.direction) ? extra.direction.clone().normalize() : new THREE.Vector3().copy(boss.mesh.position).sub(bulletPos).normalize();
         var kbOrigin = (extra && extra.origin) || bulletPos;
-        kbSys.applyAt(boss.mesh, kbOrigin, kbVal, kbDir, 200, kbDist);
+        kbSys.applyAt(boss.mesh, kbOrigin, kbVal, kbDir, 200, kbDist, hitType);
       }
     }
     if (this.game && this.game.sound) this.game.sound.playAt('boss_pain', boss.mesh.position);

@@ -13,7 +13,15 @@ plugin.register({
 
   init() {},
 
-  applyAt(entityMesh, origin, knockbackForce, direction, weight, maxDistance) {
+  knockbackMultipliers: {
+    head: 2.0,
+    chest: 1.0,
+    arm: 0.6,
+    leg: 0.5,
+    foot: 0.3
+  },
+
+  applyAt(entityMesh, origin, knockbackForce, direction, weight, maxDistance, hitType) {
     if (!entityMesh || !origin || !knockbackForce) return;
 
     weight = weight || this._getWeight(entityMesh);
@@ -23,7 +31,8 @@ plugin.register({
 
     var falloff = 1 - (dist / maxDistance);
     falloff = Math.max(falloff, 0.05);
-    var force = (knockbackForce || 50) / (weight || 70) * falloff;
+    var bodyMult = this.knockbackMultipliers[hitType] || 1.0;
+    var force = (knockbackForce || 50) / (weight || 70) * falloff * bodyMult;
 
     var dir = direction ? direction.clone() : new THREE.Vector3().copy(entityMesh.position).sub(origin).normalize();
     dir.y = 0.6;
