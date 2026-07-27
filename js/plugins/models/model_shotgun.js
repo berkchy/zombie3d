@@ -194,6 +194,20 @@ plugin.register({
     rim.name = 'shell_rim';
     group.add(rim);
 
+    // Reload shell — bu fişek reload animasyonunda elden hazneye gider
+    var reloadShell = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.007, 0.035, 8), shellMat);
+    reloadShell.rotation.x = Math.PI / 2;
+    reloadShell.position.set(-0.06, -0.12, 0.02);
+    reloadShell.name = 'reload_shell';
+    reloadShell.visible = false;
+    group.add(reloadShell);
+
+    // Gear/pouch reference (shell'in geldiği yer)
+    var pouchRef = new THREE.Object3D();
+    pouchRef.position.set(-0.06, -0.12, 0.02);
+    pouchRef.name = 'pouch_ref';
+    group.add(pouchRef);
+
     // === PICATINNY RAIL (top) ===
     for (var ri = 0; ri < 6; ri++) {
       var rSeg = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.004, 0.012), railMat);
@@ -277,14 +291,17 @@ plugin.register({
       ]
     },
     reload: {
-      duration: 1.8,
+      duration: 1.4,
       loop: false,
       tracks: [
-        { pivot: '__self__', prop: 'position.y', keys: [0, -0.05, -0.08, -0.08, -0.02, 0] },
-        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.06, 0.12, 0.1, 0.03, 0] },
-        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.2, -0.25, -0.22, -0.1, 0] },
-        { pivot: 'shell', prop: 'position.z', keys: [0.1, 0.1, 0.06, 0.1, 0.1, 0.1] },
-        { pivot: 'shell', prop: 'position.y', keys: [-0.035, -0.035, 0.0, -0.035, -0.035, -0.035] }
+        { pivot: '__self__', prop: 'position.y', keys: [0, -0.04, -0.06, -0.06, -0.02, 0] },
+        { pivot: '__self__', prop: 'rotation.x', keys: [0, 0.05, 0.1, 0.08, 0.02, 0] },
+        { pivot: '__self__', prop: 'rotation.z', keys: [0, -0.18, -0.22, -0.18, -0.06, 0] },
+        { pivot: 'reload_shell', prop: 'position.x', keys: [-0.06, -0.06, -0.03, 0, 0] },
+        { pivot: 'reload_shell', prop: 'position.y', keys: [-0.12, -0.12, -0.07, -0.035, -0.035] },
+        { pivot: 'reload_shell', prop: 'position.z', keys: [0.02, 0.02, 0.06, 0.1, 0.1] },
+        { pivot: 'shell', prop: 'position.y', keys: [-0.035, -0.035, -0.035, -0.035, -0.03, -0.035] },
+        { pivot: 'shell', prop: 'position.z', keys: [0.1, 0.1, 0.1, 0.1, 0.08, 0.1] }
       ]
     },
     equip: {

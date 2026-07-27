@@ -77,6 +77,8 @@ plugin.register({
     plugin.on('reload:start', this.id, function(data) {
       if (!self._modelRef) return;
       if (data && data.weapon && data.weapon.id === self.id) {
+        var shell = self._modelRef.getObjectByName('reload_shell');
+        if (shell) shell.visible = true;
         self._playAnim('reload');
         if (game.sound) game.sound.play('shotgun_reload');
       }
@@ -160,6 +162,8 @@ plugin.register({
         var defCb = Object.assign({}, def, {
           onComplete: function() {
             self._resetToRestPose();
+            var shell = self._modelRef && self._modelRef.getObjectByName('reload_shell');
+            if (shell) shell.visible = false;
             if (name === 'equip') self._equipping = false;
             if (name !== 'idle') self._startIdle();
           }
