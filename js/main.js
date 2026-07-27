@@ -317,9 +317,10 @@ function init() {
 
         shoot: function(owner) {
           var rl = PluginRegistry.get('system_reload');
-          if (rl && rl._reloading) return;
+          if (rl && rl._reloading) { console.log('game.shoot blocked: reloading'); return; }
           if (game.hotbar) {
             var sel = game.hotbar.getSelected();
+            console.log('game.shoot sel:', sel ? sel.slot.id : null);
             if (sel && sel.slot && sel.slot.id) {
               var weapons = PluginRegistry.getByType('weapon');
               for (var i = 0; i < weapons.length; i++) {

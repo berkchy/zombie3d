@@ -257,9 +257,10 @@ plugin.register({
   },
 
   shoot(owner) {
-    if (this.cooldown > 0) return;
-    if (this._equipping) return;
-    if (this.ammo <= 0) return;
+    console.log('shoot called, cooldown:', this.cooldown, 'equip:', this._equipping, 'ammo:', this.ammo);
+    if (this.cooldown > 0) { console.log('block: cooldown'); return; }
+    if (this._equipping) { console.log('block: equipping'); return; }
+    if (this.ammo <= 0) { console.log('block: ammo'); return; }
     this.cooldown = this.cooldownTime;
     this.ammo--;
 
