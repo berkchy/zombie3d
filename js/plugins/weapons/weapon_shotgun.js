@@ -28,9 +28,7 @@ plugin.register({
   _animId: null,
   _animArmId: null,
   _idleAnimId: null,
-  _reloadSfxTimer: 0,
-  _reloadSfxFired: false,
-  _lastReloadTime: 0,
+  _lastReloadAmmo: 0,
   _modelRef: null,
   _armsRef: null,
   _restPose: null,
@@ -84,9 +82,7 @@ plugin.register({
     this._modelRef = null;
     this._armsRef = null;
     this._restPose = null;
-    this._reloadSfxTimer = 0;
-    this._reloadSfxFired = false;
-    this._lastReloadTime = 0;
+    this._lastReloadAmmo = 0;
 
     this._armAnims.reload.duration = 1.1;
 
@@ -115,9 +111,7 @@ plugin.register({
         if (self._handShell) self._handShell.visible = true;
         if (self._handShellRim) self._handShellRim.visible = true;
         self._reloading = true;
-        self._reloadSfxTimer = 0;
-        self._reloadSfxFired = false;
-        self._lastReloadTime = 0;
+        self._lastReloadAmmo = self.ammo;
         self._playAnim('reload');
       }
     });
@@ -330,15 +324,10 @@ plugin.register({
         if (this._handShell) this._handShell.visible = false;
         if (this._handShellRim) this._handShellRim.visible = false;
       } else {
-        this._reloadSfxTimer = (this._reloadSfxTimer + dt) % 1.1;
-        if (this._lastReloadTime !== undefined && this._lastReloadTime > this._reloadSfxTimer) {
-          this._reloadSfxFired = false;
-        }
-        if (this._reloadSfxTimer >= 0.72 && !this._reloadSfxFired) {
-          this._reloadSfxFired = true;
+        if (this.ammo !== this._lastReloadAmmo) {
+          this._lastReloadAmmo = this.ammo;
           if (this.game && this.game.sound) this.game.sound.play('shotgun_reload');
         }
-        this._lastReloadTime = this._reloadSfxTimer;
       }
     }
   },
