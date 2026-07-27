@@ -14,6 +14,7 @@ plugin.register({
   cooldownTime: 0.25,
   damage: 25,
   knockback: 25,
+  knockbackDistance: 5,
   shake: 0.045,
   clip: 15,
   ammo: 15,
@@ -195,7 +196,7 @@ plugin.register({
 
     var bs = plugin.get('system_bullet');
     if (bs && bs.enabled) {
-      bs.spawn({ position: pos, direction: dir, speed: 500, damage: this.damage, knockback: this.knockback, count: 1, life: 2.0, size: 0.05, spread: 0.02 });
+      bs.spawn({ position: pos, direction: dir, speed: 500, damage: this.damage, knockback: this.knockback, knockbackDistance: this.knockbackDistance, count: 1, life: 2.0, size: 0.05, spread: 0.02 });
     }
 
     plugin.emit('weapon:fire', {

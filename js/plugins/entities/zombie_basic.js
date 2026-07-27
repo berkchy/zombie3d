@@ -304,11 +304,12 @@ plugin.register({
     });
 
     var kbVal = (extra && extra.knockback) || 0;
+    var kbDist = (extra && extra.knockbackDistance) || 10;
     if (kbVal > 0) {
       var kbSys = plugin.get('entity_knockback');
       if (kbSys && kbSys.enabled) {
         var kbDir = (extra && extra.direction) ? extra.direction.clone().normalize() : new THREE.Vector3().copy(z.mesh.position).sub(bulletPos).normalize();
-        kbSys.applyAt(z.mesh, bulletPos, kbVal, kbDir, 70);
+        kbSys.applyAt(z.mesh, bulletPos, kbVal, kbDir, 70, kbDist);
       }
     }
 

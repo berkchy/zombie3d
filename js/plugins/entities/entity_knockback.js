@@ -13,14 +13,16 @@ plugin.register({
 
   init() {},
 
-  applyAt(entityMesh, origin, knockbackForce, direction, weight) {
+  applyAt(entityMesh, origin, knockbackForce, direction, weight, maxDistance) {
     if (!entityMesh || !origin || !knockbackForce) return;
 
     weight = weight || this._getWeight(entityMesh);
+    maxDistance = maxDistance || this.maxDistance;
     var dist = entityMesh.position.distanceTo(origin);
-    if (dist > this.maxDistance) return;
+    if (dist > maxDistance) return;
 
-    var falloff = 1 - (dist / this.maxDistance);
+    var falloff = 1 - (dist / maxDistance);
+    falloff = Math.max(falloff, 0.05);
     var force = (knockbackForce || 50) / (weight || 70) * falloff;
 
     var dir = direction ? direction.clone() : new THREE.Vector3().copy(entityMesh.position).sub(origin).normalize();

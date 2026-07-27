@@ -61,6 +61,7 @@ plugin.register({
         speed: config.speed || 500,
         damage: config.damage || 25,
         knockback: config.knockback || 0,
+        knockbackDistance: config.knockbackDistance || 10,
         life: config.life || 2.0,
         size: config.size || 0.05
       });
@@ -103,7 +104,7 @@ plugin.register({
         }
 
         for (var e = 0; e < enemies.length; e++) {
-          if (enemies[e].enabled && typeof enemies[e].hitTest === 'function' && enemies[e].hitTest(b.pos, b.size, b.damage, { knockback: b.knockback || 0, direction: b.dir })) {
+          if (enemies[e].enabled && typeof enemies[e].hitTest === 'function' && enemies[e].hitTest(b.pos, b.size, b.damage, { knockback: b.knockback || 0, knockbackDistance: b.knockbackDistance || 10, direction: b.dir })) {
             if (enemies[e].id !== 'zombie_boss') {
               plugin.emit('bullet:hit', { position: b.pos.clone() });
             }

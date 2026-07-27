@@ -11,10 +11,11 @@ plugin.register({
   description: 'Pompali tufek — 6 sacma atar, yavas ates eder, animasyonlu',
 
   cooldown: 0,
-  cooldownTime: 2.0,
+  cooldownTime: 0.9,
   pelletsPerShot: 6,
   pelletDamage: 10,
   knockback: 400,
+  knockbackDistance: 8,
   shake: 0.12,
   spreadAngle: 0.07,
   clip: 6,
@@ -291,7 +292,7 @@ plugin.register({
 
     var bs = plugin.get('system_bullet');
     if (bs && bs.enabled) {
-      bs.spawn({ position: pos, direction: dir, speed: 500, damage: this.pelletDamage, knockback: this.knockback, count: this.pelletsPerShot, spread: this.spreadAngle, life: 1.5, size: 0.05 });
+      bs.spawn({ position: pos, direction: dir, speed: 500, damage: this.pelletDamage, knockback: this.knockback, knockbackDistance: this.knockbackDistance, count: this.pelletsPerShot, spread: this.spreadAngle, life: 1.5, size: 0.05 });
     }
 
     plugin.emit('weapon:fire', {

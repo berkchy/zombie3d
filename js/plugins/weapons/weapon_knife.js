@@ -15,6 +15,7 @@ plugin.register({
   range: 2.2,
   damage: 60,
   knockback: 60,
+  knockbackDistance: 3,
   shake: 0,
   arcAngle: 1.2,
   _equipping: false,
@@ -264,7 +265,7 @@ plugin.register({
     var kbSys = plugin.get('entity_knockback');
     if (kbSys && kbSys.enabled) {
       var kbDir = new THREE.Vector3().copy(enemy.mesh.position).sub(origin).normalize();
-      kbSys.applyAt(enemy.mesh, origin, this.knockback, kbDir, 70);
+      kbSys.applyAt(enemy.mesh, origin, this.knockback, kbDir, 70, this.knockbackDistance);
     }
 
     if (enemy.hp <= 0 && !enemy.dying) {
