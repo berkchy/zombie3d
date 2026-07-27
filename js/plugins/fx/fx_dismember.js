@@ -141,18 +141,18 @@ plugin.register({
 
       game.scene.add(detached);
 
-      // Physics
+      // Physics — daha yavas, az sekme
       var angle = Math.random() * Math.PI * 2;
-      var speed = 2 + Math.random() * 4;
+      var speed = 1 + Math.random() * 1.5;
       this._parts.push({
         group: detached,
         vx: Math.cos(angle) * speed,
-        vy: 2 + Math.random() * 4,
+        vy: 1 + Math.random() * 2,
         vz: Math.sin(angle) * speed,
         rotSpeed: {
-          x: (Math.random() - 0.5) * 8,
-          y: (Math.random() - 0.5) * 6,
-          z: (Math.random() - 0.5) * 8
+          x: (Math.random() - 0.5) * 4,
+          y: (Math.random() - 0.5) * 3,
+          z: (Math.random() - 0.5) * 4
         },
         life: 4,
         maxLife: 4,
@@ -219,13 +219,13 @@ plugin.register({
         p.group.position.y = 0;
         if (!p.landed) {
           p.landed = true;
-          p.vy *= -0.3;
-          p.vx *= 0.5;
-          p.vz *= 0.5;
-          if (Math.abs(p.vy) < 0.5) p.vy = 0;
+          p.vy *= -0.15;
+          p.vx *= 0.3;
+          p.vz *= 0.3;
+          if (Math.abs(p.vy) < 0.3) p.vy = 0;
         } else {
-          p.vx *= 0.9;
-          p.vz *= 0.9;
+          p.vx *= 0.85;
+          p.vz *= 0.85;
           p.vy = 0;
         }
       }
