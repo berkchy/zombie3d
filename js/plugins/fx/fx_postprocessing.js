@@ -60,8 +60,8 @@ plugin.register({
 
     // Cvarlar
     cvar.register('gfx_bloom', 1, 'number', 'Bloom efekti ac/kapa');
-    cvar.register('gfx_bloom_intensity', 0.8, 'number', 'Bloom siddeti (0.0-2.0)');
-    cvar.register('gfx_bloom_threshold', 0.2, 'number', 'Bloom esik degeri');
+    cvar.register('gfx_bloom_intensity', 0.25, 'number', 'Bloom siddeti (0.0-2.0)');
+    cvar.register('gfx_bloom_threshold', 0.6, 'number', 'Bloom esik degeri');
     cvar.register('gfx_vignette', 1, 'number', 'Vignette (kenar kararmasi)');
     cvar.register('gfx_vignette_amount', 0.35, 'number', 'Vignette miktari');
     cvar.register('gfx_saturation', 1.0, 'number', 'Renk doygunlugu');
@@ -69,7 +69,7 @@ plugin.register({
     cvar.register('gfx_fog', 1, 'number', 'Sis efekti');
     cvar.register('gfx_fog_density', 0.008, 'number', 'Sis yogunlugu');
     cvar.register('gfx_godrays', 1, 'number', 'God rays (gunes isini)');
-    cvar.register('gfx_godrays_intensity', 0.4, 'number', 'God rays siddeti');
+    cvar.register('gfx_godrays_intensity', 0.2, 'number', 'God rays siddeti');
     cvar.register('gfx_shadows', 0, 'number', 'Golge kalitesi 0=off 1=low 2=high');
     cvar.register('gfx_quality', 'medium', 'string', 'Grafik kalitesi low/medium/ultra');
 
@@ -98,18 +98,18 @@ plugin.register({
     if (p === 'low') {
       cvar.set('gfx_bloom', 0); cvar.set('gfx_vignette', 0);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.005);
-      cvar.set('gfx_shadows', 0); cvar.set('gfx_bloom_intensity', 0.5);
+      cvar.set('gfx_shadows', 0); cvar.set('gfx_bloom_intensity', 0.2);
       cvar.set('gfx_godrays', 0);
     } else if (p === 'medium') {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.008);
-      cvar.set('gfx_shadows', 1); cvar.set('gfx_bloom_intensity', 0.8);
-      cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.3);
+      cvar.set('gfx_shadows', 1); cvar.set('gfx_bloom_intensity', 0.25);
+      cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.15);
     } else {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.012);
-      cvar.set('gfx_shadows', 2); cvar.set('gfx_bloom_intensity', 1.2);
-      cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.5);
+      cvar.set('gfx_shadows', 2); cvar.set('gfx_bloom_intensity', 0.4);
+      cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.25);
     }
   },
 
@@ -146,7 +146,7 @@ plugin.register({
     this._combineMat = new THREE.ShaderMaterial({
       uniforms: {
         tDiffuse: { value: null }, tBloom: { value: null }, tGodRays: { value: null },
-        bloomIntensity: { value: 0.8 }, godRayIntensity: { value: 0.4 },
+        bloomIntensity: { value: 0.25 }, godRayIntensity: { value: 0.2 },
         vignetteAmount: { value: 0.35 },
         saturation: { value: 1.0 }, contrast: { value: 1.0 }
       },
@@ -156,7 +156,7 @@ plugin.register({
     this._godRaysMat = new THREE.ShaderMaterial({
       uniforms: {
         tDiffuse: { value: null }, sunPos: { value: new THREE.Vector2(0.5, 0.5) },
-        intensity: { value: 1.0 }, decay: { value: 0.95 }, weight: { value: 0.5 }
+        intensity: { value: 1.0 }, decay: { value: 0.93 }, weight: { value: 0.03 }
       },
       vertexShader: brightVert, fragmentShader: godRaysFrag, depthWrite: false, depthTest: false
     });
