@@ -248,7 +248,7 @@ plugin.register({
   },
 
   _closeEditor: function() {
-    this._panel.style.display = 'none';
+    if (this._panel) this._panel.style.display = 'none';
     this._editing = null;
   },
 
@@ -504,11 +504,12 @@ plugin.register({
   },
 
   _enterEdit: function() {
+    if (!this._overlay) return;
     this._editMode = true;
     this._overlay.style.display = 'block';
-    this._saveBtn.style.display = 'block';
-    this._closeBtn.style.display = 'flex';
-    this._info.style.display = 'block';
+    if (this._saveBtn) this._saveBtn.style.display = 'block';
+    if (this._closeBtn) this._closeBtn.style.display = 'flex';
+    if (this._info) this._info.style.display = 'block';
     if (this._gearBtn) this._gearBtn.style.display = 'none';
     this._origDisplays = {};
 
@@ -550,10 +551,10 @@ plugin.register({
     }
 
     this._editMode = false;
-    this._overlay.style.display = 'none';
-    this._saveBtn.style.display = 'none';
-    this._closeBtn.style.display = 'none';
-    this._info.style.display = 'none';
+    if (this._overlay) this._overlay.style.display = 'none';
+    if (this._saveBtn) this._saveBtn.style.display = 'none';
+    if (this._closeBtn) this._closeBtn.style.display = 'none';
+    if (this._info) this._info.style.display = 'none';
     if (this._gearBtn) this._gearBtn.style.display = 'flex';
 
     for (var id in this._buttons) {
@@ -677,11 +678,18 @@ plugin.register({
   destroy: function() {
     this._closeEditor();
     for (var id in this._buttons) this.touchRemove(id);
+    if (!this._panel) return;
     var ids = ['touch-settings-btn','touch-edit-overlay','touch-edit-info','touch-edit-save','touch-edit-close','touch-editor-panel'];
     ids.forEach(function(id) {
       var el = document.getElementById(id);
       if (el && el.parentNode) el.parentNode.removeChild(el);
     });
+    this._panel = null;
+    this._overlay = null;
+    this._saveBtn = null;
+    this._closeBtn = null;
+    this._info = null;
+    this._gearBtn = null;
     plugin.off('game:start', this.id);
     plugin.off('game:over', this.id);
     plugin.off('game:restart', this.id);
