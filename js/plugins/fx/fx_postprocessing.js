@@ -70,6 +70,7 @@ plugin.register({
     cvar.register('gfx_fog_density', 0.008, 'number', 'Sis yogunlugu');
     cvar.register('gfx_godrays', 1, 'number', 'God rays (gunes isini)');
     cvar.register('gfx_godrays_intensity', 1.0, 'number', 'God rays siddeti (0-2)');
+    cvar.register('gfx_godrays_blur', 0.5, 'number', 'God rays bulaniklik (0=keskin 1=cok yumusak)');
     cvar.register('gfx_shadows', 0, 'number', 'Golge kalitesi 0=off 1=low 2=high');
     cvar.register('gfx_quality', 'medium', 'string', 'Grafik kalitesi low/medium/ultra');
 
@@ -105,11 +106,13 @@ plugin.register({
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.008);
       cvar.set('gfx_shadows', 1); cvar.set('gfx_bloom_intensity', 0.25);
       cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.8);
+      cvar.set('gfx_godrays_blur', 0.5);
     } else {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.012);
       cvar.set('gfx_shadows', 2); cvar.set('gfx_bloom_intensity', 0.4);
       cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 1.2);
+      cvar.set('gfx_godrays_blur', 0.7);
     }
   },
 
@@ -277,6 +280,22 @@ plugin.register({
       this._godRaysMat.uniforms.tDiffuse.value = this._rt2.texture;
       renderer.setRenderTarget(this._rt4);
       renderer.render(this._fsqGodRays, this._ppCamera);
+
+      // God rays blur (yumusatma)
+      var grBlur = cvar.get('gfx_godrays_blur') || 0.5;
+      if (grBlur > 0.01) {
+        var gw = Math.max(1, w >> 1), gh = Math.max(1, h >> 1);
+        this._blurHMat.uniforms.resolution.value.set(gw, gh);
+        this._blurHMat.uniforms.tDiffuse.value = this._rt4.texture;
+        renderer.setRenderTarget(this._rt3);
+        renderer.render(this._fsqBlurH, this._ppCamera);
+        this._blurVMat.uniforms.resolution.value.set(gw, gh);
+        this._blurVMat.uniforms.tDiffuse.value = this._rt3.texture;
+        renderer.setRenderTarget(this._rt4);
+        renderer.render(this._fsqBlurV, this._ppCamera);
+        this._blurHMat.uniforms.resolution.value.set(w, h);
+        this._blurVMat.uniforms.resolution.value.set(w, h);
+      }
       this._combineMat.uniforms.tGodRays.value = this._rt4.texture;
     } else {
       this._combineMat.uniforms.tGodRays.value = this._rt.texture;
