@@ -98,6 +98,7 @@
   "test_hata": "js/plugins/misc/test_hata.js",
   "test_menu": "js/plugins/misc/test_menu.js",
   "model_boss": "js/plugins/models/model_boss.js",
+  "model_mdl": "js/plugins/models/model_mdl.js",
   "model_digits": "js/plugins/models/model_digits.js",
   "model_dropbox": "js/plugins/models/model_dropbox.js",
   "model_knife": "js/plugins/models/model_knife.js",
