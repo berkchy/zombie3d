@@ -105,6 +105,8 @@ plugin.register({
   _close() {
     document.getElementById('ssOverlay').classList.remove('show');
     this.panel.classList.remove('open');
+    var p = window.plugin || window.PluginRegistry;
+    if (p && p.emit) p.emit('menu:return');
   },
 
   _rebuild() {

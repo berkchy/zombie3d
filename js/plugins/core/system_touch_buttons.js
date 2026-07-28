@@ -69,7 +69,6 @@ plugin.register({
     this._game = game;
     this._createUI();
     this._loadPositions();
-    this._gearBtn.style.display = 'flex';
 
     this.touchAdd('fire', {
       label: 'ATES',
@@ -122,6 +121,7 @@ plugin.register({
 
     var self = this;
     plugin.on('game:start', this.id, function() {
+      self._loadPositions();
       self._gearBtn.style.display = 'flex';
       self._updateVisibility();
     });
@@ -310,8 +310,8 @@ plugin.register({
       height: (saved && saved.height) ? saved.height : (config.height || 60),
       shape: config.shape || 'circle',
       bgColor: (saved && saved.bgColor) ? saved.bgColor : (config.bgColor || 'rgba(255,255,255,.2)'),
-      color: config.color || '#fff',
-      fontSize: config.fontSize || 12,
+      color: (saved && saved.color) ? saved.color : (config.color || '#fff'),
+      fontSize: (saved && saved.fontSize) ? saved.fontSize : (config.fontSize || 12),
       alpha: (saved && saved.alpha != null) ? saved.alpha : (config.alpha != null ? config.alpha : 1),
       border: config.border || '1px solid rgba(255,255,255,.15)',
       zIndex: config.zIndex || 200,
@@ -322,6 +322,20 @@ plugin.register({
       _el: null,
       _external: !!config.element
     };
+
+    // saved'dan kalan alanları da uygula (store'dan birebir yansıt)
+    if (saved) {
+      btn.x = saved.x;
+      btn.y = saved.y;
+      if (saved.width) btn.width = saved.width;
+      if (saved.height) btn.height = saved.height;
+      if (saved.bgColor) btn.bgColor = saved.bgColor;
+      if (saved.color) btn.color = saved.color;
+      if (saved.fontSize) btn.fontSize = saved.fontSize;
+      if (saved.alpha != null) btn.alpha = saved.alpha;
+      if (saved.hidden != null) btn.hidden = saved.hidden;
+      if (saved.label) btn.label = saved.label;
+    }
 
     if (config.element) {
       btn._el = config.element;
@@ -378,16 +392,19 @@ plugin.register({
     var el = document.createElement('div');
     el.className = 'touch-btn';
     el.id = 'tbtn-' + btn.id;
-    if (btn.html) el.innerHTML = btn.html;
-    else el.textContent = btn.label;
+    var content = document.createElement('span');
+    content.className = 'tbtn-content';
+    if (btn.html) content.innerHTML = btn.html;
+    else content.textContent = btn.label;
+    el.appendChild(content);
     this._applyStyle(el, btn);
     el.style.display = btn.hidden ? 'none' : 'flex';
 
     el.addEventListener('touchstart', function(e) {
       e.stopPropagation();
-      if (self._editMode) { self._startDrag(e, btn.id); return; }
+      if (self._editMode) { self._startDrag(e, btn.id); e.preventDefault(); return; }
       if (btn.onTouchStart) btn.onTouchStart(e);
-    }, {passive: true});
+    }, {passive: false});
 
     el.addEventListener('touchend', function(e) {
       e.stopPropagation();
@@ -438,6 +455,7 @@ plugin.register({
       return;
     }
     var r = btn.shape === 'circle' ? '50%' : '8px';
+    var z = this._editMode ? 292 : btn.zIndex;
     el.style.cssText = [
       'left:' + btn.x + '%;',
       'top:' + btn.y + '%;',
@@ -446,7 +464,7 @@ plugin.register({
       'background:' + btn.bgColor + ';',
       'color:' + btn.color + ';',
       'font-size:' + btn.fontSize + 'px;',
-      'z-index:' + btn.zIndex + ';',
+      'z-index:' + z + ';',
       'border-radius:' + r + ';',
       'border:' + btn.border + ';',
       'opacity:' + btn.alpha + ';',
@@ -457,9 +475,10 @@ plugin.register({
   _updateElement: function(btn) {
     if (!btn._el) return;
     this._applyStyle(btn._el, btn);
-    if (!btn._external) {
-      if (btn.html) btn._el.innerHTML = btn.html;
-      else btn._el.textContent = btn.label;
+    var content = btn._el.querySelector('.tbtn-content');
+    if (content) {
+      if (btn.html) content.innerHTML = btn.html;
+      else content.textContent = btn.label;
     }
   },
 
@@ -485,7 +504,6 @@ plugin.register({
   },
 
   _enterEdit: function() {
-    var self = this;
     this._editMode = true;
     this._overlay.style.display = 'block';
     this._saveBtn.style.display = 'block';
@@ -500,22 +518,9 @@ plugin.register({
       btn._el.classList.add('touch-btn-edit');
       this._origDisplays[id] = btn._el.style.display;
       btn._el.style.display = 'flex';
-      btn._el.style.zIndex = 292;
 
       this._updateEditHidden(btn);
-
-      var pencil = btn._el.querySelector('.touch-btn-pencil');
-      if (!pencil) {
-        pencil = document.createElement('div');
-        pencil.className = 'touch-btn-pencil';
-        pencil.textContent = '\u270E';
-        (function(bid) {
-          pencil.addEventListener('mousedown', function(e) { e.stopPropagation(); });
-          pencil.addEventListener('click', function(e) { e.stopPropagation(); self._openEditor(bid); });
-          pencil.addEventListener('touchstart', function(e) { e.stopPropagation(); self._openEditor(bid); });
-        })(id);
-        btn._el.appendChild(pencil);
-      }
+      this._ensurePencil(btn);
     }
   },
 
@@ -531,6 +536,14 @@ plugin.register({
         if (saved) {
           this._buttons[id].x = saved.x;
           this._buttons[id].y = saved.y;
+          if (saved.width) this._buttons[id].width = saved.width;
+          if (saved.height) this._buttons[id].height = saved.height;
+          if (saved.bgColor) this._buttons[id].bgColor = saved.bgColor;
+          if (saved.color) this._buttons[id].color = saved.color;
+          if (saved.fontSize) this._buttons[id].fontSize = saved.fontSize;
+          if (saved.alpha != null) this._buttons[id].alpha = saved.alpha;
+          if (saved.hidden != null) this._buttons[id].hidden = saved.hidden;
+          if (saved.label) this._buttons[id].label = saved.label;
         }
         this._updateElement(this._buttons[id]);
       }
@@ -576,8 +589,12 @@ plugin.register({
     this._drag = {
       id: id,
       ox: pos.x - (btn.x / 100 * window.innerWidth),
-      oy: pos.y - (btn.y / 100 * window.innerHeight)
+      oy: pos.y - (btn.y / 100 * window.innerHeight),
+      origAlpha: btn.alpha
     };
+
+    btn.alpha = 0.4;
+    this._updateElement(btn);
 
     var self = this;
     this._drag._move = function(e) { self._onDrag(e); };
@@ -602,11 +619,32 @@ plugin.register({
 
   _endDrag: function(e) {
     if (!this._drag) return;
+    var btn = this._buttons[this._drag.id];
+    if (btn) {
+      btn.alpha = this._drag.origAlpha !== undefined ? this._drag.origAlpha : 1;
+      this._updateElement(btn);
+      this._ensurePencil(btn);
+    }
     document.removeEventListener('mousemove', this._drag._move);
     document.removeEventListener('mouseup', this._drag._end);
     document.removeEventListener('touchmove', this._drag._move);
     document.removeEventListener('touchend', this._drag._end);
     this._drag = null;
+  },
+
+  _ensurePencil: function(btn) {
+    if (!this._editMode || !btn || !btn._el) return;
+    if (btn._el.querySelector('.touch-btn-pencil')) return;
+    var pencil = document.createElement('div');
+    pencil.className = 'touch-btn-pencil';
+    pencil.textContent = '\u270E';
+    var self = this;
+    (function(bid) {
+      pencil.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+      pencil.addEventListener('click', function(e) { e.stopPropagation(); self._openEditor(bid); });
+      pencil.addEventListener('touchstart', function(e) { e.stopPropagation(); self._openEditor(bid); });
+    })(btn.id);
+    btn._el.appendChild(pencil);
   },
 
   _getPos: function(e) {
@@ -619,7 +657,7 @@ plugin.register({
     var data = {};
     for (var id in this._buttons) {
       var b = this._buttons[id];
-      data[id] = {x: b.x, y: b.y, width: b.width, height: b.height, bgColor: b.bgColor, alpha: b.alpha, hidden: b.hidden, label: b.label};
+      data[id] = {x: b.x, y: b.y, width: b.width, height: b.height, bgColor: b.bgColor, color: b.color, fontSize: b.fontSize, alpha: b.alpha, hidden: b.hidden, label: b.label};
     }
     PluginStorageAPI.set('touch_buttons_positions', data);
   },

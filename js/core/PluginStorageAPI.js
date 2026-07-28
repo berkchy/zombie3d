@@ -72,3 +72,5 @@ window.PluginStorageAPI = (function() {
   window.store = api;
   return api;
 })();
+
+Engine.register('PluginStorageAPI', { name: 'Depolama API', type: 'core', description: 'localStorage tabanli key-value depolama' });

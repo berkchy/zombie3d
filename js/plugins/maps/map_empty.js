@@ -138,7 +138,7 @@ plugin.register({
       playerSpawn: [0, 0.5, 0],
       zombieSpawns: [],
       thumbnailCamera: {
-        position: [0, 8, 14],
+        position: [0, 22, 22],
         target: [0, 0, 0]
       },
       dropbox: {
@@ -170,7 +170,7 @@ plugin.register({
       try {
         var result = p.createModel(config);
         if (result && result.mesh) targetScene.add(result.mesh);
-      } catch (e) {}
+      } catch (e) { console.warn('[buildThumbnail]', pluginId, e.message); }
     }
 
     addModel('map_skybox_day', {});

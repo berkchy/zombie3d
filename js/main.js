@@ -1,3 +1,18 @@
+// ----- ANA MOTOR — core modül kayıt sistemi -----
+var Engine = window.Engine = {
+  _modules: new Map(),
+  register(id, meta) {
+    if (this._modules.has(id)) return;
+    meta = meta || {};
+    meta.id = id;
+    if (!meta.version) meta.version = '1.0';
+    meta._loaded = true;
+    this._modules.set(id, meta);
+  },
+  get(id) { return this._modules.get(id) || null; },
+  getAll() { return Array.from(this._modules.values()); }
+};
+
 var scene, camera, renderer, overlayCtx;
 var game;
 var lastTime = 0;
@@ -62,8 +77,62 @@ function crashGame(pluginId, phase, error) {
   if (error.stack) devconsoleLog('error', error.stack);
   devconsoleLog('error', '========================================');
 
+  // Dispose Three.js scene graph — geometries, materials, textures
+  if (game && game.scene) {
+    try {
+      game.scene.traverse(function(obj) {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach(function(m) { disposeMaterial(m); });
+          } else {
+            disposeMaterial(obj.material);
+          }
+        }
+      });
+    } catch(e) {}
+  }
+  function disposeMaterial(mat) {
+    if (!mat) return;
+    if (mat.map) mat.map.dispose();
+    if (mat.lightMap) mat.lightMap.dispose();
+    if (mat.bumpMap) mat.bumpMap.dispose();
+    if (mat.normalMap) mat.normalMap.dispose();
+    if (mat.specularMap) mat.specularMap.dispose();
+    if (mat.envMap) mat.envMap.dispose();
+    if (mat.alphaMap) mat.alphaMap.dispose();
+    if (mat.aoMap) mat.aoMap.dispose();
+    if (mat.displacementMap) mat.displacementMap.dispose();
+    if (mat.emissiveMap) mat.emissiveMap.dispose();
+    if (mat.metalnessMap) mat.metalnessMap.dispose();
+    if (mat.roughnessMap) mat.roughnessMap.dispose();
+    mat.dispose();
+  }
+
+  // Destroy all plugins and remove their styles
+  if (typeof PluginRegistry !== 'undefined') {
+    try {
+      var allPlugins = PluginRegistry.getAll();
+      for (var pi = 0; pi < allPlugins.length; pi++) {
+        var p = allPlugins[pi];
+        try { if (p.destroy) p.destroy(); } catch(e) {}
+        try { PluginRegistry.removeStyles(p.id); } catch(e) {}
+        p.enabled = false;
+        p._loaded = false;
+      }
+      try { PluginRegistry.clearAllHooks(); } catch(e) {}
+    } catch(e) {}
+  }
+
+  // Clear global animation frame callbacks
+  if (window._animFrameId) {
+    try { cancelAnimationFrame(window._animFrameId); } catch(e) {}
+    window._animFrameId = null;
+  }
+
   if (renderer) {
     try { renderer.dispose(); } catch(e) {}
+    renderer = null;
   }
   var container = document.getElementById('gameContainer');
   if (container) {
@@ -72,11 +141,24 @@ function crashGame(pluginId, phase, error) {
     for (var c = 0; c < canvases.length; c++) {
       canvases[c].remove();
     }
+    container.innerHTML = '';
   }
   var overlays = document.querySelectorAll('.menu-overlay, .intro-overlay, .pause-overlay, #hud, #gameOver, #joystick-area');
   for (var k = 0; k < overlays.length; k++) {
     overlays[k].style.display = 'none';
   }
+
+  // Null out globals
+  try {
+    if (game) {
+      game.scene = null;
+      game.camera = null;
+      game.renderer = null;
+      game.sound = null;
+    }
+    window.game = null;
+    game = null;
+  } catch(e) {}
 
   var errMsg = error && error.message ? error.message : String(error || '');
   var stackStr = error && error.stack ? error.stack : '';
@@ -883,4 +965,60 @@ function loop(time) {
   requestAnimationFrame(loop);
 }
 
-init();
+// ---- Dinamik modül yükleyici (localhost directory listing) ----
+(function() {
+  var baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+
+  function fetchDir(dir) {
+    return fetch(baseUrl + dir + '/').then(function(r) {
+      if (!r.ok) throw new Error(dir + ' listing alınamadı');
+      return r.text();
+    }).then(function(html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var links = doc.querySelectorAll('a');
+      var files = [];
+      for (var i = 0; i < links.length; i++) {
+        var name = ((links[i].getAttribute('href') || '').split('/').pop() || '').trim();
+        if (name.endsWith('.js') && !name.startsWith('.')) files.push(dir + '/' + name);
+      }
+      // Bağımlılık sırası: Storage → Registry → diğerleri (alfabetik)
+      files.sort(function(a, b) {
+        var na = a.split('/').pop(), nb = b.split('/').pop();
+        var pa = na === 'PluginStorageAPI.js' ? 0 : na === 'PluginRegistry.js' ? 1 : 2;
+        var pb = nb === 'PluginStorageAPI.js' ? 0 : nb === 'PluginRegistry.js' ? 1 : 2;
+        return pa !== pb ? pa - pb : na.localeCompare(nb);
+      });
+      return files;
+    });
+  }
+
+  function loadSeq(list) {
+    var idx = 0;
+    return new Promise(function(resolve) {
+      function next() {
+        if (idx >= list.length) { resolve(); return; }
+        var s = document.createElement('script');
+        s.src = list[idx++];
+        s.async = false;
+        s.onload = next;
+        s.onerror = next;
+        document.head.appendChild(s);
+      }
+      next();
+    });
+  }
+
+  Promise.all([fetchDir('js/lib'), fetchDir('js/core')])
+    .then(function(r) {
+      return loadSeq(r[0].concat(r[1]));
+    })
+    .then(function() {
+      console.log('[Loader] Tüm modüller yüklendi');
+      init();
+    })
+    .catch(function(e) {
+      console.error('[Loader] Yükleme hatası:', e);
+      var el = document.querySelector('.loader-text');
+      if (el) el.textContent = 'YÜKLEME HATASI: ' + e.message;
+    });
+})();

@@ -758,6 +758,7 @@ plugin.register({
     if (rotRow) rotRow.classList.remove('show');
 
     plugin.emit('model_test:close');
+    plugin.emit('menu:return');
     if (this._modelWrapper) {
       this.roomGroup.remove(this._modelWrapper);
       this._modelWrapper = null;

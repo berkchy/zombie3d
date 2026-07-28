@@ -125,8 +125,8 @@ plugin.register({
         [0, 0, -8]
       ],
       thumbnailCamera: {
-        position: [0, 15, 22],
-        target: [0, 1, 0]
+        position: [0, 22, 22],
+        target: [0, 0, 0]
       },
       dropbox: {
         zones: [{ center: [0, 0, 0], radius: 4 }],
@@ -155,7 +155,7 @@ plugin.register({
       try {
         var result = p.createModel(config);
         if (result && result.mesh) targetScene.add(result.mesh);
-      } catch (e) {}
+      } catch (e) { console.warn('[buildThumbnail]', pluginId, e.message); }
     }
     function build() {
       addModel('map_skybox_day', {});
@@ -172,19 +172,7 @@ plugin.register({
       addModel('map_cover_wall', { position: [RX, 0, 0], sizeX: 0.2, sizeZ: RZ * 2, height: WH, color: 0x777777 });
       callback();
     }
-    if (this._ready) {
-      build();
-    } else if (this._depLoaded >= this._depCount) {
-      build();
-    } else {
-      (function check() {
-        if (self._depLoaded >= self._depCount) {
-          build();
-        } else {
-          setTimeout(check, 100);
-        }
-      })();
-    }
+    build();
   },
 
   getColliders: function() {

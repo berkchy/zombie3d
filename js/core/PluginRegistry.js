@@ -177,6 +177,10 @@ window.PluginRegistry = (function() {
       });
     },
 
+    clearAllHooks: function() {
+      _hookChains = {};
+    },
+
       emit: function(hook) {
       var chain = _hookChains[hook];
       if (!chain) return;
@@ -197,6 +201,7 @@ getCoreModule = function(name) {
     case 'commands': return window.PluginCommandsAPI || null;
     case 'map': return window.MapRegistry || null;
     case 'game': return window.Game || window.game || null;
+    case 'confirm_dialog': return window.ConfirmDialog || null;
     default: return null;
   }
 };
@@ -204,3 +209,5 @@ getCoreModule = function(name) {
 include = function(name) {
   return getCoreModule(name);
 };
+
+Engine.register('PluginRegistry', { name: 'Plugin Kayıt Sistemi', type: 'core', version: '1.0', description: 'Plugin kayit, sorgulama ve hook altyapisi' });

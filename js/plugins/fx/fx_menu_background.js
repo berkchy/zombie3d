@@ -12,6 +12,7 @@ plugin.register({
   _zombies: null,
   _lights: [],
   _zombiesSpawned: false,
+  _hidden: false,
 
   init(game) {
     this.game = game;
@@ -129,7 +130,28 @@ plugin.register({
     };
   },
 
+  hide() {
+    this._hidden = true;
+    for (var i = 0; i < this._zombies.length; i++) {
+      if (this._zombies[i].mesh) this._zombies[i].mesh.visible = false;
+    }
+    for (var i = 0; i < this._lights.length; i++) {
+      this._lights[i].visible = false;
+    }
+  },
+
+  show() {
+    this._hidden = false;
+    for (var i = 0; i < this._zombies.length; i++) {
+      if (this._zombies[i].mesh) this._zombies[i].mesh.visible = true;
+    }
+    for (var i = 0; i < this._lights.length; i++) {
+      this._lights[i].visible = true;
+    }
+  },
+
   update(dt) {
+    if (this._hidden) return;
     if (!this.game || !this._zombies || this._zombies.length === 0) return;
 
     if (!this._skyboxHandled) {

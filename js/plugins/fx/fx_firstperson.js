@@ -310,6 +310,11 @@ plugin.register({
   syncMainCamera: function(mainCam) {
     if (!this._overlayCamera) return;
     this._overlayCamera.position.copy(mainCam.position);
+    // Crouch offset
+    if (this.game && this.game.player) {
+      var cr = this.game.player._crouchSmooth || 0;
+      this._overlayCamera.position.y -= cr * 0.3;
+    }
     this._overlayCamera.quaternion.copy(mainCam.quaternion);
     this._overlayCamera.fov = mainCam.fov;
     this._overlayCamera.aspect = mainCam.aspect;

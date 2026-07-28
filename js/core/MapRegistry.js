@@ -20,6 +20,10 @@ var MapRegistry = {
     return Object.keys(this._maps).length;
   },
 
+  clearThumbnails: function() {
+    for (var k in this._maps) delete this._maps[k]._thumbnail;
+  },
+
   _ensureRenderer: function(width, height) {
     if (this._thumbRenderer) {
       try {
@@ -83,3 +87,5 @@ var MapRegistry = {
     });
   }
 };
+
+Engine.register('MapRegistry', { name: 'Harita Kayıt', type: 'core', version: '1.0', description: 'Harita tanimlarini kaydeder ve yönetir' });

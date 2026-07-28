@@ -132,3 +132,5 @@ window.ColliderHelper = (function() {
     pointInBox: pointInBox
   };
 })();
+
+Engine.register('ColliderHelper', { name: 'Collider Yardimci', type: 'core', version: '1.0', description: 'Carpisma algilama yardimci fonksiyonlari' });

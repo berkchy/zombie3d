@@ -144,7 +144,7 @@ plugin.register({
         [14, 0, 14], [-14, 0, -14]
       ],
       thumbnailCamera: {
-        position: [0, 20, 20],
+        position: [0, 22, 22],
         target: [0, 0, 0]
       },
       dropbox: {
@@ -175,7 +175,7 @@ plugin.register({
       try {
         var result = p.createModel(config);
         if (result && result.mesh) targetScene.add(result.mesh);
-      } catch (e) {}
+      } catch (e) { console.warn('[buildThumbnail]', pluginId, e.message); }
     }
 
     function build() {
@@ -211,20 +211,7 @@ plugin.register({
       callback();
     }
 
-    if (this._ready) {
-      build();
-    } else if (this._depLoaded >= this._depCount) {
-      build();
-    } else {
-      var check = function() {
-        if (self._depLoaded >= self._depCount) {
-          build();
-        } else {
-          setTimeout(check, 100);
-        }
-      };
-      check();
-    }
+    build();
   },
 
   getColliders: function() {

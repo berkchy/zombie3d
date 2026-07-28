@@ -35,7 +35,12 @@ plugin.register({
     this._fallStartY = null;
     this._wasOnGround = false;
     this.crouching = false;
-    if (game.player) game.player._gravityMultiplier = 1.0;
+    if (game.player) { 
+      game.player._gravityMultiplier = 1.0;
+      game.player._crouching = false;
+      game.player._crouchTarget = 0;
+      game.player._crouchSmooth = 0;
+    }
 
     var self = this;
     document.addEventListener('keydown', function(e) {
@@ -44,6 +49,10 @@ plugin.register({
         if (!self.crouching) {
           self.crouching = true;
           self.speed = 2.5;
+          if (self.game && self.game.player) {
+            self.game.player._crouching = true;
+            self.game.player._crouchTarget = 1;
+          }
         }
       }
     });
@@ -57,8 +66,46 @@ plugin.register({
       if (e.key === 'Control') {
         self.crouching = false;
         self.speed = 5;
+        if (self.game && self.game.player) {
+          self.game.player._crouching = false;
+          self.game.player._crouchTarget = 0;
+        }
       }
     });
+
+    // Mobil dokunmatik egilme tusu
+    var touchSys = plugin.get('system_touch_buttons');
+    if (touchSys && touchSys.touchAdd) {
+      touchSys.touchAdd('crouch', {
+        label: 'EGIL',
+        html: '<svg viewBox="0 0 40 40" width="26" height="26"><path d="M8 10 L20 22 L32 10 M8 22 L20 34 L32 22" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        x: 15, y: 78,
+        width: 68, height: 68,
+        shape: 'circle',
+        bgColor: 'rgba(156,39,176,.5)',
+        color: '#fff',
+        fontSize: 11,
+        zIndex: 200,
+        onTouchStart: function() {
+          if (!self.crouching) {
+            self.crouching = true;
+            self.speed = 2.5;
+            if (self.game && self.game.player) {
+              self.game.player._crouching = true;
+              self.game.player._crouchTarget = 1;
+            }
+          }
+        },
+        onTouchEnd: function() {
+          self.crouching = false;
+          self.speed = 5;
+          if (self.game && self.game.player) {
+            self.game.player._crouching = false;
+            self.game.player._crouchTarget = 0;
+          }
+        }
+      });
+    }
 
     var self = this;
     plugin.on('game:loaded', this.id, function() {
@@ -232,6 +279,21 @@ plugin.register({
     mesh.position.z = Math.max(-half, Math.min(half, nz));
 
     var speed = Math.sqrt(this.velX * this.velX + this.velZ * this.velZ);
+
+    // Smooth crouch interpolation
+    if (game.player) {
+      var tgt = game.player._crouchTarget !== undefined ? game.player._crouchTarget : 0;
+      var cur = game.player._crouchSmooth !== undefined ? game.player._crouchSmooth : 0;
+      var diff = tgt - cur;
+      if (Math.abs(diff) > 0.001) {
+        var rate = 10 * dt;
+        if (rate > 1) rate = 1;
+        game.player._crouchSmooth = cur + diff * rate;
+      } else {
+        game.player._crouchSmooth = tgt;
+      }
+    }
+
     plugin.emit('player:moving', {
       x: mesh.position.x,
       z: mesh.position.z,

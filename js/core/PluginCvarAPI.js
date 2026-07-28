@@ -128,3 +128,5 @@ window.PluginCvarAPI = (function() {
     }
   };
 })();
+
+Engine.register('PluginCvarAPI', { name: 'Cvar API', type: 'core', version: '1.0', description: 'Yapilandirma degiskenleri (cvar) kayit ve yonetimi' });

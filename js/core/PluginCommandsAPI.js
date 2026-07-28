@@ -75,3 +75,5 @@ window.PluginCommandsAPI = (function() {
     }
   };
 })();
+
+Engine.register('PluginCommandsAPI', { name: 'Komut API', type: 'core', version: '1.0', description: 'Konsol komut kayit ve yonetim sistemi' });

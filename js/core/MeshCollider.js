@@ -140,3 +140,5 @@ window.MeshCollider = (function() {
     slideMove: slideMove
   };
 })();
+
+Engine.register('MeshCollider', { name: 'Mesh Collider', type: 'core', version: '1.0', description: 'Three.js mesh tabanli fizik ve çarpisma' });

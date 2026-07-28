@@ -357,3 +357,5 @@ window.PluginLoader = (function() {
     reset: reset
   };
 })();
+
+Engine.register('PluginLoader', { name: 'Plugin Yükleyici', type: 'core', version: '1.0', description: 'plugins.ini dosyasini okur, eklentileri sirayla yükler' });

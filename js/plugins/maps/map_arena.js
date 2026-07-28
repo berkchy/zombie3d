@@ -173,7 +173,7 @@ plugin.register({
       try {
         var result = p.createModel(config);
         if (result && result.mesh) targetScene.add(result.mesh);
-      } catch (e) {}
+      } catch (e) { console.warn('[buildThumbnail]', pluginId, e.message); }
     }
 
     function build() {
@@ -223,20 +223,7 @@ plugin.register({
       callback();
     }
 
-    if (this._ready) {
-      build();
-    } else if (this._depLoaded >= this._depCount) {
-      build();
-    } else {
-      var check = function() {
-        if (self._depLoaded >= self._depCount) {
-          build();
-        } else {
-          setTimeout(check, 100);
-        }
-      };
-      check();
-    }
+    build();
   },
 
   getColliders: function() {

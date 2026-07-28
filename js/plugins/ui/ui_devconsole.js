@@ -352,6 +352,31 @@ plugin.register({
       return 'Bilinmeyen alt komut: ' + sub;
     }, 'Plugin yönetimi: list / get / pause / resume');
 
+    commands.register('ui_devconsole', 'modules', function(args) {
+      var eng = typeof Engine !== 'undefined' ? Engine : window.Engine;
+      if (!eng) return 'Engine motoru bulunamadi';
+      if (!args[0] || args[0] === 'list') {
+        var all = eng.getAll();
+        if (all.length === 0) return 'Hiç modül kayıtlı değil';
+        var out = 'ID'.padEnd(22) + 'İsim'.padEnd(16) + 'Tür'.padEnd(8) + 'Sürüm\n';
+        out += '─'.repeat(50) + '\n';
+        all.forEach(function(m) {
+          out += (m.id || '').substring(0, 20).padEnd(22);
+          out += (m.name || '').substring(0, 14).padEnd(16);
+          out += (m.type || '-').padEnd(8);
+          out += (m.version || '1.0') + '\n';
+        });
+        return out;
+      }
+      if (args[0] === 'get') {
+        if (!args[1]) return 'Kullanım: modules get <id>';
+        var m = eng.get(args[1]);
+        if (!m) return 'Modül bulunamadı: ' + args[1];
+        return 'ID: ' + m.id + '\nİsim: ' + (m.name || '-') + '\nTip: ' + (m.type || '-') + '\nSürüm: ' + (m.version || '1.0') + '\nAçıklama: ' + (m.description || '-');
+      }
+      return 'Kullanım: modules list / modules get <id>';
+    }, 'Core modül listesi: list / get');
+
     commands.register('ui_devconsole', 'cvar', function(args) {
       if (args.length === 0) return 'Kullanım: cvar list / cvar reset <id>';
       var sub = args[0];
