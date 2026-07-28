@@ -6,6 +6,14 @@
 <title>DEADWAKE</title>
 <link rel="stylesheet" href="css/style.css">
 <link href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/lib/three_webgpu.min.js",
+    "three/addons/": "./js/lib/three/"
+  }
+}
+</script>
 </head>
 <body>
 <div id="gameContainer">
@@ -35,6 +43,7 @@
   </div>
 </div>
 
-<script src="js/main.js"></script>
+<script type="module" src="js/lib/three_bootstrap.js"></script>
+<script defer src="js/main.js"></script>
 </body>
 </html>
