@@ -1,10 +1,11 @@
 var plugin = include('registry');
+
 plugin.register({
   id: 'map_torch',
   name: 'Mesale',
   type: 'map_model',
   version: '1.0',
-  description: 'Mesale + ates isigi',
+  description: 'Mesale + ates isigi + isi titremesi',
 
   createModel: function(config) {
     var group = new THREE.Group();
@@ -27,6 +28,11 @@ plugin.register({
     var pl = new THREE.PointLight(0xff6600, 0.6, 8);
     pl.position.set(cx, cy + 1.3, cz);
     group.add(pl);
+
+    // Heat shimmer kaynagi olarak kaydet
+    var heatPos = new THREE.Vector3(cx, cy + 1.3, cz);
+    var pp = plugin.get('gfx_postprocessing');
+    if (pp && pp.addHeatSource) pp.addHeatSource(heatPos);
 
     return {
       mesh: group,

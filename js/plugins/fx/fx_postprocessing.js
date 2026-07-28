@@ -22,7 +22,7 @@ var combineFrag = 'uniform sampler2D tDiffuse;uniform sampler2D tBloom;uniform s
 
 var godRaysFrag = 'uniform sampler2D tDiffuse;uniform vec2 sunPos;uniform float intensity;uniform float decay;uniform float weight;varying vec2 vUv;void main(){vec2 uv=vUv;vec2 dir=sunPos-uv;float dist=length(dir);if(dist<0.001){gl_FragColor=vec4(0.0,0.0,0.0,1.0);return;}vec2 delta=dir/dist*0.008;vec3 col=vec3(0.0);float atten=1.0;for(int i=0;i<64;i++){vec4 s=texture2D(tDiffuse,uv);col+=s.rgb*weight*atten;uv+=delta;atten*=decay;if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0)break;}gl_FragColor=vec4(col*intensity,1.0);}';
 
-var heatShimmerFrag = 'uniform sampler2D tDiffuse;uniform float uTime;uniform float uIntensity;varying vec2 vUv;void main(){vec2 uv=vUv;float nx=sin(uv.y*40.0+uTime*1.3)*cos(uv.x*30.0+uTime*0.7);float ny=sin(uv.x*35.0+uTime*0.9)*cos(uv.y*45.0+uTime*1.1);uv+=vec2(nx,ny)*uIntensity*0.008;gl_FragColor=texture2D(tDiffuse,uv);}';
+var heatShimmerFrag = 'uniform sampler2D tDiffuse;uniform float uTime;uniform float uIntensity;uniform vec2 uHeatSources[16];uniform int uHeatCount;varying vec2 vUv;void main(){vec2 uv=vUv;float heat=0.0;for(int i=0;i<16;i++){if(i>=uHeatCount)break;vec2 hs=uHeatSources[i];if(hs.x<-0.5)continue;float d=distance(vUv,hs);float s=exp(-d*d*80.0);heat=max(heat,s);}if(heat>0.01){float nx=sin(uv.y*40.0+uTime*1.3)*cos(uv.x*30.0+uTime*0.7);float ny=sin(uv.x*35.0+uTime*0.9)*cos(uv.y*45.0+uTime*1.1);uv+=vec2(nx,ny)*heat*uIntensity*0.008;}gl_FragColor=texture2D(tDiffuse,uv);}';
 
 // ==================== PLUGIN ====================
 plugin.register({
@@ -58,6 +58,7 @@ plugin.register({
   _ppCamera: null,
   _sunVec: new THREE.Vector3(),
   _sunUV: new THREE.Vector2(),
+  _heatSources: [],
 
   init() {
     var self = this;
@@ -107,6 +108,7 @@ plugin.register({
     // Dinamik gölge ayari icin light listener
     plugin.on('game:start', this.id, function() {
       self._updateShadows();
+      self._clearHeatSources();
     });
   },
 
@@ -191,7 +193,11 @@ plugin.register({
     this._fsqGodRays = new Fsq(this._godRaysMat);
 
     this._heatShimmerMat = new THREE.ShaderMaterial({
-      uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uIntensity: { value: 1.0 } },
+      uniforms: {
+        tDiffuse: { value: null }, uTime: { value: 0 }, uIntensity: { value: 1.0 },
+        uHeatSources: { value: new Array(16).fill(null).map(function() { return new THREE.Vector2(-1, -1); }) },
+        uHeatCount: { value: 0 }
+      },
       vertexShader: brightVert, fragmentShader: heatShimmerFrag, depthWrite: false, depthTest: false
     });
     this._fsqHeatShimmer = new Fsq(this._heatShimmerMat);
@@ -356,6 +362,23 @@ plugin.register({
 
     // Pass 7: Heat shimmer → screen
     if (doHeatShimmer) {
+      // Project heat sources to screen space
+      var hsUniforms = this._heatShimmerMat.uniforms.uHeatSources.value;
+      var count = Math.min(this._heatSources.length, 16);
+      this._heatShimmerMat.uniforms.uHeatCount.value = count;
+      var i;
+      for (i = 0; i < count; i++) {
+        var pos = this._heatSources[i];
+        if (!pos) { hsUniforms[i].set(-1, -1); continue; }
+        var sp = pos.clone().project(camera);
+        hsUniforms[i].set(
+          Math.max(-1, Math.min(2, sp.x * 0.5 + 0.5)),
+          Math.max(-1, Math.min(2, sp.y * 0.5 + 0.5))
+        );
+      }
+      for (i = count; i < 16; i++) {
+        hsUniforms[i].set(-1, -1);
+      }
       this._heatShimmerMat.uniforms.tDiffuse.value = this._rt3.texture;
       this._heatShimmerMat.uniforms.uTime.value = performance.now() / 1000;
       this._heatShimmerMat.uniforms.uIntensity.value = cvar.get('gfx_heat_shimmer_intensity') || 1.0;
@@ -387,6 +410,17 @@ plugin.register({
       Math.max(-0.1, Math.min(1.1, sp.y * 0.5 + 0.5))
     );
     return this._sunUV;
+  },
+
+  addHeatSource(worldPos) {
+    this._heatSources.push(worldPos);
+  },
+  removeHeatSource(worldPos) {
+    var idx = this._heatSources.indexOf(worldPos);
+    if (idx !== -1) this._heatSources.splice(idx, 1);
+  },
+  _clearHeatSources() {
+    this._heatSources.length = 0;
   },
 
   destroy() {
