@@ -7,7 +7,7 @@ plugin.register({
   name: 'Gece Tapınağı',
   version: '1.0',
   type: 'scene',
-  description: 'Gece haritasi — ay isigi + mesaleler',
+  description: 'Gece haritasi — ay isigi, fenerler, mezarlar, gargoyleler',
 
   game: null,
   objects: [],
@@ -16,13 +16,14 @@ plugin.register({
   _depCount: 0,
   _depLoaded: 0,
   _modelPaths: [
-    'map_ground',
-    'map_platform',
-    'map_pillar',
-    'map_ruins',
-    'map_torch',
-    'map_wall',
-    'map_moon'
+    'map_night_ground',
+    'map_moon',
+    'map_night_statue',
+    'map_night_crypt',
+    'map_night_brazier',
+    'map_night_lantern_post',
+    'map_night_tree',
+    'map_wall'
   ],
 
   init(game) {
@@ -45,8 +46,6 @@ plugin.register({
     });
 
     if (!game.currentMap || game.currentMap.id !== 'night') return;
-
-    this.arenaSize = 60;
   },
 
   update(dt) {
@@ -81,55 +80,53 @@ plugin.register({
       }
     }
 
-    addModel('map_ground', { size: 60, color: 0x3a3a4a });
-    addModel('map_platform', { position: [0, 0, 0] });
-    addModel('map_moon', { position: [8, 22, 12], targetX: 0, targetZ: 0, intensity: 0.7, ambientIntensity: 0.2, hemiIntensity: 0.25, shadowSize: 35 });
+    addModel('map_night_ground', { size: 60 });
+    addModel('map_moon', { position: [12, 24, 8], targetX: 0, targetZ: 0, intensity: 0.8, ambientIntensity: 0.15, hemiIntensity: 0.2, shadowSize: 35 });
 
-    // Gece sisi ayari
-    cvar.set('gfx_fog_density', 0.015);
+    cvar.set('gfx_fog_density', 0.012);
 
-    for (var i = 0; i < 8; i++) {
-      var ag = i * Math.PI / 4 + Math.PI / 8;
-      addModel('map_pillar', {
-        position: [Math.sin(ag) * 11, 0, Math.cos(ag) * 11],
-        height: 3.0, radius: 0.45, fallen: false, color: 0x4a4a5a
+    // 4 gargoyle — kose noktalarinda
+    var statuePositions = [[-12, -12], [12, -12], [-12, 12], [12, 12]];
+    statuePositions.forEach(function(pos, idx) {
+      addModel('map_night_statue', {
+        position: [pos[0], 0, pos[1]], rotationY: idx * Math.PI / 2, scale: 1.0
+      });
+    });
+
+    // 8 mezar — iki sira halinde
+    for (var i = -3; i <= 3; i++) {
+      if (i === 0) continue;
+      addModel('map_night_crypt', { position: [i * 2.5, 0, -10], rotationY: 0 });
+      addModel('map_night_crypt', { position: [i * 2.5, 0, 10], rotationY: Math.PI });
+    }
+
+    // 4 büyük ates ocagi — ic kosede
+    var brazierPos = [[-16, -16], [16, -16], [-16, 16], [16, 16]];
+    brazierPos.forEach(function(pos) {
+      addModel('map_night_brazier', { position: [pos[0], 0, pos[1]] });
+    });
+
+    // 8 fener diregi — yol boyunca
+    for (var a = 0; a < 8; a++) {
+      var ag = a * Math.PI / 4;
+      addModel('map_night_lantern_post', {
+        position: [Math.sin(ag) * 14, 0, Math.cos(ag) * 14]
       });
     }
-    addModel('map_pillar', {
-      position: [-14, 0, -14], fallen: true, length: 2.5,
-      rotX: Math.PI / 2.5, rotZ: 0.3, radius: 0.4, color: 0x4a4a5a
-    });
-    addModel('map_pillar', {
-      position: [14, 0, 14], fallen: true, length: 2.0,
-      rotX: Math.PI / 3, rotZ: -0.4, radius: 0.4, color: 0x4a4a5a
-    });
 
-    var ruins = [
-      { x: -8, z: -18, sx: 2.5, sz: 0.4, h: 1.2 },
-      { x: 8, z: -18, sx: 2.5, sz: 0.4, h: 0.8 },
-      { x: -18, z: -8, sx: 0.4, sz: 2.5, h: 1.0 },
-      { x: -18, z: 8, sx: 0.4, sz: 2.5, h: 0.6 },
-      { x: 18, z: -8, sx: 0.4, sz: 2.5, h: 1.1 },
-      { x: 18, z: 8, sx: 0.4, sz: 2.5, h: 0.7 },
-      { x: -8, z: 18, sx: 2.5, sz: 0.4, h: 0.9 },
-      { x: 8, z: 18, sx: 2.5, sz: 0.4, h: 1.3 }
-    ];
-    ruins.forEach(function(r) {
-      addModel('map_ruins', {
-        position: [r.x, 0, r.z], sizeX: r.sx, sizeZ: r.sz, height: r.h, color: 0x4a4a5a
+    // 6 kuru agac — rastgele dagilmis
+    var treePos = [[-18, -5], [18, -5], [-5, -18], [5, 18], [-20, 10], [20, 10]];
+    treePos.forEach(function(pos, idx) {
+      addModel('map_night_tree', {
+        position: [pos[0], 0, pos[1]], scale: 0.8 + idx * 0.1
       });
     });
 
-    var torches = [[-14, -14], [14, -14], [-14, 14], [14, 14]];
-    torches.forEach(function(pos) {
-      addModel('map_torch', { position: [pos[0], 0, pos[1]] });
-    });
-
-    var H = 30;
-    addModel('map_wall', { position: [0, 0, -H], sizeX: 60, sizeZ: 0.4, height: 1.5, color: 0x4a4a5a });
-    addModel('map_wall', { position: [0, 0, H], sizeX: 60, sizeZ: 0.4, height: 1.5, color: 0x4a4a5a });
-    addModel('map_wall', { position: [-H, 0, 0], sizeX: 0.4, sizeZ: 60, height: 1.5, color: 0x4a4a5a });
-    addModel('map_wall', { position: [H, 0, 0], sizeX: 0.4, sizeZ: 60, height: 1.5, color: 0x4a4a5a });
+    var H = 28;
+    addModel('map_wall', { position: [0, 0, -H], sizeX: 56, sizeZ: 0.4, height: 1.5, color: 0x3a3a4a });
+    addModel('map_wall', { position: [0, 0, H], sizeX: 56, sizeZ: 0.4, height: 1.5, color: 0x3a3a4a });
+    addModel('map_wall', { position: [-H, 0, 0], sizeX: 0.4, sizeZ: 56, height: 1.5, color: 0x3a3a4a });
+    addModel('map_wall', { position: [H, 0, 0], sizeX: 0.4, sizeZ: 56, height: 1.5, color: 0x3a3a4a });
   },
 
   getMapConfig: function() {
@@ -140,20 +137,17 @@ plugin.register({
       modeDescription: 'Her dalgada artan zorluk — gece',
       playerSpawn: [0, 0.5, 0],
       zombieSpawns: [
-        [8, 0, 8], [-8, 0, -8],
-        [8, 0, -8], [-8, 0, 8],
-        [12, 0, 0], [-12, 0, 0],
-        [0, 0, 12], [0, 0, -12]
+        [6, 0, 6], [-6, 0, -6], [6, 0, -6], [-6, 0, 6],
+        [10, 0, 0], [-10, 0, 0], [0, 0, 10], [0, 0, -10],
+        [14, 0, 14], [-14, 0, -14]
       ],
       thumbnailCamera: {
-        position: [0, 22, 22],
+        position: [0, 20, 20],
         target: [0, 0, 0]
       },
       dropbox: {
-        zones: [
-          { center: [0, 0, 0], radius: 6 }
-        ],
-        dropInterval: 45,
+        zones: [{ center: [0, 0, 0], radius: 7 }],
+        dropInterval: 40,
         fallSpeed: 2.5,
         minHeight: 16
       }
@@ -163,9 +157,9 @@ plugin.register({
   getIntroData: function() {
     return {
       cameraPath: [
-        { pos: [0, 0.6, 10], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
-        { pos: [10, 0.6, 5], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
-        { pos: [-8, 0.6, -8], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 }
+        { pos: [0, 0.6, 12], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
+        { pos: [14, 0.6, 6], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
+        { pos: [-12, 0.6, -8], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 }
       ]
     };
   },
@@ -183,48 +177,34 @@ plugin.register({
     }
 
     function build() {
-      addModel('map_moon', { position: [8, 22, 12], targetX: 0, targetZ: 0, intensity: 0.7, ambientIntensity: 0.2, hemiIntensity: 0.25, castShadow: false });
-      addModel('map_ground', { size: 60, color: 0x3a3a4a });
-      addModel('map_platform', { position: [0, 0, 0] });
-      for (var i = 0; i < 8; i++) {
-        var ag = i * Math.PI / 4 + Math.PI / 8;
-        addModel('map_pillar', {
-          position: [Math.sin(ag) * 11, 0, Math.cos(ag) * 11],
-          height: 3.0, radius: 0.45, fallen: false, color: 0x4a4a5a
-        });
+      addModel('map_moon', { position: [12, 24, 8], targetX: 0, targetZ: 0, intensity: 0.8, ambientIntensity: 0.15, hemiIntensity: 0.2, castShadow: false });
+      addModel('map_night_ground', { size: 60 });
+      var statuePositions = [[-12, -12], [12, -12], [-12, 12], [12, 12]];
+      statuePositions.forEach(function(pos, idx) {
+        addModel('map_night_statue', { position: [pos[0], 0, pos[1]], rotationY: idx * Math.PI / 2 });
+      });
+      for (var i = -3; i <= 3; i++) {
+        if (i === 0) continue;
+        addModel('map_night_crypt', { position: [i * 2.5, 0, -10] });
+        addModel('map_night_crypt', { position: [i * 2.5, 0, 10], rotationY: Math.PI });
       }
-      addModel('map_pillar', {
-        position: [-14, 0, -14], fallen: true, length: 2.5,
-        rotX: Math.PI / 2.5, rotZ: 0.3, radius: 0.4, color: 0x4a4a5a
+      var brazierPos = [[-16, -16], [16, -16], [-16, 16], [16, 16]];
+      brazierPos.forEach(function(pos) {
+        addModel('map_night_brazier', { position: [pos[0], 0, pos[1]] });
       });
-      addModel('map_pillar', {
-        position: [14, 0, 14], fallen: true, length: 2.0,
-        rotX: Math.PI / 3, rotZ: -0.4, radius: 0.4, color: 0x4a4a5a
+      for (var a = 0; a < 8; a++) {
+        var ag = a * Math.PI / 4;
+        addModel('map_night_lantern_post', { position: [Math.sin(ag) * 14, 0, Math.cos(ag) * 14] });
+      }
+      var treePos = [[-18, -5], [18, -5], [-5, -18], [5, 18], [-20, 10], [20, 10]];
+      treePos.forEach(function(pos, idx) {
+        addModel('map_night_tree', { position: [pos[0], 0, pos[1]], scale: 0.8 + idx * 0.1 });
       });
-      var ruins = [
-        { x: -8, z: -18, sx: 2.5, sz: 0.4, h: 1.2 },
-        { x: 8, z: -18, sx: 2.5, sz: 0.4, h: 0.8 },
-        { x: -18, z: -8, sx: 0.4, sz: 2.5, h: 1.0 },
-        { x: -18, z: 8, sx: 0.4, sz: 2.5, h: 0.6 },
-        { x: 18, z: -8, sx: 0.4, sz: 2.5, h: 1.1 },
-        { x: 18, z: 8, sx: 0.4, sz: 2.5, h: 0.7 },
-        { x: -8, z: 18, sx: 2.5, sz: 0.4, h: 0.9 },
-        { x: 8, z: 18, sx: 2.5, sz: 0.4, h: 1.3 }
-      ];
-      ruins.forEach(function(r) {
-        addModel('map_ruins', {
-          position: [r.x, 0, r.z], sizeX: r.sx, sizeZ: r.sz, height: r.h, color: 0x4a4a5a
-        });
-      });
-      var torches = [[-14, -14], [14, -14], [-14, 14], [14, 14]];
-      torches.forEach(function(pos) {
-        addModel('map_torch', { position: [pos[0], 0, pos[1]] });
-      });
-      var H = 30;
-      addModel('map_wall', { position: [0, 0, -H], sizeX: 60, sizeZ: 0.4, height: 1.5, color: 0x4a4a5a });
-      addModel('map_wall', { position: [0, 0, H], sizeX: 60, sizeZ: 0.4, height: 1.5, color: 0x4a4a5a });
-      addModel('map_wall', { position: [-H, 0, 0], sizeX: 0.4, sizeZ: 60, height: 1.5, color: 0x4a4a5a });
-      addModel('map_wall', { position: [H, 0, 0], sizeX: 0.4, sizeZ: 60, height: 1.5, color: 0x4a4a5a });
+      var H = 28;
+      addModel('map_wall', { position: [0, 0, -H], sizeX: 56, sizeZ: 0.4, height: 1.5, color: 0x3a3a4a });
+      addModel('map_wall', { position: [0, 0, H], sizeX: 56, sizeZ: 0.4, height: 1.5, color: 0x3a3a4a });
+      addModel('map_wall', { position: [-H, 0, 0], sizeX: 0.4, sizeZ: 56, height: 1.5, color: 0x3a3a4a });
+      addModel('map_wall', { position: [H, 0, 0], sizeX: 0.4, sizeZ: 56, height: 1.5, color: 0x3a3a4a });
       callback();
     }
 
