@@ -139,7 +139,7 @@ plugin.register({
         '<hr class="mm-divider">' +
         '<button class="mm-btn primary" id="menuPlay">Oyunu Başlat</button>' +
         '<button class="mm-btn" id="menuModelTest">Model Test Odası</button>' +
-        '<button class="mm-btn" id="menuPlugins">Eklentiler</button>' +
+        '<button class="mm-btn" id="menuMapCreator">Harita Oluştur</button>' +
         '<button class="mm-btn" id="menuSoundSettings">Ses Ayarları</button>' +
       '</div>' +
       '<div class="menu-view" id="mv-maps">' +
@@ -161,9 +161,10 @@ plugin.register({
       plugin.emit('menu:model_test');
     }.bind(this));
 
-    document.getElementById('menuPlugins').addEventListener('click', function() {
+    document.getElementById('menuMapCreator').addEventListener('click', function() {
       self._playClick();
-      console.warn('[Plugin] Panel kaldirildi, konsol uzerinden yonetin: PluginRegistry.list()');
+      self.hide();
+      plugin.emit('menu:map_creator');
     });
 
     document.getElementById('menuSoundSettings').addEventListener('click', function() {
