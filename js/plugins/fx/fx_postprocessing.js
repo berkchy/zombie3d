@@ -18,7 +18,9 @@ var brightFrag = 'uniform sampler2D tDiffuse;uniform float threshold;varying vec
 var blurFragH = 'uniform sampler2D tDiffuse;uniform vec2 resolution;varying vec2 vUv;void main(){vec2 px=vec2(1.0/resolution.x,0.0);vec4 c=texture2D(tDiffuse,vUv)*0.227;c+=texture2D(tDiffuse,vUv+px*1.0)*0.158;c+=texture2D(tDiffuse,vUv-px*1.0)*0.158;c+=texture2D(tDiffuse,vUv+px*2.0)*0.073;c+=texture2D(tDiffuse,vUv-px*2.0)*0.073;c+=texture2D(tDiffuse,vUv+px*3.0)*0.018;c+=texture2D(tDiffuse,vUv-px*3.0)*0.018;gl_FragColor=c;}';
 var blurFragV = 'uniform sampler2D tDiffuse;uniform vec2 resolution;varying vec2 vUv;void main(){vec2 px=vec2(0.0,1.0/resolution.y);vec4 c=texture2D(tDiffuse,vUv)*0.227;c+=texture2D(tDiffuse,vUv+px*1.0)*0.158;c+=texture2D(tDiffuse,vUv-px*1.0)*0.158;c+=texture2D(tDiffuse,vUv+px*2.0)*0.073;c+=texture2D(tDiffuse,vUv-px*2.0)*0.073;c+=texture2D(tDiffuse,vUv+px*3.0)*0.018;c+=texture2D(tDiffuse,vUv-px*3.0)*0.018;gl_FragColor=c;}';
 
-var combineFrag = 'uniform sampler2D tDiffuse;uniform sampler2D tBloom;uniform float bloomIntensity;uniform float vignetteAmount;uniform float saturation;uniform float contrast;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);vec4 b=texture2D(tBloom,vUv);c.rgb+=b.rgb*bloomIntensity;float l=dot(c.rgb,vec3(0.299,0.587,0.114));c.rgb=mix(vec3(l),c.rgb,saturation);c.rgb=(c.rgb-0.5)*contrast+0.5;float d=distance(vUv,vec2(0.5,0.5));float v=1.0-smoothstep(0.15,0.65,d)*vignetteAmount;gl_FragColor=vec4(c.rgb*v,c.a);}';
+var combineFrag = 'uniform sampler2D tDiffuse;uniform sampler2D tBloom;uniform sampler2D tGodRays;uniform float bloomIntensity;uniform float godRayIntensity;uniform float vignetteAmount;uniform float saturation;uniform float contrast;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);vec4 b=texture2D(tBloom,vUv);c.rgb+=b.rgb*bloomIntensity;vec4 g=texture2D(tGodRays,vUv);c.rgb+=g.rgb*godRayIntensity;float l=dot(c.rgb,vec3(0.299,0.587,0.114));c.rgb=mix(vec3(l),c.rgb,saturation);c.rgb=(c.rgb-0.5)*contrast+0.5;float d=distance(vUv,vec2(0.5,0.5));float v=1.0-smoothstep(0.15,0.65,d)*vignetteAmount;gl_FragColor=vec4(c.rgb*v,c.a);}';
+
+var godRaysFrag = 'uniform sampler2D tDiffuse;uniform vec2 sunPos;uniform float intensity;uniform float decay;uniform float weight;varying vec2 vUv;void main(){vec2 uv=vUv;vec2 dir=sunPos-uv;float dist=length(dir);if(dist<0.001){gl_FragColor=vec4(0.0,0.0,0.0,1.0);return;}vec2 delta=dir/dist*0.008;vec3 col=vec3(0.0);float atten=1.0;for(int i=0;i<64;i++){uv+=delta;if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0)break;vec4 s=texture2D(tDiffuse,uv);col+=s.rgb*weight*atten;atten*=decay;}gl_FragColor=vec4(col*intensity,1.0);}';
 
 // ==================== PLUGIN ====================
 plugin.register({
@@ -36,17 +38,22 @@ plugin.register({
   _rt: null,
   _rt2: null,
   _rt3: null,
+  _rt4: null,
   _brightMat: null,
   _blurHMat: null,
   _blurVMat: null,
   _combineMat: null,
+  _godRaysMat: null,
   _fsqBright: null,
   _fsqBlurH: null,
   _fsqBlurV: null,
   _fsqCombine: null,
+  _fsqGodRays: null,
   _width: 0,
   _height: 0,
   _ppCamera: null,
+  _sunVec: new THREE.Vector3(),
+  _sunUV: new THREE.Vector2(),
 
   init() {
     var self = this;
@@ -61,6 +68,8 @@ plugin.register({
     cvar.register('gfx_contrast', 1.0, 'number', 'Kontrast');
     cvar.register('gfx_fog', 1, 'number', 'Sis efekti');
     cvar.register('gfx_fog_density', 0.008, 'number', 'Sis yogunlugu');
+    cvar.register('gfx_godrays', 1, 'number', 'God rays (gunes isini)');
+    cvar.register('gfx_godrays_intensity', 0.4, 'number', 'God rays siddeti');
     cvar.register('gfx_shadows', 0, 'number', 'Golge kalitesi 0=off 1=low 2=high');
     cvar.register('gfx_quality', 'medium', 'string', 'Grafik kalitesi low/medium/ultra');
 
@@ -90,14 +99,17 @@ plugin.register({
       cvar.set('gfx_bloom', 0); cvar.set('gfx_vignette', 0);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.005);
       cvar.set('gfx_shadows', 0); cvar.set('gfx_bloom_intensity', 0.5);
+      cvar.set('gfx_godrays', 0);
     } else if (p === 'medium') {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.008);
       cvar.set('gfx_shadows', 1); cvar.set('gfx_bloom_intensity', 0.8);
+      cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.3);
     } else {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.012);
       cvar.set('gfx_shadows', 2); cvar.set('gfx_bloom_intensity', 1.2);
+      cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.5);
     }
   },
 
@@ -109,9 +121,11 @@ plugin.register({
     if (this._rt) this._rt.dispose();
     if (this._rt2) this._rt2.dispose();
     if (this._rt3) this._rt3.dispose();
+    if (this._rt4) this._rt4.dispose();
     this._rt = new THREE.WebGLRenderTarget(w, h, opts);
     this._rt2 = new THREE.WebGLRenderTarget(w, h, opts);
     this._rt3 = new THREE.WebGLRenderTarget(w, h, opts);
+    this._rt4 = new THREE.WebGLRenderTarget(w, h, opts);
   },
 
   _initShaders() {
@@ -131,17 +145,27 @@ plugin.register({
     });
     this._combineMat = new THREE.ShaderMaterial({
       uniforms: {
-        tDiffuse: { value: null }, tBloom: { value: null },
-        bloomIntensity: { value: 0.8 }, vignetteAmount: { value: 0.35 },
+        tDiffuse: { value: null }, tBloom: { value: null }, tGodRays: { value: null },
+        bloomIntensity: { value: 0.8 }, godRayIntensity: { value: 0.4 },
+        vignetteAmount: { value: 0.35 },
         saturation: { value: 1.0 }, contrast: { value: 1.0 }
       },
       vertexShader: brightVert, fragmentShader: combineFrag, depthWrite: false, depthTest: false
+    });
+
+    this._godRaysMat = new THREE.ShaderMaterial({
+      uniforms: {
+        tDiffuse: { value: null }, sunPos: { value: new THREE.Vector2(0.5, 0.5) },
+        intensity: { value: 1.0 }, decay: { value: 0.95 }, weight: { value: 0.5 }
+      },
+      vertexShader: brightVert, fragmentShader: godRaysFrag, depthWrite: false, depthTest: false
     });
 
     this._fsqBright = new Fsq(this._brightMat);
     this._fsqBlurH = new Fsq(this._blurHMat);
     this._fsqBlurV = new Fsq(this._blurVMat);
     this._fsqCombine = new Fsq(this._combineMat);
+    this._fsqGodRays = new Fsq(this._godRaysMat);
 
     this._blurHMat.uniforms.resolution.value.set(this._width || 1, this._height || 1);
     this._blurVMat.uniforms.resolution.value.set(this._width || 1, this._height || 1);
@@ -213,10 +237,11 @@ plugin.register({
 
     // Bloom check
     var doBloom = cvar.get('gfx_bloom') && cvar.get('gfx_bloom_intensity') > 0.01;
+    var doGodRays = cvar.get('gfx_godrays') && cvar.get('gfx_godrays_intensity') > 0.01;
     var doVignette = cvar.get('gfx_vignette');
     var doColor = Math.abs(cvar.get('gfx_saturation') - 1.0) > 0.01 || Math.abs(cvar.get('gfx_contrast') - 1.0) > 0.01;
 
-    if (!doBloom && !doVignette && !doColor) {
+    if (!doBloom && !doGodRays && !doVignette && !doColor) {
       renderer.render(scene, camera);
       return;
     }
@@ -228,6 +253,7 @@ plugin.register({
     this._blurHMat.uniforms.resolution.value.set(w, h);
     this._blurVMat.uniforms.resolution.value.set(w, h);
     this._combineMat.uniforms.bloomIntensity.value = cvar.get('gfx_bloom_intensity') || 0.8;
+    this._combineMat.uniforms.godRayIntensity.value = doGodRays ? (cvar.get('gfx_godrays_intensity') || 0.4) : 0;
     this._combineMat.uniforms.vignetteAmount.value = doVignette ? (cvar.get('gfx_vignette_amount') || 0.35) : 0;
     this._combineMat.uniforms.saturation.value = cvar.get('gfx_saturation') || 1.0;
     this._combineMat.uniforms.contrast.value = cvar.get('gfx_contrast') || 1.0;
@@ -242,12 +268,25 @@ plugin.register({
       renderer.setRenderTarget(this._rt2);
       renderer.render(this._fsqBright, this._ppCamera);
 
-      // Pass 3: Blur H → RT3
+      // Pass 3: God rays from bright tex → RT4
+      if (doGodRays) {
+        var sunUV = this._findSunUV(scene, camera);
+        this._godRaysMat.uniforms.sunPos.value.copy(sunUV);
+        this._godRaysMat.uniforms.intensity.value = cvar.get('gfx_godrays_intensity') || 0.4;
+        this._godRaysMat.uniforms.tDiffuse.value = this._rt2.texture;
+        renderer.setRenderTarget(this._rt4);
+        renderer.render(this._fsqGodRays, this._ppCamera);
+        this._combineMat.uniforms.tGodRays.value = this._rt4.texture;
+      } else {
+        this._combineMat.uniforms.tGodRays.value = this._rt.texture;
+      }
+
+      // Pass 4: Blur H → RT3
       this._blurHMat.uniforms.tDiffuse.value = this._rt2.texture;
       renderer.setRenderTarget(this._rt3);
       renderer.render(this._fsqBlurH, this._ppCamera);
 
-      // Pass 4: Blur V → RT2
+      // Pass 5: Blur V → RT2
       this._blurVMat.uniforms.tDiffuse.value = this._rt3.texture;
       renderer.setRenderTarget(this._rt2);
       renderer.render(this._fsqBlurV, this._ppCamera);
@@ -256,19 +295,42 @@ plugin.register({
     } else {
       this._combineMat.uniforms.tBloom.value = this._rt.texture;
       this._combineMat.uniforms.bloomIntensity.value = 0;
+      this._combineMat.uniforms.tGodRays.value = this._rt.texture;
+      this._combineMat.uniforms.godRayIntensity.value = 0;
     }
 
-    // Pass 5: Combine → screen
+    // Pass 6: Combine → screen
     this._combineMat.uniforms.tDiffuse.value = this._rt.texture;
     renderer.setRenderTarget(null);
     renderer.render(this._fsqCombine, this._ppCamera);
+  },
+
+  _findSunUV(scene, camera) {
+    if (!scene || !camera) { this._sunUV.set(0.5, 0.5); return this._sunUV; }
+    this._sunVec.set(0, 0, 0);
+    scene.traverse(function(obj) {
+      if (obj.isDirectionalLight && !this._sunVec.length()) {
+        obj.getWorldPosition(this._sunVec);
+      }
+    }.bind(this));
+    if (!this._sunVec.length() || (this._sunVec.x === 0 && this._sunVec.y === 0 && this._sunVec.z === 0)) {
+      this._sunUV.set(0.5, 0.5);
+      return this._sunUV;
+    }
+    var sp = this._sunVec.project(camera);
+    this._sunUV.set(
+      Math.max(0.0, Math.min(1.0, sp.x * 0.5 + 0.5)),
+      Math.max(0.0, Math.min(1.0, sp.y * 0.5 + 0.5))
+    );
+    return this._sunUV;
   },
 
   destroy() {
     if (this._rt) this._rt.dispose();
     if (this._rt2) this._rt2.dispose();
     if (this._rt3) this._rt3.dispose();
-    this._rt = this._rt2 = this._rt3 = null;
+    if (this._rt4) this._rt4.dispose();
+    this._rt = this._rt2 = this._rt3 = this._rt4 = null;
     plugin.off('game:start', this.id);
     if (commands) commands.unregister('gfx_postprocessing', 'gfx');
   }

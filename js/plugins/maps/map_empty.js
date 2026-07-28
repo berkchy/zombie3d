@@ -12,16 +12,32 @@ plugin.register({
   objects: [],
   colliders: [],
   _ready: false,
+  _depCount: 0,
+  _depLoaded: 0,
+  _modelPaths: ['map_sun'],
 
   init(game) {
     this.game = game;
     this.objects = [];
     this.colliders = [];
     this._ready = false;
+    this._depCount = 0;
+    this._depLoaded = 0;
+
+    var self = this;
+    this._depCount = this._modelPaths.length;
+    this._depLoaded = 0;
+    this._modelPaths.forEach(function(path) {
+      loader.loadScript(path, function(err) {
+        if (err) console.warn('[map_empty]', err);
+        self._depLoaded++;
+      });
+    });
   },
 
   update(dt) {
     if (this._ready) return;
+    if (this._depLoaded < this._depCount) return;
     if (!this.game || !this.game.currentMap || this.game.currentMap.id !== 'empty') return;
     this._ready = true;
     this._buildMap();
@@ -29,24 +45,29 @@ plugin.register({
 
   _buildMap() {
     var scene = this.game.scene;
+    var self = this;
 
-    var amb = new THREE.AmbientLight(0x8899bb, 0.5);
-    scene.add(amb);
-    this.objects.push(amb);
+    function addModel(pluginId, config) {
+      var p = plugin.get(pluginId);
+      if (!p || !p.enabled || typeof p.createModel !== 'function') {
+        if (!p) console.warn('[map_empty] model bulunamadi:', pluginId);
+        return;
+      }
+      try {
+        var result = p.createModel(config);
+        if (result && result.mesh) {
+          scene.add(result.mesh);
+          self.objects.push(result.mesh);
+          if (result.colliders) {
+            result.colliders.forEach(function(c) { self.colliders.push(c); });
+          }
+        }
+      } catch (e) {
+        console.warn('[map_empty] model yukleme hatasi:', pluginId, e);
+      }
+    }
 
-    var sun = new THREE.DirectionalLight(0xffeedd, 1.2);
-    sun.position.set(10, 20, 15);
-    sun.castShadow = true;
-    sun.shadow.mapSize.width = 1024;
-    sun.shadow.mapSize.height = 1024;
-    var d = 25;
-    sun.shadow.camera.left = -d;
-    sun.shadow.camera.right = d;
-    sun.shadow.camera.top = d;
-    sun.shadow.camera.bottom = -d;
-    sun.shadow.camera.far = 40;
-    scene.add(sun);
-    this.objects.push(sun);
+    addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.5, hemiIntensity: 0.7, shadowSize: 25 });
 
     var size = 30;
     var floorMat = new THREE.MeshStandardMaterial({ color: 0x6a7a7a, roughness: 0.7 });
@@ -140,11 +161,18 @@ plugin.register({
   },
 
   buildThumbnail(targetScene, callback) {
-    var amb = new THREE.AmbientLight(0x8899bb, 0.5);
-    targetScene.add(amb);
-    var sun = new THREE.DirectionalLight(0xffeedd, 1.2);
-    sun.position.set(10, 20, 15);
-    targetScene.add(sun);
+    var self = this;
+
+    function addModel(pluginId, config) {
+      var p = plugin.get(pluginId);
+      if (!p || !p.enabled || typeof p.createModel !== 'function') return;
+      try {
+        var result = p.createModel(config);
+        if (result && result.mesh) targetScene.add(result.mesh);
+      } catch (e) {}
+    }
+
+    addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.5, hemiIntensity: 0.7, castShadow: false });
 
     var size = 30;
     var floorMat = new THREE.MeshStandardMaterial({ color: 0x6a7a7a, roughness: 0.7 });

@@ -20,7 +20,8 @@ plugin.register({
     'map_pillar',
     'map_ruins',
     'map_torch',
-    'map_wall'
+    'map_wall',
+    'map_sun'
   ],
 
   init(game) {
@@ -59,24 +60,6 @@ plugin.register({
     var scene = this.game.scene;
     var self = this;
 
-    var amb = new THREE.AmbientLight(0x605060, 0.45);
-    scene.add(amb);
-    this.objects.push(amb);
-
-    var sun = new THREE.DirectionalLight(0xffaa66, 1.3);
-    sun.position.set(10, 25, 10);
-    sun.castShadow = true;
-    sun.shadow.mapSize.width = 1024;
-    sun.shadow.mapSize.height = 1024;
-    var d = 35;
-    sun.shadow.camera.left = -d;
-    sun.shadow.camera.right = d;
-    sun.shadow.camera.top = d;
-    sun.shadow.camera.bottom = -d;
-    sun.shadow.camera.far = 50;
-    scene.add(sun);
-    this.objects.push(sun);
-
     function addModel(pluginId, config) {
       var p = plugin.get(pluginId);
       if (!p || !p.enabled || typeof p.createModel !== 'function') {
@@ -99,6 +82,7 @@ plugin.register({
 
     addModel('map_ground', { size: 60, color: 0x9a8a6a });
     addModel('map_platform', { position: [0, 0, 0] });
+    addModel('map_sun', { position: [10, 25, 10], targetX: 0, targetZ: 0, intensity: 1.3, ambientIntensity: 0.45, hemiIntensity: 0.7, shadowSize: 35 });
     for (var i = 0; i < 8; i++) {
       var ag = i * Math.PI / 4 + Math.PI / 8;
       addModel('map_pillar', {
@@ -191,12 +175,7 @@ plugin.register({
     }
 
     function build() {
-      var amb = new THREE.AmbientLight(0x605060, 0.45);
-      targetScene.add(amb);
-      var sun = new THREE.DirectionalLight(0xffaa66, 1.3);
-      sun.position.set(10, 25, 10);
-      targetScene.add(sun);
-
+      addModel('map_sun', { position: [10, 25, 10], targetX: 0, targetZ: 0, intensity: 1.3, ambientIntensity: 0.45, hemiIntensity: 0.7, castShadow: false });
       addModel('map_ground', { size: 60, color: 0x9a8a6a });
       addModel('map_platform', { position: [0, 0, 0] });
       for (var i = 0; i < 8; i++) {
