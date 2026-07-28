@@ -18,7 +18,7 @@ var brightFrag = 'uniform sampler2D tDiffuse;uniform float threshold;varying vec
 var blurFragH = 'uniform sampler2D tDiffuse;uniform vec2 resolution;varying vec2 vUv;void main(){vec2 px=vec2(1.0/resolution.x,0.0);vec4 c=texture2D(tDiffuse,vUv)*0.227;c+=texture2D(tDiffuse,vUv+px*1.0)*0.158;c+=texture2D(tDiffuse,vUv-px*1.0)*0.158;c+=texture2D(tDiffuse,vUv+px*2.0)*0.073;c+=texture2D(tDiffuse,vUv-px*2.0)*0.073;c+=texture2D(tDiffuse,vUv+px*3.0)*0.018;c+=texture2D(tDiffuse,vUv-px*3.0)*0.018;gl_FragColor=c;}';
 var blurFragV = 'uniform sampler2D tDiffuse;uniform vec2 resolution;varying vec2 vUv;void main(){vec2 px=vec2(0.0,1.0/resolution.y);vec4 c=texture2D(tDiffuse,vUv)*0.227;c+=texture2D(tDiffuse,vUv+px*1.0)*0.158;c+=texture2D(tDiffuse,vUv-px*1.0)*0.158;c+=texture2D(tDiffuse,vUv+px*2.0)*0.073;c+=texture2D(tDiffuse,vUv-px*2.0)*0.073;c+=texture2D(tDiffuse,vUv+px*3.0)*0.018;c+=texture2D(tDiffuse,vUv-px*3.0)*0.018;gl_FragColor=c;}';
 
-var combineFrag = 'uniform sampler2D tDiffuse;uniform sampler2D tBloom;uniform sampler2D tGodRays;uniform float bloomIntensity;uniform float godRayIntensity;uniform float vignetteAmount;uniform float saturation;uniform float contrast;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);vec4 b=texture2D(tBloom,vUv);c.rgb+=b.rgb*bloomIntensity;vec4 g=texture2D(tGodRays,vUv);c.rgb+=g.rgb*godRayIntensity;float l=dot(c.rgb,vec3(0.299,0.587,0.114));c.rgb=mix(vec3(l),c.rgb,saturation);c.rgb=(c.rgb-0.5)*contrast+0.5;float d=distance(vUv,vec2(0.5,0.5));float v=1.0-smoothstep(0.15,0.65,d)*vignetteAmount;gl_FragColor=vec4(c.rgb*v,c.a);}';
+var combineFrag = 'uniform sampler2D tDiffuse;uniform sampler2D tBloom;uniform sampler2D tGodRays;uniform float bloomIntensity;uniform float godRayIntensity;uniform float sunGlow;uniform vec2 sunPos;uniform float vignetteAmount;uniform float saturation;uniform float contrast;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);vec4 b=texture2D(tBloom,vUv);c.rgb+=b.rgb*bloomIntensity;vec4 g=texture2D(tGodRays,vUv);c.rgb+=g.rgb*godRayIntensity;float sd=distance(vUv,sunPos);float glow=exp(-sd*sd*12.0);c.rgb+=g.rgb*glow*sunGlow;float l=dot(c.rgb,vec3(0.299,0.587,0.114));c.rgb=mix(vec3(l),c.rgb,saturation);c.rgb=(c.rgb-0.5)*contrast+0.5;float d=distance(vUv,vec2(0.5,0.5));float v=1.0-smoothstep(0.15,0.65,d)*vignetteAmount;gl_FragColor=vec4(c.rgb*v,c.a);}';
 
 var godRaysFrag = 'uniform sampler2D tDiffuse;uniform vec2 sunPos;uniform float intensity;uniform float decay;uniform float weight;varying vec2 vUv;void main(){vec2 uv=vUv;vec2 dir=sunPos-uv;float dist=length(dir);if(dist<0.001){gl_FragColor=vec4(0.0,0.0,0.0,1.0);return;}vec2 delta=dir/dist*0.008;vec3 col=vec3(0.0);float atten=1.0;for(int i=0;i<64;i++){vec4 s=texture2D(tDiffuse,uv);col+=s.rgb*weight*atten;uv+=delta;atten*=decay;if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0)break;}gl_FragColor=vec4(col*intensity,1.0);}';
 
@@ -70,6 +70,7 @@ plugin.register({
     cvar.register('gfx_fog_density', 0.008, 'number', 'Sis yogunlugu');
     cvar.register('gfx_godrays', 1, 'number', 'God rays (gunes isini)');
     cvar.register('gfx_godrays_intensity', 1.0, 'number', 'God rays siddeti (0-2)');
+    cvar.register('gfx_godrays_glow', 0.5, 'number', 'Gunes parlamasi (0-2)');
     cvar.register('gfx_godrays_blur', 0.5, 'number', 'God rays bulaniklik (0=keskin 1=cok yumusak)');
     cvar.register('gfx_shadows', 0, 'number', 'Golge kalitesi 0=off 1=low 2=high');
     cvar.register('gfx_quality', 'medium', 'string', 'Grafik kalitesi low/medium/ultra');
@@ -106,13 +107,13 @@ plugin.register({
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.008);
       cvar.set('gfx_shadows', 1); cvar.set('gfx_bloom_intensity', 0.25);
       cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.8);
-      cvar.set('gfx_godrays_blur', 0.5);
+      cvar.set('gfx_godrays_glow', 0.5); cvar.set('gfx_godrays_blur', 0.5);
     } else {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.012);
       cvar.set('gfx_shadows', 2); cvar.set('gfx_bloom_intensity', 0.4);
       cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 1.2);
-      cvar.set('gfx_godrays_blur', 0.7);
+      cvar.set('gfx_godrays_glow', 0.7); cvar.set('gfx_godrays_blur', 0.7);
     }
   },
 
@@ -151,6 +152,7 @@ plugin.register({
       uniforms: {
         tDiffuse: { value: null }, tBloom: { value: null }, tGodRays: { value: null },
         bloomIntensity: { value: 0.25 }, godRayIntensity: { value: 1.0 },
+        sunGlow: { value: 0.5 }, sunPos: { value: new THREE.Vector2(0.5, 0.5) },
         vignetteAmount: { value: 0.35 },
         saturation: { value: 1.0 }, contrast: { value: 1.0 }
       },
@@ -259,6 +261,7 @@ plugin.register({
     this._blurVMat.uniforms.resolution.value.set(w, h);
     this._combineMat.uniforms.bloomIntensity.value = cvar.get('gfx_bloom_intensity') || 0.8;
     this._combineMat.uniforms.godRayIntensity.value = doGodRays ? 1.0 : 0;
+    this._combineMat.uniforms.sunGlow.value = cvar.get('gfx_godrays_glow') || 0.5;
     this._combineMat.uniforms.vignetteAmount.value = doVignette ? (cvar.get('gfx_vignette_amount') || 0.35) : 0;
     this._combineMat.uniforms.saturation.value = cvar.get('gfx_saturation') || 1.0;
     this._combineMat.uniforms.contrast.value = cvar.get('gfx_contrast') || 1.0;
@@ -276,6 +279,7 @@ plugin.register({
     if (doGodRays) {
       var sunUV = this._findSunUV(scene, camera);
       this._godRaysMat.uniforms.sunPos.value.copy(sunUV);
+      this._combineMat.uniforms.sunPos.value.copy(sunUV);
       this._godRaysMat.uniforms.intensity.value = cvar.get('gfx_godrays_intensity') || 1.0;
       this._godRaysMat.uniforms.tDiffuse.value = this._rt2.texture;
       renderer.setRenderTarget(this._rt4);
