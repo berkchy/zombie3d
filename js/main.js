@@ -374,7 +374,6 @@ function init() {
         document.getElementById('gameContainer').insertBefore(
           renderer.domElement, document.getElementById('gameContainer').firstChild
         );
-      }
 
       // ---------- 2D Overlay ----------
       var overlayCanvas = document.getElementById('overlay');
@@ -650,6 +649,7 @@ function init() {
         }
       } else {
         _finishLoading();
+      }
       }
     }, updateLoader);
   });
