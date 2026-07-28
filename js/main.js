@@ -689,6 +689,7 @@ function loop(time) {
   if (!running) return;
 
   var dt = Math.min((time - lastTime) / 1000, 0.05);
+  dt *= (window._timeScale || 1);
   lastTime = time;
   if (gameStarted && !game.paused) game.elapsed += dt;
 
