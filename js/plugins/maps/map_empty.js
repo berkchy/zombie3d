@@ -14,7 +14,7 @@ plugin.register({
   _ready: false,
   _depCount: 0,
   _depLoaded: 0,
-  _modelPaths: ['map_sun'],
+  _modelPaths: ['map_sun', 'map_skybox_day'],
 
   init(game) {
     this.game = game;
@@ -67,6 +67,7 @@ plugin.register({
       }
     }
 
+    addModel('map_skybox_day', {});
     addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.45, hemiIntensity: 0.35, shadowSize: 25 });
 
     var size = 30;
@@ -172,6 +173,7 @@ plugin.register({
       } catch (e) {}
     }
 
+    addModel('map_skybox_day', {});
     addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.45, hemiIntensity: 0.35, castShadow: false });
 
     var size = 30;

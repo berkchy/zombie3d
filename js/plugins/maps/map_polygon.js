@@ -19,7 +19,8 @@ plugin.register({
     'map_cover_wall',
     'map_pit_center',
     'map_spawn_platforms',
-    'map_sun'
+    'map_sun',
+    'map_skybox_day'
   ],
 
   init: function(game) {
@@ -73,6 +74,7 @@ plugin.register({
       }
     }
 
+    addModel('map_skybox_day', {});
     addModel('map_sun', {
       position: [20, 35, 15], targetX: 0, targetZ: 0, intensity: 1.8
     });
@@ -156,6 +158,7 @@ plugin.register({
       } catch (e) {}
     }
     function build() {
+      addModel('map_skybox_day', {});
       addModel('map_sun', {
         position: [20, 35, 15], targetX: 0, targetZ: 0, intensity: 1.8, castShadow: false
       });

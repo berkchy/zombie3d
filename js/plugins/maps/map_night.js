@@ -23,7 +23,8 @@ plugin.register({
     'map_night_brazier',
     'map_night_lantern_post',
     'map_night_tree',
-    'map_wall'
+    'map_wall',
+    'map_skybox_night'
   ],
 
   init(game) {
@@ -81,6 +82,7 @@ plugin.register({
     }
 
     addModel('map_night_ground', { size: 60 });
+    addModel('map_skybox_night', {});
     addModel('map_moon', { position: [12, 24, 8], targetX: 0, targetZ: 0, intensity: 0.8, ambientIntensity: 0.15, hemiIntensity: 0.2, shadowSize: 35 });
 
     cvar.set('gfx_fog_density', 0.012);
@@ -177,6 +179,7 @@ plugin.register({
     }
 
     function build() {
+      addModel('map_skybox_night', {});
       addModel('map_moon', { position: [12, 24, 8], targetX: 0, targetZ: 0, intensity: 0.8, ambientIntensity: 0.15, hemiIntensity: 0.2, castShadow: false });
       addModel('map_night_ground', { size: 60 });
       var statuePositions = [[-12, -12], [12, -12], [-12, 12], [12, 12]];
