@@ -293,7 +293,7 @@ plugin.register({
     this._combineMat.uniforms.godRayIntensity.value = doGodRays ? 1.0 : 0;
     this._combineMat.uniforms.sunGlow.value = cvar.get('gfx_godrays_glow') || 0.5;
     this._combineMat.uniforms.vignetteAmount.value = doVignette ? (cvar.get('gfx_vignette_amount') || 0.35) : 0;
-    this._combineMat.uniforms.uSlowMo.value = cvar.get('slowmo') && cvar.get('slowmo_speed') < 0.99 ? (cvar.get('slowmo_amount') || 0.5) : 0;
+    this._combineMat.uniforms.uSlowMo.value = (window._slowMoEffect || 0);
     this._combineMat.uniforms.saturation.value = cvar.get('gfx_saturation') || 1.0;
     this._combineMat.uniforms.contrast.value = cvar.get('gfx_contrast') || 1.0;
 
