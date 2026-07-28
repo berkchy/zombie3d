@@ -276,8 +276,9 @@ plugin.register({
     renderer.render(this._fsqBright, this._ppCamera);
 
     // Pass 3: God rays from bright tex → RT4
-    if (doGodRays) {
-      var sunUV = this._findSunUV(scene, camera);
+    var sunUV = doGodRays ? this._findSunUV(scene, camera) : null;
+    var sunVisible = sunUV && sunUV.x >= -0.05 && sunUV.y >= -0.05;
+    if (doGodRays && sunVisible) {
       this._godRaysMat.uniforms.sunPos.value.copy(sunUV);
       this._combineMat.uniforms.sunPos.value.copy(sunUV);
       this._godRaysMat.uniforms.intensity.value = cvar.get('gfx_godrays_intensity') || 1.0;
@@ -304,6 +305,7 @@ plugin.register({
     } else {
       this._combineMat.uniforms.tGodRays.value = this._rt.texture;
       this._combineMat.uniforms.godRayIntensity.value = 0;
+      this._combineMat.uniforms.sunGlow.value = 0;
     }
 
     if (doBloom) {
@@ -342,9 +344,14 @@ plugin.register({
       return this._sunUV;
     }
     var sp = this._sunVec.project(camera);
+    // Gunus kameranin arkasinda veya ekran disindaysa sentinel (-1,-1) don
+    if (sp.z > 1.0 || sp.x < -1.2 || sp.x > 1.2 || sp.y < -1.2 || sp.y > 1.2) {
+      this._sunUV.set(-1, -1);
+      return this._sunUV;
+    }
     this._sunUV.set(
-      Math.max(0.0, Math.min(1.0, sp.x * 0.5 + 0.5)),
-      Math.max(0.0, Math.min(1.0, sp.y * 0.5 + 0.5))
+      Math.max(-0.1, Math.min(1.1, sp.x * 0.5 + 0.5)),
+      Math.max(-0.1, Math.min(1.1, sp.y * 0.5 + 0.5))
     );
     return this._sunUV;
   },
