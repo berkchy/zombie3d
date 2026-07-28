@@ -129,6 +129,9 @@ plugin.register({
     addModel('map_wall', { position: [0, 0, H], sizeX: 56, sizeZ: 0.4, height: 1.5, color: 0x3a3a4a });
     addModel('map_wall', { position: [-H, 0, 0], sizeX: 0.4, sizeZ: 56, height: 1.5, color: 0x3a3a4a });
     addModel('map_wall', { position: [H, 0, 0], sizeX: 0.4, sizeZ: 56, height: 1.5, color: 0x3a3a4a });
+
+    var w = plugin.get('fx_weather');
+    if (w && w.setWeather) w.setWeather({ rain: 0.4, fog: 0.6, wind: 0.2 });
   },
 
   getMapConfig: function() {

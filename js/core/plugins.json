@@ -54,6 +54,7 @@
   "fx_thumbnail_helper": "js/plugins/fx/fx_thumbnail_helper.js",
   "fx_tracer": "js/plugins/fx/fx_tracer.js",
   "fx_viewmodel_sway": "js/plugins/fx/fx_viewmodel_sway.js",
+  "fx_weather": "js/plugins/fx/fx_weather.js",
   "fx_zombie_health": "js/plugins/fx/fx_zombie_health.js",
   "fx_zombie_spawn": "js/plugins/fx/fx_zombie_spawn.js",
   "particle_fx": "js/plugins/fx/particle_fx.js",
