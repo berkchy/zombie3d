@@ -20,7 +20,7 @@ var blurFragV = 'uniform sampler2D tDiffuse;uniform vec2 resolution;varying vec2
 
 var combineFrag = 'uniform sampler2D tDiffuse;uniform sampler2D tBloom;uniform sampler2D tGodRays;uniform float bloomIntensity;uniform float godRayIntensity;uniform float vignetteAmount;uniform float saturation;uniform float contrast;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);vec4 b=texture2D(tBloom,vUv);c.rgb+=b.rgb*bloomIntensity;vec4 g=texture2D(tGodRays,vUv);c.rgb+=g.rgb*godRayIntensity;float l=dot(c.rgb,vec3(0.299,0.587,0.114));c.rgb=mix(vec3(l),c.rgb,saturation);c.rgb=(c.rgb-0.5)*contrast+0.5;float d=distance(vUv,vec2(0.5,0.5));float v=1.0-smoothstep(0.15,0.65,d)*vignetteAmount;gl_FragColor=vec4(c.rgb*v,c.a);}';
 
-var godRaysFrag = 'uniform sampler2D tDiffuse;uniform vec2 sunPos;uniform float intensity;uniform float decay;uniform float weight;varying vec2 vUv;void main(){vec2 uv=vUv;vec2 dir=sunPos-uv;float dist=length(dir);if(dist<0.001){gl_FragColor=vec4(0.0,0.0,0.0,1.0);return;}vec2 delta=dir/dist*0.008;vec3 col=vec3(0.0);float atten=1.0;for(int i=0;i<64;i++){uv+=delta;if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0)break;vec4 s=texture2D(tDiffuse,uv);col+=s.rgb*weight*atten;atten*=decay;}gl_FragColor=vec4(col*intensity,1.0);}';
+var godRaysFrag = 'uniform sampler2D tDiffuse;uniform vec2 sunPos;uniform float intensity;uniform float decay;uniform float weight;varying vec2 vUv;void main(){vec2 uv=vUv;vec2 dir=sunPos-uv;float dist=length(dir);if(dist<0.001||dist>1.4){gl_FragColor=vec4(0.0,0.0,0.0,1.0);return;}vec2 delta=dir/96.0;vec3 col=vec3(0.0);float atten=1.0;for(int i=0;i<96;i++){vec4 s=texture2D(tDiffuse,uv);float lum=dot(s.rgb,vec3(0.299,0.587,0.114));float bright=smoothstep(0.3,0.9,lum);col+=s.rgb*weight*atten*bright;uv+=delta;atten*=decay;if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0)break;}gl_FragColor=vec4(col*intensity,1.0);}';
 
 // ==================== PLUGIN ====================
 plugin.register({
@@ -125,7 +125,8 @@ plugin.register({
     this._rt = new THREE.WebGLRenderTarget(w, h, opts);
     this._rt2 = new THREE.WebGLRenderTarget(w, h, opts);
     this._rt3 = new THREE.WebGLRenderTarget(w, h, opts);
-    this._rt4 = new THREE.WebGLRenderTarget(w, h, opts);
+    opts.minFilter = THREE.LinearFilter; opts.magFilter = THREE.LinearFilter;
+    this._rt4 = new THREE.WebGLRenderTarget(Math.max(1, w>>1), Math.max(1, h>>1), opts);
   },
 
   _initShaders() {
@@ -156,7 +157,7 @@ plugin.register({
     this._godRaysMat = new THREE.ShaderMaterial({
       uniforms: {
         tDiffuse: { value: null }, sunPos: { value: new THREE.Vector2(0.5, 0.5) },
-        intensity: { value: 1.0 }, decay: { value: 0.93 }, weight: { value: 0.03 }
+        intensity: { value: 1.0 }, decay: { value: 0.97 }, weight: { value: 0.015 }
       },
       vertexShader: brightVert, fragmentShader: godRaysFrag, depthWrite: false, depthTest: false
     });
@@ -250,6 +251,13 @@ plugin.register({
     this._ensureRT(w, h);
     this._initShaders();
     this._brightMat.uniforms.threshold.value = cvar.get('gfx_bloom_threshold') || 0.2;
+
+    // God rays kullanilmiyorsa combine'daki intensity sifirla
+    if (!doGodRays) {
+      this._combineMat.uniforms.godRayIntensity.value = 0;
+    }
+
+    // RT cozunurluklerini blur icin ayarla
     this._blurHMat.uniforms.resolution.value.set(w, h);
     this._blurVMat.uniforms.resolution.value.set(w, h);
     this._combineMat.uniforms.bloomIntensity.value = cvar.get('gfx_bloom_intensity') || 0.8;
@@ -262,24 +270,25 @@ plugin.register({
     renderer.setRenderTarget(this._rt);
     renderer.render(scene, camera);
 
+    // Pass 2: God rays from scene tex → RT4 (yarim cozunurlukte, luminance agirlikli)
+    if (doGodRays) {
+      var sunUV = this._findSunUV(scene, camera);
+      this._godRaysMat.uniforms.sunPos.value.copy(sunUV);
+      this._godRaysMat.uniforms.intensity.value = cvar.get('gfx_godrays_intensity') || 0.2;
+      this._godRaysMat.uniforms.tDiffuse.value = this._rt.texture;
+      renderer.setRenderTarget(this._rt4);
+      renderer.render(this._fsqGodRays, this._ppCamera);
+      this._combineMat.uniforms.tGodRays.value = this._rt4.texture;
+    } else {
+      this._combineMat.uniforms.tGodRays.value = this._rt.texture;
+      this._combineMat.uniforms.godRayIntensity.value = 0;
+    }
+
     if (doBloom) {
-      // Pass 2: Extract bright → RT2
+      // Pass 3: Extract bright → RT2
       this._brightMat.uniforms.tDiffuse.value = this._rt.texture;
       renderer.setRenderTarget(this._rt2);
       renderer.render(this._fsqBright, this._ppCamera);
-
-      // Pass 3: God rays from bright tex → RT4
-      if (doGodRays) {
-        var sunUV = this._findSunUV(scene, camera);
-        this._godRaysMat.uniforms.sunPos.value.copy(sunUV);
-        this._godRaysMat.uniforms.intensity.value = cvar.get('gfx_godrays_intensity') || 0.4;
-        this._godRaysMat.uniforms.tDiffuse.value = this._rt2.texture;
-        renderer.setRenderTarget(this._rt4);
-        renderer.render(this._fsqGodRays, this._ppCamera);
-        this._combineMat.uniforms.tGodRays.value = this._rt4.texture;
-      } else {
-        this._combineMat.uniforms.tGodRays.value = this._rt.texture;
-      }
 
       // Pass 4: Blur H → RT3
       this._blurHMat.uniforms.tDiffuse.value = this._rt2.texture;
@@ -295,8 +304,6 @@ plugin.register({
     } else {
       this._combineMat.uniforms.tBloom.value = this._rt.texture;
       this._combineMat.uniforms.bloomIntensity.value = 0;
-      this._combineMat.uniforms.tGodRays.value = this._rt.texture;
-      this._combineMat.uniforms.godRayIntensity.value = 0;
     }
 
     // Pass 6: Combine → screen
