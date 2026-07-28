@@ -9,9 +9,7 @@ window.PluginLoader = (function() {
   var _globalErrorHandler = null;
   var _activeResults = null;
   var _nameToPath = {};
-  var _scanDone = false;
-
-  var _subdirs = ['core', 'dev', 'fx', 'input', 'models', 'ui', 'weapons', 'entities', 'pickups', 'menu', 'misc', 'maps', 'actions'];
+  var _manifestPromise = null;
 
   function _calcDisplayTime(bytes) {
     if (bytes <= 0) return 80;
@@ -39,44 +37,28 @@ window.PluginLoader = (function() {
     window.addEventListener('error', _globalErrorHandler);
   }
 
-  // ---------- Klasör tara, .js dosyalarını bul ----------
-  function _scanDir(dir, onDone) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', dir + '/?v=' + _cacheBust, true);
-    xhr.onload = function() {
-      if (xhr.status === 200 || xhr.status === 0) {
-        var html = xhr.responseText;
-        var base = dir.replace(/\/+$/, '') + '/';
-        var regex = /<a[^>]+href="([^"]+\.js)"/gi;
-        var match;
-        while ((match = regex.exec(html)) !== null) {
-          var fname = decodeURIComponent(match[1]);
-          var name = fname.replace(/\.js$/i, '');
-          if (!_nameToPath[name]) {
-            _nameToPath[name] = base + fname;
-          }
+  // ---------- plugins.json manifestini yükle ----------
+  function _loadManifest() {
+    if (_manifestPromise) return _manifestPromise;
+    _manifestPromise = new Promise(function(resolve) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', 'js/core/plugins.json?v=' + _cacheBust, true);
+      xhr.onload = function() {
+        if (xhr.status === 200 || xhr.status === 0) {
+          try {
+            var data = JSON.parse(xhr.responseText);
+            _nameToPath = {};
+            for (var name in data) {
+              _nameToPath[name] = data[name];
+            }
+          } catch(e) {}
         }
-      }
-      if (onDone) onDone();
-    };
-    xhr.onerror = function() { if (onDone) onDone(); };
-    xhr.send();
-  }
-
-  function _scanPlugins(onDone) {
-    if (_scanDone) { if (onDone) onDone(); return; }
-    _nameToPath = {};
-    var pending = _subdirs.length + 1;
-    _subdirs.forEach(function(sub) {
-      _scanDir('js/plugins/' + sub, function() {
-        pending--;
-        if (pending <= 0) { _scanDone = true; if (onDone) onDone(); }
-      });
+        resolve();
+      };
+      xhr.onerror = function() { resolve(); };
+      xhr.send();
     });
-    _scanDir('js/plugins/maps/models', function() {
-      pending--;
-      if (pending <= 0) { _scanDone = true; if (onDone) onDone(); }
-    });
+    return _manifestPromise;
   }
 
   // ---------- İsimden yolu çöz ----------
@@ -106,7 +88,8 @@ window.PluginLoader = (function() {
             debug: flags.indexOf('debug') !== -1
           });
         });
-        _scanPlugins(function() {
+        // Manifest yüklendikten sonra callback'e dön
+        _loadManifest().then(function() {
           if (onDone) onDone(null, _entries);
         });
       } else {

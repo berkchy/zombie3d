@@ -965,32 +965,25 @@ function loop(time) {
   requestAnimationFrame(loop);
 }
 
-// ---- Dinamik modül yükleyici (localhost directory listing) ----
+// ---- Modül yükleyici ----
 (function() {
-  var baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+  var libFiles = [
+    'js/lib/three.min.js',
+    'js/lib/howler.min.js'
+  ];
 
-  function fetchDir(dir) {
-    return fetch(baseUrl + dir + '/').then(function(r) {
-      if (!r.ok) throw new Error(dir + ' listing alınamadı');
-      return r.text();
-    }).then(function(html) {
-      var doc = new DOMParser().parseFromString(html, 'text/html');
-      var links = doc.querySelectorAll('a');
-      var files = [];
-      for (var i = 0; i < links.length; i++) {
-        var name = ((links[i].getAttribute('href') || '').split('/').pop() || '').trim();
-        if (name.endsWith('.js') && !name.startsWith('.')) files.push(dir + '/' + name);
-      }
-      // Bağımlılık sırası: Storage → Registry → diğerleri (alfabetik)
-      files.sort(function(a, b) {
-        var na = a.split('/').pop(), nb = b.split('/').pop();
-        var pa = na === 'PluginStorageAPI.js' ? 0 : na === 'PluginRegistry.js' ? 1 : 2;
-        var pb = nb === 'PluginStorageAPI.js' ? 0 : nb === 'PluginRegistry.js' ? 1 : 2;
-        return pa !== pb ? pa - pb : na.localeCompare(nb);
-      });
-      return files;
-    });
-  }
+  var coreFiles = [
+    'js/core/PluginStorageAPI.js',
+    'js/core/PluginRegistry.js',
+    'js/core/ColliderHelper.js',
+    'js/core/ConfirmDialog.js',
+    'js/core/MapRegistry.js',
+    'js/core/MeshCollider.js',
+    'js/core/PluginCommandsAPI.js',
+    'js/core/PluginCvarAPI.js',
+    'js/core/PluginLoader.js',
+    'js/core/PluginPanel.js'
+  ];
 
   function loadSeq(list) {
     var idx = 0;
@@ -1008,10 +1001,7 @@ function loop(time) {
     });
   }
 
-  Promise.all([fetchDir('js/lib'), fetchDir('js/core')])
-    .then(function(r) {
-      return loadSeq(r[0].concat(r[1]));
-    })
+  loadSeq(libFiles.concat(coreFiles))
     .then(function() {
       console.log('[Loader] Tüm modüller yüklendi');
       init();
