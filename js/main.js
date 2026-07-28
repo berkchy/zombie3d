@@ -277,7 +277,7 @@ window._applyHfov = function() {
   camera.updateProjectionMatrix();
 };
 
-async function init() {
+function init() {
   document.getElementById('loadingScreen').classList.remove('hidden');
 
   PluginLoader.loadIni('plugins.ini', function(err) {
@@ -353,20 +353,28 @@ async function init() {
       if (typeof THREE.WebGPURenderer !== 'undefined') {
         try {
           renderer = new THREE.WebGPURenderer({ antialias: true });
-          await renderer.init();
+          renderer.init().then(continueInit).catch(function() {
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            continueInit();
+          });
         } catch(e) {
           renderer = new THREE.WebGLRenderer({ antialias: true });
+          continueInit();
         }
       } else {
         renderer = new THREE.WebGLRenderer({ antialias: true });
+        continueInit();
       }
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      document.getElementById('gameContainer').insertBefore(
-        renderer.domElement, document.getElementById('gameContainer').firstChild
-      );
+
+      function continueInit() {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('gameContainer').insertBefore(
+          renderer.domElement, document.getElementById('gameContainer').firstChild
+        );
+      }
 
       // ---------- 2D Overlay ----------
       var overlayCanvas = document.getElementById('overlay');
