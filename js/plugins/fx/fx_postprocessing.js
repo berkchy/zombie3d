@@ -22,6 +22,8 @@ var combineFrag = 'uniform sampler2D tDiffuse;uniform sampler2D tBloom;uniform s
 
 var godRaysFrag = 'uniform sampler2D tDiffuse;uniform vec2 sunPos;uniform float intensity;uniform float decay;uniform float weight;varying vec2 vUv;void main(){vec2 uv=vUv;vec2 dir=sunPos-uv;float dist=length(dir);if(dist<0.001){gl_FragColor=vec4(0.0,0.0,0.0,1.0);return;}vec2 delta=dir/dist*0.008;vec3 col=vec3(0.0);float atten=1.0;for(int i=0;i<64;i++){vec4 s=texture2D(tDiffuse,uv);col+=s.rgb*weight*atten;uv+=delta;atten*=decay;if(uv.x<0.0||uv.x>1.0||uv.y<0.0||uv.y>1.0)break;}gl_FragColor=vec4(col*intensity,1.0);}';
 
+var heatShimmerFrag = 'uniform sampler2D tDiffuse;uniform float uTime;uniform float uIntensity;varying vec2 vUv;void main(){vec2 uv=vUv;float nx=sin(uv.y*40.0+uTime*1.3)*cos(uv.x*30.0+uTime*0.7);float ny=sin(uv.x*35.0+uTime*0.9)*cos(uv.y*45.0+uTime*1.1);uv+=vec2(nx,ny)*uIntensity*0.008;gl_FragColor=texture2D(tDiffuse,uv);}';
+
 // ==================== PLUGIN ====================
 plugin.register({
   id: 'gfx_postprocessing',
@@ -44,11 +46,13 @@ plugin.register({
   _blurVMat: null,
   _combineMat: null,
   _godRaysMat: null,
+  _heatShimmerMat: null,
   _fsqBright: null,
   _fsqBlurH: null,
   _fsqBlurV: null,
   _fsqCombine: null,
   _fsqGodRays: null,
+  _fsqHeatShimmer: null,
   _width: 0,
   _height: 0,
   _ppCamera: null,
@@ -73,6 +77,8 @@ plugin.register({
     cvar.register('gfx_godrays_glow', 0.5, 'number', 'Gunes parlamasi (0-2)');
     cvar.register('gfx_godrays_blur', 0.5, 'number', 'God rays bulaniklik (0=keskin 1=cok yumusak)');
     cvar.register('gfx_shadows', 0, 'number', 'Golge kalitesi 0=off 1=low 2=high');
+    cvar.register('gfx_heat_shimmer', 1, 'number', 'Isi titremesi (heat shimmer)');
+    cvar.register('gfx_heat_shimmer_intensity', 1.0, 'number', 'Isi titremesi siddeti (0-3)');
     cvar.register('gfx_quality', 'medium', 'string', 'Grafik kalitesi low/medium/ultra');
 
     this.active = true;
@@ -86,6 +92,15 @@ plugin.register({
         if (p === 'medium') { self._setPreset('medium'); return 'Medium kalite'; }
         if (p === 'ultra') { self._setPreset('ultra'); return 'Ultra kalite'; }
         return 'Bilinmeyen: ' + p;
+      });
+      commands.register('heat_shimmer', 'fx', function(args) {
+        if (args.length === 0) return 'heat_shimmer <0/1> veya heat_shimmer_intensity <0-3>';
+        if (args[0] === 'intensity' && args[1]) {
+          cvar.set('gfx_heat_shimmer_intensity', parseFloat(args[1]));
+          return 'Heat shimmer intensity: ' + cvar.get('gfx_heat_shimmer_intensity');
+        }
+        cvar.set('gfx_heat_shimmer', args[0] === '1' ? 1 : 0);
+        return 'Heat shimmer: ' + (cvar.get('gfx_heat_shimmer') ? 'ON' : 'OFF');
       });
     }
 
@@ -101,19 +116,21 @@ plugin.register({
       cvar.set('gfx_bloom', 0); cvar.set('gfx_vignette', 0);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.005);
       cvar.set('gfx_shadows', 0); cvar.set('gfx_bloom_intensity', 0.2);
-      cvar.set('gfx_godrays', 0);
+      cvar.set('gfx_godrays', 0); cvar.set('gfx_heat_shimmer', 0);
     } else if (p === 'medium') {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.008);
       cvar.set('gfx_shadows', 1); cvar.set('gfx_bloom_intensity', 0.25);
       cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 0.8);
       cvar.set('gfx_godrays_glow', 0.5); cvar.set('gfx_godrays_blur', 0.5);
+      cvar.set('gfx_heat_shimmer', 1); cvar.set('gfx_heat_shimmer_intensity', 1.0);
     } else {
       cvar.set('gfx_bloom', 1); cvar.set('gfx_vignette', 1);
       cvar.set('gfx_fog', 1); cvar.set('gfx_fog_density', 0.012);
       cvar.set('gfx_shadows', 2); cvar.set('gfx_bloom_intensity', 0.4);
       cvar.set('gfx_godrays', 1); cvar.set('gfx_godrays_intensity', 1.2);
       cvar.set('gfx_godrays_glow', 0.7); cvar.set('gfx_godrays_blur', 0.7);
+      cvar.set('gfx_heat_shimmer', 1); cvar.set('gfx_heat_shimmer_intensity', 1.5);
     }
   },
 
@@ -172,6 +189,12 @@ plugin.register({
     this._fsqBlurV = new Fsq(this._blurVMat);
     this._fsqCombine = new Fsq(this._combineMat);
     this._fsqGodRays = new Fsq(this._godRaysMat);
+
+    this._heatShimmerMat = new THREE.ShaderMaterial({
+      uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uIntensity: { value: 1.0 } },
+      vertexShader: brightVert, fragmentShader: heatShimmerFrag, depthWrite: false, depthTest: false
+    });
+    this._fsqHeatShimmer = new Fsq(this._heatShimmerMat);
 
     this._blurHMat.uniforms.resolution.value.set(this._width || 1, this._height || 1);
     this._blurVMat.uniforms.resolution.value.set(this._width || 1, this._height || 1);
@@ -238,10 +261,11 @@ plugin.register({
     // Bloom check
     var doBloom = cvar.get('gfx_bloom') && cvar.get('gfx_bloom_intensity') > 0.01;
     var doGodRays = cvar.get('gfx_godrays') && cvar.get('gfx_godrays_intensity') > 0.01;
+    var doHeatShimmer = cvar.get('gfx_heat_shimmer') && cvar.get('gfx_heat_shimmer_intensity') > 0.01;
     var doVignette = cvar.get('gfx_vignette');
     var doColor = Math.abs(cvar.get('gfx_saturation') - 1.0) > 0.01 || Math.abs(cvar.get('gfx_contrast') - 1.0) > 0.01;
 
-    if (!doBloom && !doGodRays && !doVignette && !doColor) {
+    if (!doBloom && !doGodRays && !doHeatShimmer && !doVignette && !doColor) {
       renderer.render(scene, camera);
       return;
     }
@@ -325,10 +349,19 @@ plugin.register({
       this._combineMat.uniforms.bloomIntensity.value = 0;
     }
 
-    // Pass 6: Combine → screen
+    // Pass 6: Combine → RT3 (or screen if no heat shimmer)
     this._combineMat.uniforms.tDiffuse.value = this._rt.texture;
-    renderer.setRenderTarget(null);
+    renderer.setRenderTarget(doHeatShimmer ? this._rt3 : null);
     renderer.render(this._fsqCombine, this._ppCamera);
+
+    // Pass 7: Heat shimmer → screen
+    if (doHeatShimmer) {
+      this._heatShimmerMat.uniforms.tDiffuse.value = this._rt3.texture;
+      this._heatShimmerMat.uniforms.uTime.value = performance.now() / 1000;
+      this._heatShimmerMat.uniforms.uIntensity.value = cvar.get('gfx_heat_shimmer_intensity') || 1.0;
+      renderer.setRenderTarget(null);
+      renderer.render(this._fsqHeatShimmer, this._ppCamera);
+    }
   },
 
   _findSunUV(scene, camera) {
@@ -363,6 +396,9 @@ plugin.register({
     if (this._rt4) this._rt4.dispose();
     this._rt = this._rt2 = this._rt3 = this._rt4 = null;
     plugin.off('game:start', this.id);
-    if (commands) commands.unregister('gfx_postprocessing', 'gfx');
+    if (commands) {
+      commands.unregister('gfx_postprocessing', 'gfx');
+      commands.unregister('heat_shimmer', 'fx');
+    }
   }
 });
