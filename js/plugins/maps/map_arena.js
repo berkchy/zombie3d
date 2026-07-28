@@ -82,7 +82,7 @@ plugin.register({
 
     addModel('map_ground', { size: 60, color: 0x9a8a6a });
     addModel('map_platform', { position: [0, 0, 0] });
-    addModel('map_sun', { position: [10, 25, 10], targetX: 0, targetZ: 0, intensity: 1.3, ambientIntensity: 0.45, hemiIntensity: 0.7, shadowSize: 35 });
+    addModel('map_sun', { position: [10, 25, 10], targetX: 0, targetZ: 0, intensity: 1.3, ambientColor: 0x605060, ambientIntensity: 0.45, hemiSkyColor: 0x88ccff, hemiGroundColor: 0x444422, hemiIntensity: 0.35, sunColor: 0xffaa66, shadowSize: 35 });
     for (var i = 0; i < 8; i++) {
       var ag = i * Math.PI / 4 + Math.PI / 8;
       addModel('map_pillar', {
@@ -175,7 +175,7 @@ plugin.register({
     }
 
     function build() {
-      addModel('map_sun', { position: [10, 25, 10], targetX: 0, targetZ: 0, intensity: 1.3, ambientIntensity: 0.45, hemiIntensity: 0.7, castShadow: false });
+      addModel('map_sun', { position: [10, 25, 10], targetX: 0, targetZ: 0, intensity: 1.3, ambientColor: 0x605060, ambientIntensity: 0.45, hemiSkyColor: 0x88ccff, hemiGroundColor: 0x444422, hemiIntensity: 0.35, sunColor: 0xffaa66, castShadow: false });
       addModel('map_ground', { size: 60, color: 0x9a8a6a });
       addModel('map_platform', { position: [0, 0, 0] });
       for (var i = 0; i < 8; i++) {

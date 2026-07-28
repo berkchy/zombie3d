@@ -32,13 +32,13 @@ plugin.register({
     halo.position.set(cx, cy, cz);
     group.add(halo);
 
-    var amb = new THREE.AmbientLight(0x8899bb, config.ambientIntensity || 0.5);
+    var amb = new THREE.AmbientLight(config.ambientColor || 0x8899bb, config.ambientIntensity || 0.5);
     group.add(amb);
 
-    var hemi = new THREE.HemisphereLight(0x88ccff, 0x444422, config.hemiIntensity || 0.7);
+    var hemi = new THREE.HemisphereLight(config.hemiSkyColor || 0x88ccff, config.hemiGroundColor || 0x444422, config.hemiIntensity || 0.7);
     group.add(hemi);
 
-    var sun = new THREE.DirectionalLight(0xffeedd, config.intensity || 1.8);
+    var sun = new THREE.DirectionalLight(config.sunColor || 0xffeedd, config.intensity || 1.8);
     sun.position.set(cx, cy, cz);
     sun.target.position.set(config.targetX || 0, 0, config.targetZ || 0);
     group.add(sun);

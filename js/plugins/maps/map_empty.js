@@ -67,7 +67,7 @@ plugin.register({
       }
     }
 
-    addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.5, hemiIntensity: 0.7, shadowSize: 25 });
+    addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.45, hemiIntensity: 0.35, shadowSize: 25 });
 
     var size = 30;
     var floorMat = new THREE.MeshStandardMaterial({ color: 0x6a7a7a, roughness: 0.7 });
@@ -172,7 +172,7 @@ plugin.register({
       } catch (e) {}
     }
 
-    addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.5, hemiIntensity: 0.7, castShadow: false });
+    addModel('map_sun', { position: [10, 20, 15], targetX: 0, targetZ: 0, intensity: 1.2, ambientIntensity: 0.45, hemiIntensity: 0.35, castShadow: false });
 
     var size = 30;
     var floorMat = new THREE.MeshStandardMaterial({ color: 0x6a7a7a, roughness: 0.7 });
