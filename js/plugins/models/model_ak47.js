@@ -67,7 +67,13 @@ plugin.register({
     console.log('[model_ak47] _build starting');
     var mdl = plugin.get('model_mdl');
     if (!mdl) return new THREE.Group();
-    var r = mdl.build(this._mdlFile);
+    var r;
+    try {
+      r = mdl.build(this._mdlFile);
+    } catch(e) {
+      console.error('[model_ak47] build ERROR:', e.message, e.stack);
+      return new THREE.Group();
+    }
     var g = r.group;
     g.name = 'ak47_model';
 
