@@ -48,12 +48,14 @@ plugin.register({
   },
 
   setModelRef(model) {
+    console.log('[weapon_ak47] setModelRef called, children:', model.children.length, 'userData:', Object.keys(model.userData));
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
     model.scale.set(1, 1, 1);
     model.position.set(0, 0, 0);
     model.rotation.set(0, 0, 0);
-    if (this._mixer) this._playClip('clip1');
+    if (this._mixer) { console.log('[weapon_ak47] playing clip1'); this._playClip('clip1'); }
+    else console.log('[weapon_ak47] no mixer');
   },
 
   setArmsRef(group) {
