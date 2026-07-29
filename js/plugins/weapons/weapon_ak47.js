@@ -51,8 +51,8 @@ plugin.register({
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
     model.scale.set(0.08, 0.08, 0.08);
-    model.position.set(0.35, -0.30, -0.18);
-    model.rotation.set(-0.06, 3.1, 0.03);
+    model.position.set(0, -0.06, 0);
+    model.rotation.set(-0.06, Math.PI, 0);
     if (this._mixer) this._playClip('clip1');
   },
 

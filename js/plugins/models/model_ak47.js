@@ -60,8 +60,7 @@ plugin.register({
     var g = r.group;
     g.name = 'ak47_model';
     g.scale.set(0.08, 0.08, 0.08);
-    g.position.set(0.35, -0.30, -0.18);
-    g.rotation.set(-0.06, 3.1, 0.03);
+    g.rotation.set(-0.06, Math.PI, 0);
 
     var mixer = new THREE.AnimationMixer(g);
     var clips = {};
