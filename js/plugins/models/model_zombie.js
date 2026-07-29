@@ -11,6 +11,7 @@ plugin.register({
 
   createModel() {
     var group = new THREE.Group();
+    group.traverse(function(c) { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
 
     var skinMat = new THREE.MeshStandardMaterial({ color: 0x6b8e5a, roughness: 0.85 });
     var darkSkinMat = new THREE.MeshStandardMaterial({ color: 0x4a6a3a, roughness: 0.9 });
@@ -72,7 +73,6 @@ plugin.register({
     var torsoGeo = new THREE.CylinderGeometry(0.22, 0.18, 0.33, 6);
     var torso = new THREE.Mesh(torsoGeo, shirtMat);
     torso.position.set(0, 0, 0);
-    torso.castShadow = true;
     torso.name = 'torso';
     torsoPivot.add(torso);
 

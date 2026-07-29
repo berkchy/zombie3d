@@ -168,6 +168,9 @@ plugin.register({
 
     var playerPos = this.game.player.mesh.position;
     var toRemove = [];
+    var anim = plugin.get('core_animation');
+    var mp = plugin.get('model_zombie');
+    var _v3 = new THREE.Vector3();
 
     for (var i = 0; i < this.zombies.length; i++) {
       var z = this.zombies[i];
@@ -196,14 +199,9 @@ plugin.register({
         }
       }
 
-      var dir = new THREE.Vector3()
-        .copy(playerPos)
-        .sub(z.mesh.position);
-      var dist = dir.length();
-      dir.normalize();
-
-      var anim = plugin.get('core_animation');
-      var mp = plugin.get('model_zombie');
+      _v3.copy(playerPos).sub(z.mesh.position);
+      var dist = _v3.length();
+      _v3.normalize();
 
       if (z._attacking) {
         plugin.emit('movement:stop', { entityId: z._moveId });
@@ -220,7 +218,7 @@ plugin.register({
         }
       } else if (dist > 0.5) {
         plugin.emit('movement:move_to', { entityId: z._moveId, target: playerPos });
-        z.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+        z.mesh.rotation.y = Math.atan2(_v3.x, _v3.z);
         if (anim && anim.enabled && mp && mp.animations) {
           if (!z._animId || z._lastAnim !== 'walk') {
             if (z._animId) anim.stop(z._animId);

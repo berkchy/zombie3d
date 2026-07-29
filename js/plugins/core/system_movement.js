@@ -11,6 +11,7 @@ plugin.register({
 
   init() {
     this._entities = {};
+    this._v3 = new THREE.Vector3();
 
     var self = this;
     plugin.on('movement:register', this.id, function(data) {
@@ -35,7 +36,7 @@ plugin.register({
       if (!data || !data.entityId) return;
       var e = self._entities[data.entityId];
       if (!e) return;
-      e.target = data.target instanceof THREE.Vector3 ? data.target.clone() : new THREE.Vector3(data.target[0], data.target[1] || 0, data.target[2]);
+      e.target = data.target;
       e.accel = data.accel || 15;
       e.friction = data.friction || 10;
       if (data.speed !== undefined) e.speed = data.speed;
@@ -70,16 +71,17 @@ plugin.register({
       if (!e.mesh || !e.canMove) continue;
 
       if (e.target) {
-        var dir = new THREE.Vector3()
-          .copy(e.target)
-          .sub(e.mesh.position);
-        var dist = dir.length();
-        dir.y = 0;
-        dir.normalize();
+        var _v3 = this._v3;
+        _v3.copy(e.target).sub(e.mesh.position);
+        var dist = _v3.length();
+        _v3.y = 0;
+        var distXZ = _v3.length();
+        if (distXZ < 0.001) { e.target = null; continue; }
+        _v3.divideScalar(distXZ);
 
         var moveSpeed = e.speed * dt;
-        var dx = dir.x * moveSpeed;
-        var dz = dir.z * moveSpeed;
+        var dx = _v3.x * moveSpeed;
+        var dz = _v3.z * moveSpeed;
 
         var nx = e.mesh.position.x + dx;
         var nz = e.mesh.position.z + dz;
