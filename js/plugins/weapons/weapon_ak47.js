@@ -92,6 +92,21 @@ plugin.register({
     this._currentAction.play();
   },
 
+  _onModelReady() {
+    var mp = plugin.get('model_ak47');
+    if (!mp || !mp._ready) return;
+    var fp = plugin.get('fx_firstperson');
+    if (!fp || !fp._viewGroup || !fp._arms) return;
+    var slot = fp._arms.slot;
+    if (!slot) return;
+    var old = slot.getObjectByName('ak47_model');
+    if (old) slot.remove(old);
+    var model = mp.createModel();
+    if (model.children.length === 0) return;
+    slot.add(model);
+    this.setModelRef(model);
+  },
+
   update(dt) {
     if (this.cooldown > 0) this.cooldown -= dt;
     if (this._mixer) this._mixer.update(dt);
