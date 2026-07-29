@@ -38,7 +38,7 @@ plugin.register({
     var self = this;
     plugin.on('hotbar:select', this.id, function(data) {
       if (!data.slot || data.slot.id !== 'weapon_ak47') {
-        if (self._armsRef) { self._armsRef.visible = true; self._armsRef = null; }
+        if (self._armsRef) { self._armsRef.traverse(function(c) { if (c.isMesh) c.visible = true; }); self._armsRef = null; }
       }
     });
   },
@@ -57,9 +57,11 @@ plugin.register({
   },
 
   setArmsRef(group) {
-    if (this._armsRef && this._armsRef !== group) this._armsRef.visible = true;
+    if (this._armsRef && this._armsRef !== group) {
+      this._armsRef.traverse(function(c) { if (c.isMesh) c.visible = true; });
+    }
     this._armsRef = group;
-    if (group) group.visible = false;
+    if (group) group.traverse(function(c) { if (c.isMesh) c.visible = false; });
   },
 
   getBarrelTip() {
