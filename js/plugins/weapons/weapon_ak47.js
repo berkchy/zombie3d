@@ -4,7 +4,7 @@ var loader = window.include('loader');
 plugin.register({
   id: 'weapon_ak47',
   name: 'AK-47',
-  version: '1.0',
+  version: '1.2',
   type: 'weapon',
   weaponType: 'rifle',
   modelId: 'model_ak47',
@@ -25,6 +25,7 @@ plugin.register({
   _modelRef: null,
   _mixer: null,
   _currentAction: null,
+  _armsRef: null,
 
   init(game) {
     loader.loadScript('model_ak47', function(){});
@@ -34,16 +35,38 @@ plugin.register({
     this._modelRef = null;
     this._mixer = null;
     this._currentAction = null;
+    this._armsRef = null;
     this.reserve = this.maxAmmo - this.ammo;
+    var self = this;
+    plugin.on('hotbar:select', this.id, function(data) {
+      if (!data.slot || data.slot.id !== 'weapon_ak47') {
+        if (self._armsRef) { self._armsRef.visible = true; self._armsRef = null; }
+      }
+    });
+  },
+
+  destroy() {
+    plugin.off('hotbar:select', this.id);
   },
 
   setModelRef(model) {
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
-    if (this._mixer) this._playClip('idle');
+    model.scale.set(0.08, 0.08, 0.08);
+    model.position.set(0.35, -0.30, -0.18);
+    model.rotation.set(-0.06, 3.1, 0.03);
+    if (this._mixer) {
+      var clips = model.userData.clips;
+      if (clips) console.log('[weapon_ak47] clips:', Object.keys(clips).join(', '));
+      this._playClip('idle');
+    }
   },
 
-  setArmsRef() {},
+  setArmsRef(group) {
+    if (this._armsRef && this._armsRef !== group) this._armsRef.visible = true;
+    this._armsRef = group;
+    if (group) group.visible = false;
+  },
 
   getBarrelTip() {
     return this._modelRef || null;
@@ -64,7 +87,7 @@ plugin.register({
     var clips = this._modelRef.userData.clips;
     if (!clips) return;
     var clip = clips[name];
-    if (!clip) return;
+    if (!clip) { console.log('[weapon_ak47] no clip:', name); return; }
     if (this._currentAction) {
       this._currentAction.stop();
       this._currentAction = null;
