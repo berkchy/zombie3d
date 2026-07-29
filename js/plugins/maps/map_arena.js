@@ -158,11 +158,7 @@ plugin.register({
 
   getIntroData: function() {
     return {
-      cameraPath: [
-        { pos: [0, 0.6, 10], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
-        { pos: [10, 0.6, 5], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 },
-        { pos: [-8, 0.6, -8], target: [0, 0.5, 0], duration: 2.5, fadeTime: 0.5 }
-      ]
+      cameraPath: []
     };
   },
 
