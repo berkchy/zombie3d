@@ -3,7 +3,7 @@ var plugin = window.include('registry');
 plugin.register({
   id: 'weapon_ak47',
   name: 'AK-47',
-  version: '1.2',
+  version: '1.3',
   type: 'weapon',
   weaponType: 'rifle',
   modelId: 'model_ak47',
@@ -27,6 +27,7 @@ plugin.register({
   _armsRef: null,
 
   init(game) {
+    console.log('[weapon_ak47] init');
     this.game = game;
     this.cooldown = 0;
     this.ammo = this.clip;
@@ -37,6 +38,7 @@ plugin.register({
     this.reserve = this.maxAmmo - this.ammo;
     var self = this;
     plugin.on('hotbar:select', this.id, function(data) {
+      console.log('[weapon_ak47] hotbar:select', data.slot ? data.slot.id : null);
       if (!data.slot || data.slot.id !== 'weapon_ak47') {
         if (self._armsRef) { self._armsRef.traverse(function(c) { if (c.isMesh) c.visible = true; }); self._armsRef = null; }
       }
@@ -48,14 +50,13 @@ plugin.register({
   },
 
   setModelRef(model) {
-    console.log('[weapon_ak47] setModelRef called, children:', model.children.length, 'userData:', Object.keys(model.userData));
+    console.log('[weapon_ak47] setModelRef, children:', model.children.length, 'name:', model.name);
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
     model.scale.set(1, 1, 1);
     model.position.set(0, 0, 0);
     model.rotation.set(0, 0, 0);
-    if (this._mixer) { console.log('[weapon_ak47] playing clip1'); this._playClip('clip1'); }
-    else console.log('[weapon_ak47] no mixer');
+    if (this._mixer) this._playClip('clip1');
   },
 
   setArmsRef(group) {
@@ -95,6 +96,7 @@ plugin.register({
   },
 
   _onModelReady() {
+    console.log('[weapon_ak47] _onModelReady');
     var mp = plugin.get('model_ak47');
     if (!mp || !mp._ready) return;
     var fp = plugin.get('fx_firstperson');
