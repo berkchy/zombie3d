@@ -280,7 +280,7 @@ window._applyHfov = function() {
 function init() {
   document.getElementById('loadingScreen').classList.remove('hidden');
 
-  PluginLoader.loadIni('plugins.ini', function(err) {
+  PluginLoader.loadIni('js/core/plugins.json', function(err) {
     if (err) {
       document.querySelector('.loader-text').textContent = 'HATA: ' + err;
       crashGame('PluginLoader', 'loadIni', err);

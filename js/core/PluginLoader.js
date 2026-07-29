@@ -48,8 +48,10 @@ window.PluginLoader = (function() {
           try {
             var data = JSON.parse(xhr.responseText);
             _nameToPath = {};
+            _entries = [];
             for (var name in data) {
               _nameToPath[name] = data[name];
+              _entries.push({ name: name, path: null, debug: false });
             }
           } catch(e) {}
         }
@@ -69,35 +71,11 @@ window.PluginLoader = (function() {
     return null;
   }
 
-  // ---------- plugins.ini oku ----------
+  // ---------- plugins.json'dan entry'leri yükle (plugins.ini yerine) ----------
   function loadIni(url, onDone) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url + '?v=' + _cacheBust, true);
-    xhr.onload = function() {
-      if (xhr.status === 200 || xhr.status === 0) {
-        var lines = xhr.responseText.split('\n');
-        lines.forEach(function(line) {
-          line = line.trim();
-          if (line === '' || line.startsWith('#') || line.startsWith('//')) return;
-          var parts = line.split(/\s+/);
-          var name = parts[0];
-          var flags = parts.slice(1);
-          _entries.push({
-            name: name,
-            path: null,
-            debug: flags.indexOf('debug') !== -1
-          });
-        });
-        // Manifest yüklendikten sonra callback'e dön
-        _loadManifest().then(function() {
-          if (onDone) onDone(null, _entries);
-        });
-      } else {
-        if (onDone) onDone('INI yuklenemedi: ' + xhr.status);
-      }
-    };
-    xhr.onerror = function() { if (onDone) onDone('INI dosyasina erisilemedi'); };
-    xhr.send();
+    _loadManifest().then(function() {
+      if (onDone) onDone(null, _entries);
+    });
   }
 
   // ---------- Tüm pluginleri yükle ----------
@@ -341,4 +319,4 @@ window.PluginLoader = (function() {
   };
 })();
 
-Engine.register('PluginLoader', { name: 'Plugin Yükleyici', type: 'core', version: '1.0', description: 'plugins.ini dosyasini okur, eklentileri sirayla yükler' });
+Engine.register('PluginLoader', { name: 'Plugin Yükleyici', type: 'core', version: '1.1', description: 'plugins.json manifestini okur, eklentileri sirayla yükler' });
