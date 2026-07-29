@@ -350,21 +350,8 @@ function init() {
       try { var f = PluginCvarAPI.get('camera_fov'); if (f) window._targetHfov = f; } catch(e) {}
       window._applyHfov();
 
-      if (typeof THREE.WebGPURenderer !== 'undefined') {
-        try {
-          renderer = new THREE.WebGPURenderer({ antialias: true });
-          renderer.init().then(continueInit).catch(function() {
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            continueInit();
-          });
-        } catch(e) {
-          renderer = new THREE.WebGLRenderer({ antialias: true });
-          continueInit();
-        }
-      } else {
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        continueInit();
-      }
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      continueInit();
 
       function continueInit() {
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -985,6 +972,7 @@ function loop(time) {
 // ---- Modül yükleyici ----
 (function() {
   var libFiles = [
+    'js/lib/three.min.js',
     'js/lib/howler.min.js'
   ];
 
