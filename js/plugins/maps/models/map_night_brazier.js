@@ -44,8 +44,7 @@ plugin.register({
     group.add(pl);
 
     var heatPos = new THREE.Vector3(cx, cy + 1.3, cz);
-    var pp = plugin.get('gfx_postprocessing');
-    if (pp && pp.addHeatSource) pp.addHeatSource(heatPos);
+    try { var pp = plugin.get('gfx_postprocessing'); if (pp && pp.addHeatSource) pp.addHeatSource(heatPos); } catch(e) {}
 
     return {
       mesh: group,
