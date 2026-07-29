@@ -22,6 +22,7 @@ plugin.register({
     cvar.register('fps_counter',        false,  'boolean', 'FPS g\u00f6stergesini a\u00e7/kapa');
     cvar.register('autoreload',         true,   'boolean', 'Bo\u015f \u015farj\u00f6rde otomatik reload');
     cvar.register('viewmodel_bobbing',  true,   'boolean', 'Silah sallanma efekti');
+    cvar.register('gl_maxfps',          0,      'number',  'FPS siniri (0 = ekran yenileme hizina bagli, 30/60/120 vb.)');
 
     // === onChange handlers ===
 

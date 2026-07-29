@@ -172,6 +172,9 @@ plugin.register({
     var mp = plugin.get('model_zombie');
     var _v3 = new THREE.Vector3();
 
+    // Throttle: only update far zombies every 4 frames
+    this._animTick = (this._animTick || 0) + 1;
+
     for (var i = 0; i < this.zombies.length; i++) {
       var z = this.zombies[i];
       if (!z.alive) { toRemove.push(i); continue; }
@@ -187,6 +190,17 @@ plugin.register({
         continue;
       }
 
+      _v3.copy(playerPos).sub(z.mesh.position);
+      var dist = _v3.length();
+
+      if (dist > 35) {
+        if (z.mesh.visible) z.mesh.visible = false;
+        plugin.emit('movement:stop', { entityId: z._moveId });
+        continue;
+      } else if (!z.mesh.visible) {
+        z.mesh.visible = true;
+      }
+
       if (!this._canMove) {
         plugin.emit('movement:stop', { entityId: z._moveId });
         continue;
@@ -199,8 +213,6 @@ plugin.register({
         }
       }
 
-      _v3.copy(playerPos).sub(z.mesh.position);
-      var dist = _v3.length();
       _v3.normalize();
 
       if (z._attacking) {

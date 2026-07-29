@@ -133,6 +133,27 @@ plugin.register({
       self._gearBtn.style.display = 'flex';
       self._updateVisibility();
     });
+    plugin.on('map:entered', this.id, function() {
+      self._loadPositions();
+      for (var bid in self._buttons) {
+        var saved = self._savedPositions[bid];
+        if (saved) {
+          var b = self._buttons[bid];
+          b.x = saved.x;
+          b.y = saved.y;
+          if (saved.width) b.width = saved.width;
+          if (saved.height) b.height = saved.height;
+          if (saved.bgColor) b.bgColor = saved.bgColor;
+          if (saved.color) b.color = saved.color;
+          if (saved.fontSize) b.fontSize = saved.fontSize;
+          if (saved.alpha != null) b.alpha = saved.alpha;
+          if (saved.hidden != null) b.hidden = saved.hidden;
+          if (saved.label) b.label = saved.label;
+        }
+        self._updateElement(self._buttons[bid]);
+      }
+      self._updateVisibility();
+    });
   },
 
   _createUI: function() {
@@ -693,5 +714,6 @@ plugin.register({
     plugin.off('game:start', this.id);
     plugin.off('game:over', this.id);
     plugin.off('game:restart', this.id);
+    plugin.off('map:entered', this.id);
   }
 });

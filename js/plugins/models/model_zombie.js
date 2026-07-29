@@ -4,24 +4,24 @@ plugin.register({
   id: 'model_zombie',
   name: 'Zombi',
   type: 'model',
-  version: '1.3',
+  version: '1.4',
   description: 'Detayli zombi modeli + skeleton',
   enabled: true,
   kg: 40,
 
   createModel() {
     var group = new THREE.Group();
-    group.traverse(function(c) { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
 
-    var skinMat = new THREE.MeshStandardMaterial({ color: 0x6b8e5a, roughness: 0.85 });
-    var darkSkinMat = new THREE.MeshStandardMaterial({ color: 0x4a6a3a, roughness: 0.9 });
-    var pantsMat = new THREE.MeshStandardMaterial({ color: 0x3a2a2a, roughness: 0.85 });
-    var shirtMat = new THREE.MeshStandardMaterial({ color: 0x4a4a3a, roughness: 0.8 });
-    var bootMat = new THREE.MeshStandardMaterial({ color: 0x2a1a1a, roughness: 0.9 });
-    var eyeMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.3 });
-    var toothMat = new THREE.MeshStandardMaterial({ color: 0xccbb88, roughness: 0.9 });
-    var woundMat = new THREE.MeshStandardMaterial({ color: 0x661122, roughness: 0.8 });
-    var bloodMat = new THREE.MeshStandardMaterial({ color: 0x441111, roughness: 0.9 });
+    var LM = THREE.MeshLambertMaterial;
+    var skinMat = new LM({ color: 0x6b8e5a });
+    var darkSkinMat = new LM({ color: 0x4a6a3a });
+    var pantsMat = new LM({ color: 0x3a2a2a });
+    var shirtMat = new LM({ color: 0x4a4a3a });
+    var bootMat = new LM({ color: 0x2a1a1a });
+    var eyeMat = new LM({ color: 0xcc2222 });
+    var toothMat = new LM({ color: 0xccbb88 });
+    var woundMat = new LM({ color: 0x661122 });
+    var bloodMat = new LM({ color: 0x441111 });
 
     // ===== ISKELET PIVOTLARI =====
     var hip = new THREE.Object3D();
@@ -70,14 +70,14 @@ plugin.register({
     shoulderRPivot.add(armRPivot);
 
     // ===== GOVDE =====
-    var torsoGeo = new THREE.CylinderGeometry(0.22, 0.18, 0.33, 6);
+    var torsoGeo = new THREE.CylinderGeometry(0.22, 0.18, 0.33, 5);
     var torso = new THREE.Mesh(torsoGeo, shirtMat);
     torso.position.set(0, 0, 0);
     torso.name = 'torso';
     torsoPivot.add(torso);
 
     var tearGeo = new THREE.BoxGeometry(0.15, 0.08, 0.005);
-    var tearMat = new THREE.MeshStandardMaterial({ color: 0x5a5a4a, roughness: 0.9 });
+    var tearMat = new LM({ color: 0x5a5a4a });
     var tear = new THREE.Mesh(tearGeo, tearMat);
     tear.position.set(0.1, 0.03, 0.21);
     tear.name = 'shirt_tear';
@@ -91,10 +91,9 @@ plugin.register({
     torsoPivot.add(wound);
 
     // ===== UST BACAKLAR =====
-    var upperLegGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.16, 5);
+    var upperLegGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.16, 4);
     var upperLegL = new THREE.Mesh(upperLegGeo, pantsMat);
     upperLegL.position.set(0, 0.05, 0);
-    upperLegL.castShadow = true;
     upperLegL.name = 'upperLegL_mesh';
     legLPivot.add(upperLegL);
 
@@ -116,7 +115,7 @@ plugin.register({
     legRPivot.add(kneeRPivot);
 
     // ===== ALT BACAKLAR =====
-    var lowerLegGeo = new THREE.CylinderGeometry(0.08, 0.07, 0.12, 5);
+    var lowerLegGeo = new THREE.CylinderGeometry(0.08, 0.07, 0.12, 4);
     var lowerLegL = new THREE.Mesh(lowerLegGeo, pantsMat);
     lowerLegL.position.set(0, -0.06, 0);
     lowerLegL.castShadow = true;
@@ -142,7 +141,7 @@ plugin.register({
     kneeRPivot.add(bootR);
 
     // ===== OMUZLAR =====
-    var shGeo = new THREE.SphereGeometry(0.08, 5, 5);
+    var shGeo = new THREE.SphereGeometry(0.08, 4, 4);
     var shL = new THREE.Mesh(shGeo, shirtMat);
     shL.position.set(0, 0, 0);
     shL.name = 'shoulderL_mesh';
@@ -154,7 +153,7 @@ plugin.register({
     shoulderRPivot.add(shR);
 
     // ===== KOLLAR =====
-    var armGeo = new THREE.CylinderGeometry(0.05, 0.06, 0.26, 5);
+    var armGeo = new THREE.CylinderGeometry(0.05, 0.06, 0.26, 4);
     var armL = new THREE.Mesh(armGeo, shirtMat);
     armL.position.set(0, -0.13, 0);
     armL.castShadow = true;
@@ -168,7 +167,7 @@ plugin.register({
     armRPivot.add(armR);
 
     // ===== ELLER =====
-    var handGeo = new THREE.SphereGeometry(0.045, 4, 4);
+    var handGeo = new THREE.SphereGeometry(0.045, 3, 3);
     var handL = new THREE.Mesh(handGeo, darkSkinMat);
     handL.position.set(0, -0.28, 0);
     handL.name = 'handL';
@@ -180,14 +179,14 @@ plugin.register({
     armRPivot.add(handR);
 
     // ===== BOYUN =====
-    var neckGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.04, 5);
+    var neckGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.04, 4);
     var neck = new THREE.Mesh(neckGeo, darkSkinMat);
     neck.position.set(0, 0, 0);
     neck.name = 'neck';
     headPivot.add(neck);
 
     // ===== KAFA =====
-    var headGeo = new THREE.SphereGeometry(0.2, 7, 7);
+    var headGeo = new THREE.SphereGeometry(0.2, 5, 5);
     var head = new THREE.Mesh(headGeo, skinMat);
     head.position.set(0, 0.05, 0);
     head.scale.set(1, 1.15, 0.9);
@@ -203,8 +202,8 @@ plugin.register({
     // headPivot.add(jaw);
 
     // ===== GOZLER =====
-    var eyeGeo = new THREE.SphereGeometry(0.04, 6, 6);
-    var socketMat = new THREE.MeshStandardMaterial({ color: 0x1a0608, roughness: 0.9 });
+    var eyeGeo = new THREE.SphereGeometry(0.04, 4, 4);
+    var socketMat = new LM({ color: 0x1a0608 });
 
     var eyeL = new THREE.Mesh(eyeGeo, eyeMat);
     eyeL.position.set(-0.08, 0.02, 0.14);
@@ -216,7 +215,7 @@ plugin.register({
     eyeR.name = 'eyeR';
     headPivot.add(eyeR);
 
-    var socketGeo = new THREE.SphereGeometry(0.065, 5, 5);
+    var socketGeo = new THREE.SphereGeometry(0.065, 4, 4);
     var socketL = new THREE.Mesh(socketGeo, socketMat);
     socketL.position.set(-0.08, 0.02, 0.09);
     socketL.scale.set(1, 0.5, 0.4);
@@ -260,7 +259,7 @@ plugin.register({
     headPivot.add(gash);
 
     // ===== KEMER =====
-    var beltMatZ = new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.9 });
+    var beltMatZ = new LM({ color: 0x3a2a1a });
     var beltGeoZ = new THREE.TorusGeometry(0.18, 0.025, 4, 10);
     var beltZ = new THREE.Mesh(beltGeoZ, beltMatZ);
     beltZ.position.set(0, -0.13, 0);

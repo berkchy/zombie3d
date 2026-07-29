@@ -774,9 +774,19 @@ function startGame() {
 function loop(time) {
   if (!running) return;
 
-  var dt = Math.min((time - lastTime) / 1000, 0.05);
-  dt *= (window._timeScale || 1);
+  var maxfps = 0;
+  try { maxfps = PluginCvarAPI.get('gl_maxfps') || 0; } catch(e) {}
+  var frameMs = maxfps > 0 ? 1000 / maxfps : 0;
+  var elapsed = time - lastTime;
+
+  if (frameMs > 0 && elapsed < frameMs) {
+    requestAnimationFrame(loop);
+    return;
+  }
+
   lastTime = time;
+  var dt = Math.min(elapsed / 1000, 0.05);
+  dt *= (window._timeScale || 1);
   if (gameStarted && !game.paused) game.elapsed += dt;
 
   // Dinamik script hatalarini kontrol et (loadScript ile yuklenen pluginler)
