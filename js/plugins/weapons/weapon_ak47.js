@@ -1,5 +1,4 @@
 var plugin = window.include('registry');
-var loader = window.include('loader');
 
 plugin.register({
   id: 'weapon_ak47',
@@ -28,7 +27,6 @@ plugin.register({
   _armsRef: null,
 
   init(game) {
-    loader.loadScript('model_ak47', function(){});
     this.game = game;
     this.cooldown = 0;
     this.ammo = this.clip;
@@ -55,11 +53,7 @@ plugin.register({
     model.scale.set(0.08, 0.08, 0.08);
     model.position.set(0.35, -0.30, -0.18);
     model.rotation.set(-0.06, 3.1, 0.03);
-    if (this._mixer) {
-      var clips = model.userData.clips;
-      if (clips) console.log('[weapon_ak47] clips:', Object.keys(clips).join(', '));
-      this._playClip('idle');
-    }
+    if (this._mixer) this._playClip('clip1');
   },
 
   setArmsRef(group) {
@@ -78,7 +72,7 @@ plugin.register({
     this.cooldown = this.cooldownTime;
     this.ammo--;
     plugin.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.clip, clip: this.clip, reserve: this.reserve });
-    this._playClip('shoot');
+    this._playClip('shoot1');
     plugin.emit('weapon:fire', { weapon: this, owner: owner });
   },
 
@@ -87,7 +81,7 @@ plugin.register({
     var clips = this._modelRef.userData.clips;
     if (!clips) return;
     var clip = clips[name];
-    if (!clip) { console.log('[weapon_ak47] no clip:', name); return; }
+    if (!clip) return;
     if (this._currentAction) {
       this._currentAction.stop();
       this._currentAction = null;
