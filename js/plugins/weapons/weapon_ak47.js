@@ -50,9 +50,9 @@ plugin.register({
   setModelRef(model) {
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
-    model.scale.set(0.08, 0.08, 0.08);
-    model.position.set(0, -0.06, 0);
-    model.rotation.set(-0.06, Math.PI, 0);
+    model.scale.set(1, 1, 1);
+    model.position.set(0, 0, 0);
+    model.rotation.set(0, 0, 0);
     if (this._mixer) this._playClip('clip1');
   },
 

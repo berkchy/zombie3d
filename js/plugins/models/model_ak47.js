@@ -59,8 +59,16 @@ plugin.register({
     var r = mdl.build(this._mdlFile);
     var g = r.group;
     g.name = 'ak47_model';
-    g.scale.set(0.08, 0.08, 0.08);
-    g.rotation.set(-0.06, Math.PI, 0);
+
+    var red = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshBasicMaterial({color: 0xff0000}));
+    red.position.set(0, 0, 0);
+    g.add(red);
+    var green = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0x00ff00}));
+    green.position.set(0, 0, -0.2);
+    g.add(green);
+    var blue = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({color: 0x0000ff}));
+    blue.position.set(0.2, 0, 0);
+    g.add(blue);
 
     var mixer = new THREE.AnimationMixer(g);
     var clips = {};
