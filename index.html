@@ -66,12 +66,12 @@
     return false;
   }
   if (!tryLoad()) {
+    var fallbackEl = document.getElementById('threeFallback');
     var check = setInterval(function() {
-      if (tryLoad()) { clearInterval(check); clearTimeout(fallback); }
+      if (tryLoad()) { clearInterval(check); clearTimeout(fallback); fallbackEl.classList.remove('show'); }
     }, 5);
     var fallback = setTimeout(function() {
-      clearInterval(check);
-      document.getElementById('threeFallback').classList.add('show');
+      fallbackEl.classList.add('show');
     }, 15000);
   }
 })();
