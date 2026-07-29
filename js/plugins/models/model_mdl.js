@@ -67,9 +67,18 @@ BinaryReader.prototype.readBuffer = function(length) {
   return result;
 };
 BinaryReader.prototype.readInt8 = function() { var v = this.view.getInt8(this.offset); this.offset += 1; return v; };
-BinaryReader.prototype.readUint8 = function() { var v = this.view.getUint8(this.offset); this.offset += 1; return v; };
-BinaryReader.prototype.readInt16 = function() { var v = this.view.getInt16(this.offset, this.littleEndian); this.offset += 2; return v; };
-BinaryReader.prototype.readUint16 = function() { var v = this.view.getUint16(this.offset, this.littleEndian); this.offset += 2; return v; };
+BinaryReader.prototype.readUint8 = function(pos) {
+  if (pos !== undefined) return this.view.getUint8(pos);
+  var v = this.view.getUint8(this.offset); this.offset += 1; return v;
+};
+BinaryReader.prototype.readUint16 = function(pos) {
+  if (pos !== undefined) return this.view.getUint16(pos, this.littleEndian);
+  var v = this.view.getUint16(this.offset, this.littleEndian); this.offset += 2; return v;
+};
+BinaryReader.prototype.readInt16 = function(pos) {
+  if (pos !== undefined) return this.view.getInt16(pos, this.littleEndian);
+  var v = this.view.getInt16(this.offset, this.littleEndian); this.offset += 2; return v;
+};
 BinaryReader.prototype.readInt32 = function() { var v = this.view.getInt32(this.offset, this.littleEndian); this.offset += 4; return v; };
 BinaryReader.prototype.readUint32 = function() { var v = this.view.getUint32(this.offset, this.littleEndian); this.offset += 4; return v; };
 BinaryReader.prototype.readFloat = function() { var v = this.view.getFloat32(this.offset, this.littleEndian); this.offset += 4; return v; };
