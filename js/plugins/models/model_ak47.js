@@ -13,6 +13,7 @@ plugin.register({
   _mdlFile: null,
   _ready: false,
   _pendingCb: null,
+  _cachedGroup: null,
 
   init() {
     console.log('[model_ak47] init');
@@ -39,10 +40,15 @@ plugin.register({
   },
 
   createModel() {
-    console.log('[model_ak47] createModel called, _ready=' + this._ready);
+    console.log('[model_ak47] createModel called, _ready=' + this._ready + ' cached=' + (this._cachedGroup !== null));
+    if (this._cachedGroup) {
+      console.log('[model_ak47] returning cached group');
+      return this._cachedGroup;
+    }
     if (this._ready && this._mdlFile) {
       console.log('[model_ak47] building from .mdl');
-      return this._build();
+      this._cachedGroup = this._build();
+      return this._cachedGroup;
     }
     console.log('[model_ak47] not ready, returning test cube');
     var self = this;
@@ -138,6 +144,7 @@ plugin.register({
         meshGroup.name = b.name;
         b.mesh.forEach(function(c) {
           var geo = new THREE.BufferGeometry();
+          geo.dispose = function(){};
           geo.setAttribute('position', aPosition);
           geo.setAttribute('normal', aNormal);
           geo.setAttribute('uv', aUV);
@@ -150,6 +157,8 @@ plugin.register({
             skinning: true,
             side: THREE.DoubleSide
           });
+          mat.dispose = function(){};
+
           var mesh = new THREE.SkinnedMesh(geo, mat);
           mesh.bind(skeleton);
           meshGroup.add(mesh);
