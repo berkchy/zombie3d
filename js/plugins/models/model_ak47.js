@@ -40,31 +40,11 @@ plugin.register({
   },
 
   createModel() {
-    console.log('[model_ak47] createModel called, _ready=' + this._ready + ' cached=' + (this._cachedGroup !== null));
-    if (this._cachedGroup) {
-      console.log('[model_ak47] returning cached group');
-      return this._cachedGroup;
-    }
-    if (this._ready && this._mdlFile) {
-      console.log('[model_ak47] building from .mdl');
-      this._cachedGroup = this._build();
-      return this._cachedGroup;
-    }
-    console.log('[model_ak47] not ready, returning test cube');
-    var self = this;
-    this._pendingCb = function() {
-      console.log('[model_ak47] _pendingCb fired');
-      var fp = plugin.get('fx_firstperson');
-      if (!fp || !fp._viewGroup || !fp._arms) { console.log('[model_ak47] _pendingCb: fp not ready'); return; }
-      var slot = fp._arms.slot;
-      if (!slot) { console.log('[model_ak47] _pendingCb: no slot'); return; }
-      var old = slot.getObjectByName('ak47_model');
-      if (old) slot.remove(old);
-      var wp = plugin.get('weapon_ak47');
-      if (wp && wp._onModelReady) { console.log('[model_ak47] calling _onModelReady'); wp._onModelReady(); }
-      else console.log('[model_ak47] wp or _onModelReady missing');
-    };
-    var cube = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshBasicMaterial({color: 0xff0000}));
+    console.log('[model_ak47] createModel called');
+    var cube = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.3, 0.3),
+      new THREE.MeshBasicMaterial({color: 0xff0000})
+    );
     cube.name = 'ak47_model';
     return cube;
   },
