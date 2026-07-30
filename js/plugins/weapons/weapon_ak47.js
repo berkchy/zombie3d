@@ -64,7 +64,18 @@ plugin.register({
       this._armsRef.traverse(function(c) { if (c.isMesh) c.visible = true; });
     }
     this._armsRef = group;
-    if (group) group.traverse(function(c) { if (c.isMesh) c.visible = false; });
+    if (!group) return;
+    var slot = group.getObjectByName('fp_weapon_slot');
+    group.traverse(function(c) {
+      if (c.isMesh) {
+        var p = c;
+        while (p) {
+          if (p === slot) return;
+          p = p.parent;
+        }
+        c.visible = false;
+      }
+    });
   },
 
   getBarrelTip() {
