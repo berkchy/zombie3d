@@ -277,7 +277,13 @@ plugin.register({
         slot.add(model);
       }
     } else {
-      model.rotation.set(-0.12, Math.PI + 0.06, 0.005);
+      if (wp.modelId === 'model_ak47') {
+        // .mdl viewmodel: axis rotation is baked into the vertex data, so only
+        // a small pitch brings the muzzle up to the crosshair.
+        model.rotation.set(0.05, 0, 0.005);
+      } else {
+        model.rotation.set(-0.12, Math.PI + 0.06, 0.005);
+      }
       slot.add(model);
     }
     this._viewWeapon = model;

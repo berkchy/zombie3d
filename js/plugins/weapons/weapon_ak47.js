@@ -49,7 +49,7 @@ plugin.register({
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
     model.scale.set(0.06, 0.06, 0.06);
-    model.position.set(0.15, -0.13, -0.7);
+    model.position.set(0, -0.22, -1.0);
     if (typeof model.rebindSkeleton === 'function') model.rebindSkeleton();
   },
 

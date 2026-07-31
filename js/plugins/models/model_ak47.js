@@ -64,14 +64,6 @@ plugin.register({
       }
     });
 
-    var mixer = new THREE.AnimationMixer(g);
-    var clips = {};
-    for (var i = 0; i < r.animations.length; i++) {
-      var c = r.animations[i];
-      clips[c.name] = c;
-    }
-    g.userData.mixer = mixer;
-    g.userData.clips = clips;
     console.log('[model_ak47] _build done, meshes:', r.bones.length, 'animations:', r.animations.length);
     return g;
   }

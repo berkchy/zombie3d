@@ -1,51 +1,117 @@
 var plugin = include('registry');
 
+// ── HLSDK 3×4 row-major affine matrix helpers (port of studio_util.cpp) ────
+
+function quaternionMatrix(q) {
+  var x = q.x, y = q.y, z = q.z, w = q.w;
+  var m = new Float32Array(12);
+  m[0]  = 1 - 2 * y * y - 2 * z * z;
+  m[1]  = 2 * (x * y - w * z);
+  m[2]  = 2 * (x * z + w * y);
+  m[3]  = 0;
+  m[4]  = 2 * (x * y + w * z);
+  m[5]  = 1 - 2 * x * x - 2 * z * z;
+  m[6]  = 2 * (y * z - w * x);
+  m[7]  = 0;
+  m[8]  = 2 * (x * z - w * y);
+  m[9]  = 2 * (y * z + w * x);
+  m[10] = 1 - 2 * x * x - 2 * y * y;
+  m[11] = 0;
+  return m;
+}
+
+function concatTransforms(a, b, out) {
+  out[0]  = a[0] * b[0]  + a[1] * b[4]  + a[2] * b[8];
+  out[1]  = a[0] * b[1]  + a[1] * b[5]  + a[2] * b[9];
+  out[2]  = a[0] * b[2]  + a[1] * b[6]  + a[2] * b[10];
+  out[3]  = a[0] * b[3]  + a[1] * b[7]  + a[2] * b[11] + a[3];
+  out[4]  = a[4] * b[0]  + a[5] * b[4]  + a[6] * b[8];
+  out[5]  = a[4] * b[1]  + a[5] * b[5]  + a[6] * b[9];
+  out[6]  = a[4] * b[2]  + a[5] * b[6]  + a[6] * b[10];
+  out[7]  = a[4] * b[3]  + a[5] * b[7]  + a[6] * b[11] + a[7];
+  out[8]  = a[8] * b[0]  + a[9] * b[4]  + a[10] * b[8];
+  out[9]  = a[8] * b[1]  + a[9] * b[5]  + a[10] * b[9];
+  out[10] = a[8] * b[2]  + a[9] * b[6]  + a[10] * b[10];
+  out[11] = a[8] * b[3]  + a[9] * b[7]  + a[10] * b[11] + a[11];
+}
+
+function vectorTransform(v, m) {
+  return new Vec3(
+    v.x * m[0] + v.y * m[1] + v.z * m[2]  + m[3],
+    v.x * m[4] + v.y * m[5] + v.z * m[6]  + m[7],
+    v.x * m[8] + v.y * m[9] + v.z * m[10] + m[11]
+  );
+}
+
+function normalTransform(v, m) {
+  return new Vec3(
+    v.x * m[0] + v.y * m[1] + v.z * m[2],
+    v.x * m[4] + v.y * m[5] + v.z * m[6],
+    v.x * m[8] + v.y * m[9] + v.z * m[10]
+  );
+}
+
+/** World-space bone matrices for one frame. frame = {rot,pos} arrays, or null for rest. */
+function computeWorldMatrices(srcbones, frame) {
+  var world = [];
+  for (var i = 0; i < srcbones.length; i++) {
+    var bone = srcbones[i];
+    var q = frame ? frame.rot[i] : angleQuaternion(new Vec3(bone.value[3], bone.value[4], bone.value[5]));
+    var p = frame ? frame.pos[i] : new Vec3(bone.value[0], bone.value[1], bone.value[2]);
+    var local = quaternionMatrix(q);
+    local[3] = p.x; local[7] = p.y; local[11] = p.z;
+    if (bone.parent >= 0 && bone.parent < world.length) {
+      var out = new Float32Array(12);
+      concatTransforms(world[bone.parent], local, out);
+      world.push(out);
+    } else {
+      world.push(local);
+    }
+  }
+  return world;
+}
+
 function playClip(group, name, opts) {
   opts = opts || {};
-  var THREE = window.THREE;
   var userData = group.userData || {};
-  var mixer = userData.mixer;
   var clips = userData.clips;
-  if (!mixer || !clips) return null;
-  var clip = clips[name];
-  if (!clip) return null;
+  if (!clips) return null;
+  var seq = clips[name];
+  if (!seq) return null;
+
+  if (userData._currentAnim) {
+    userData._currentAnim.onComplete = null;
+    userData._currentAnim = null;
+  }
 
   // speed: 'default' = clip'in kendi fps'i, '40'/'40fps' = hedef fps
-  var timeScale = 1;
+  var rate = seq.fps || 30;
   if (opts.speed && opts.speed !== 'default') {
     var m = String(opts.speed).match(/(\d+(?:\.\d+)?)/);
     var targetFps = m ? parseFloat(m[1]) : 0;
-    var nativeFps = clip._mdlFps || 30;
-    if (targetFps > 0) timeScale = targetFps / nativeFps;
+    if (targetFps > 0) rate = targetFps;
   }
 
-  if (userData._currentAction) {
-    userData._currentAction.stop();
-    userData._currentAction = null;
-  }
+  var anim = {
+    seq: seq,
+    t: 0,
+    rate: rate,
+    loop: opts.loop !== undefined ? opts.loop : true,
+    onComplete: typeof opts.onComplete === 'function' ? opts.onComplete : null,
+    done: false
+  };
+  userData._currentAnim = anim;
+  group.setPose(seq, 0);
 
-  var loop = opts.loop !== undefined ? opts.loop : true;
-  var action = mixer.clipAction(clip);
-  action.timeScale = timeScale;
-  userData._currentAction = action;
-
-  if (loop) {
-    action.setLoop(THREE.LoopRepeat, Infinity);
-  } else {
-    action.setLoop(THREE.LoopOnce, 1);
-    action.clampWhenFinished = true;
-    if (typeof opts.onComplete === 'function') {
-      var done = function(e) {
-        if (e.action !== action) return;
-        mixer.removeEventListener('finished', done);
-        if (userData._currentAction === action) userData._currentAction = null;
-        opts.onComplete(action);
-      };
-      mixer.addEventListener('finished', done);
-    }
-  }
-  action.reset();
-  action.play();
+  var action = {
+    stop: function() {
+      if (userData._currentAnim === anim) {
+        anim.onComplete = null;
+        userData._currentAnim = null;
+      }
+    },
+    isRunning: function() { return userData._currentAnim === anim && !anim.done; }
+  };
   return action;
 }
 
@@ -652,38 +718,16 @@ function buildModel(mdlFile) {
   var THREE = window.THREE;
   var group = new THREE.Group();
   group.name = '[ROOT]';
-  group.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
-    new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)));
 
   var srcbones = mdlFile.bones;
-  var bones = [];
-  for (var i = 0; i < srcbones.length; i++) {
-    var a = srcbones[i];
-    var b = new THREE.Bone();
-    b.position.set(a.value[0], a.value[1], a.value[2]);
-    b.rotation.set(a.value[3], a.value[4], a.value[5], 'ZYX');
-    b.name = a.name;
-    bones.push(b);
-  }
-  for (var i = 0; i < srcbones.length; i++) {
-    for (var j = 0; j < srcbones.length; j++) {
-      if (srcbones[j].parent === i) {
-        bones[i].add(bones[j]);
-      }
-    }
-  }
 
-  var boneGroup = new THREE.Group();
-  boneGroup.name = '[BONE]';
-  for (var i = 0; i < srcbones.length; i++) {
-    if (srcbones[i].parent === -1) {
-      boneGroup.add(bones[i]);
-    }
-  }
-  group.add(boneGroup);
-
-  var skeleton = new THREE.Skeleton(bones);
-  group.updateMatrixWorld(true);
+  // GoldSrc → Three axis mapping, BAKED into the vertex data:
+  //   HL X(forward) → Three -X(left), HL Y(up) → Three +Z(forward), HL Z(left) → Three +Y(up)
+  // The model's barrel in this viewmodel rig runs along HL -Y, so this maps it
+  // to Three -Z (forward). Baked so consumer transforms (fx_firstperson rotation)
+  // can never corrupt the orientation.
+  var Rg = new THREE.Matrix4().makeBasis(
+    new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0));
 
   var textures = [];
   mdlFile.textures.forEach(function(a) {
@@ -694,99 +738,158 @@ function buildModel(mdlFile) {
     textures.push(b);
   });
 
+  var restWorld = computeWorldMatrices(srcbones, null);
+
+  var seqIndex = {};
+  mdlFile.sequences.forEach(function(s, si) { seqIndex[s.label] = si; });
+
+  var seqInfos = mdlFile.sequences.map(function(s) {
+    return { name: s.label, fps: s.fps, numFrames: s.frames.length, _index: seqIndex[s.label] };
+  });
+
   var bodyGroup = new THREE.Group();
   bodyGroup.name = '[BODY]';
   var skinFamilies = mdlFile.skinfamilies;
+
   mdlFile.bodyParts.forEach(function(a) {
     var partGroup = new THREE.Group();
     partGroup.name = '[PART]';
     a.models.forEach(function(b) {
-      var position = [], normal = [], uv = [], skinIndex = [], skinWeight = [];
-      for (var vi = 0; vi < b.vertices.length; vi++) {
+      var nv = b.vertices.length;
+      var restPos = new Float32Array(nv * 3);
+      var restNorm = new Float32Array(nv * 3);
+      for (var vi = 0; vi < nv; vi++) {
         var c = b.vertices[vi];
-        position.push(c.position.x, c.position.y, c.position.z);
-        normal.push(c.normal.x, c.normal.y, c.normal.z);
-        uv.push(c.texCoord.x, c.texCoord.y);
-        skinIndex.push(c.bone, 0, 0, 0);
-        skinWeight.push(1, 0, 0, 0);
+        var p = vectorTransform(c.position, restWorld[c.bone]);
+        var n = normalTransform(c.normal, restWorld[c.bone]);
+        restPos[vi * 3]     = -p.x;
+        restPos[vi * 3 + 1] =  p.z;
+        restPos[vi * 3 + 2] =  p.y;
+        restNorm[vi * 3]     = -n.x;
+        restNorm[vi * 3 + 1] =  n.z;
+        restNorm[vi * 3 + 2] =  n.y;
       }
-      var aPosition = new THREE.Float32BufferAttribute(position, 3);
-      var aNormal = new THREE.Float32BufferAttribute(normal, 3);
-      var aUV = new THREE.Float32BufferAttribute(uv, 2);
-      var aSkinIndex = new THREE.Uint8BufferAttribute(skinIndex, 4);
-      var aSkinWeight = new THREE.Float32BufferAttribute(skinWeight, 4);
+
+      var posArr = new THREE.Float32BufferAttribute(restPos, 3);
+      var normArr = new THREE.Float32BufferAttribute(restNorm, 3);
+      var uvArr = new THREE.Float32BufferAttribute(nv * 2, 2);
+      for (var ui = 0; ui < nv; ui++) {
+        uvArr.array[ui * 2] = b.vertices[ui].texCoord.x;
+        uvArr.array[ui * 2 + 1] = b.vertices[ui].texCoord.y;
+      }
 
       var meshGroup = new THREE.Group();
       meshGroup.name = b.name;
       b.mesh.forEach(function(c) {
         var geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', aPosition);
-        geo.setAttribute('normal', aNormal);
-        geo.setAttribute('uv', aUV);
-        geo.setAttribute('skinIndex', aSkinIndex);
-        geo.setAttribute('skinWeight', aSkinWeight);
+        geo.setAttribute('position', posArr);
+        geo.setAttribute('normal', normArr);
+        geo.setAttribute('uv', uvArr);
         geo.setIndex(c.indices);
-
         var mat = new THREE.MeshBasicMaterial({
           map: textures[skinFamilies[0][c.skinref]],
-          skinning: true,
           side: THREE.DoubleSide
         });
-        var mesh = new THREE.SkinnedMesh(geo, mat);
-        mesh.bind(skeleton);
+        var mesh = new THREE.Mesh(geo, mat);
+        mesh.frustumCulled = false;
         meshGroup.add(mesh);
       });
       partGroup.add(meshGroup);
+
+      // ── Pre-bake every sequence × frame (HLSDK-exact) ─────────────────
+      meshGroup._frames = [];
+      mdlFile.sequences.forEach(function(seq, si) {
+        var seqFrames = [];
+        if (seq.frames) {
+          for (var fi = 0; fi < seq.frames.length; fi++) {
+            var W = computeWorldMatrices(srcbones, seq.frames[fi]);
+            var fPos = new Float32Array(nv * 3);
+            var fNorm = new Float32Array(nv * 3);
+            for (var fvi = 0; fvi < nv; fvi++) {
+              var fc = b.vertices[fvi];
+              var fp = vectorTransform(fc.position, W[fc.bone]);
+              var fn = normalTransform(fc.normal, W[fc.bone]);
+              fPos[fvi * 3]     = -fp.x;
+              fPos[fvi * 3 + 1] =  fp.z;
+              fPos[fvi * 3 + 2] =  fp.y;
+              fNorm[fvi * 3]     = -fn.x;
+              fNorm[fvi * 3 + 1] =  fn.z;
+              fNorm[fvi * 3 + 2] =  fn.y;
+            }
+            seqFrames.push({ pos: fPos, norm: fNorm });
+          }
+        }
+        meshGroup._frames.push(seqFrames);
+      });
+
+      meshGroup._pos = posArr.array;
+      meshGroup._norm = normArr.array;
+      meshGroup._restPos = restPos;
+      meshGroup._restNorm = restNorm;
+      meshGroup._posAttr = posArr;
+      meshGroup._normAttr = normArr;
     });
     bodyGroup.add(partGroup);
   });
 
   group.add(bodyGroup);
 
-  var animations = [];
-  mdlFile.sequences.forEach(function(a) {
-    var duration = a.frames.length / a.fps;
-    var tracks = [];
-    for (var i = 0; i < srcbones.length; i++) {
-      var timeval = [];
-      var posvals = [];
-      var rotvals = [];
-      for (var j = 0; j < a.frames.length; j++) {
-        timeval.push(j / a.frames.length * duration);
-        posvals.push(a.frames[j].pos[i].x, a.frames[j].pos[i].y, a.frames[j].pos[i].z);
-        rotvals.push(a.frames[j].rot[i].x, a.frames[j].rot[i].y, a.frames[j].rot[i].z, a.frames[j].rot[i].w);
+  var userData = group.userData;
+  userData.clips = {};
+  seqInfos.forEach(function(s) { userData.clips[s.name] = s; });
+
+  group.setPose = function(seq, frameIdx) {
+    var index = seq ? seq._index : -1;
+    bodyGroup.traverse(function(n) {
+      if (n._frames) {
+        var useFrame = index >= 0 && n._frames[index] && frameIdx >= 0 && frameIdx < n._frames[index].length;
+        var srcPos = useFrame ? n._frames[index][frameIdx].pos : n._restPos;
+        var srcNorm = useFrame ? n._frames[index][frameIdx].norm : n._restNorm;
+        n._pos.set(srcPos);
+        n._norm.set(srcNorm);
+        n._posAttr.needsUpdate = true;
+        n._normAttr.needsUpdate = true;
       }
-      var posTrack = new THREE.VectorKeyframeTrack(srcbones[i].name + '.position', timeval, posvals);
-      var rotTrack = new THREE.QuaternionKeyframeTrack(srcbones[i].name + '.quaternion', timeval, rotvals);
-      tracks.push(posTrack, rotTrack);
+    });
+  };
+
+  group.update = function(dt) {
+    var anim = userData._currentAnim;
+    if (!anim || !anim.seq) return;
+    anim.t += dt * anim.rate;
+    var nf = anim.seq.numFrames;
+    if (anim.t >= nf) {
+      if (anim.loop) {
+        anim.t = anim.t % nf;
+      } else {
+        anim.t = nf - 1;
+        if (!anim.done) {
+          anim.done = true;
+          var cb = anim.onComplete;
+          anim.onComplete = null;
+          userData._currentAnim = null;
+          if (cb) cb();
+        }
+      }
     }
-    var clip = new THREE.AnimationClip(a.label, duration, tracks);
-    clip._mdlFps = a.fps;
-    animations.push(clip);
-  });
+    group.setPose(anim.seq, Math.floor(Math.min(anim.t, nf - 1)));
+  };
 
   group.playClip = function(name, opts) {
     return playClip(group, name, opts);
   };
 
-  group.rebindSkeleton = function() {
-    group.updateMatrixWorld(true);
-    skeleton.calculateInverses();
-    bodyGroup.traverse(function(c) {
-      if (c.isSkinnedMesh) {
-        c.bindMatrix.copy(c.matrixWorld);
-        c.bindMatrixInverse.copy(c.matrixWorld).invert();
-      }
-    });
-  };
+  // Compatibility shims (the weapon plugin calls these)
+  group.rebindSkeleton = function() {};
+  userData.mixer = { update: function(dt) { group.update(dt); } };
 
-  group.animations = animations;
+  group.animations = seqInfos;
 
   return {
     group: group,
-    bones: bones,
-    skeleton: skeleton,
-    animations: animations,
+    bones: srcbones,
+    skeleton: null,
+    animations: seqInfos,
     textures: textures,
     hitBoxes: mdlFile.hitBoxes,
     sequences: mdlFile.sequences
