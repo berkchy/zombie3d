@@ -35,12 +35,13 @@ function playClip(group, name, opts) {
     action.setLoop(THREE.LoopOnce, 1);
     action.clampWhenFinished = true;
     if (typeof opts.onComplete === 'function') {
-      var done = function() {
-        action.removeEventListener('finished', done);
+      var done = function(e) {
+        if (e.action !== action) return;
+        mixer.removeEventListener('finished', done);
         if (userData._currentAction === action) userData._currentAction = null;
         opts.onComplete(action);
       };
-      action.addEventListener('finished', done);
+      mixer.addEventListener('finished', done);
     }
   }
   action.reset();
