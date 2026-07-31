@@ -50,10 +50,11 @@ plugin.register({
   setModelRef(model) {
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
+    model.rotation.order = 'YXZ';
+    model.rotation.set(Math.PI / 2 - 0.87, Math.PI, 0);
     model.scale.set(0.06, 0.06, 0.06);
     model.position.set(0, 0, 0);
-    model.rotation.set(Math.PI / 2, Math.PI, 0);
-    if (this._mixer) this._playClip('clip1');
+    if (this._mixer) this._playDraw();
   },
 
   setArmsRef(group) {
@@ -85,11 +86,24 @@ plugin.register({
     this.cooldown = this.cooldownTime;
     this.ammo--;
     plugin.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.clip, clip: this.clip, reserve: this.reserve });
-    this._playClip('shoot1');
+    var self = this;
+    this._playClip('shoot' + (1 + Math.floor(Math.random() * 3)), true, function() {
+      self._playClip('clip1');
+    });
     plugin.emit('weapon:fire', { weapon: this, owner: owner });
   },
 
-  _playClip(name) {
+  _playDraw: function() {
+    var self = this;
+    var clips = this._modelRef ? this._modelRef.userData.clips : null;
+    if (clips && clips['draw']) {
+      this._playClip('draw', true, function() { self._playClip('clip1'); });
+    } else {
+      this._playClip('clip1');
+    }
+  },
+
+  _playClip(name, oneShot, onComplete) {
     if (!this._mixer || !this._modelRef) return;
     var clips = this._modelRef.userData.clips;
     if (!clips) return;
@@ -99,8 +113,21 @@ plugin.register({
       this._currentAction.stop();
       this._currentAction = null;
     }
-    this._currentAction = this._mixer.clipAction(clip);
-    this._currentAction.play();
+    var action = this._mixer.clipAction(clip);
+    this._currentAction = action;
+    if (oneShot) {
+      action.setLoop(THREE.LoopOnce, 1);
+      action.clampWhenFinished = true;
+      action.reset();
+      var self = this;
+      var done = function() {
+        action.removeEventListener('finished', done);
+        if (self._currentAction === action) self._currentAction = null;
+        if (onComplete) onComplete();
+      };
+      action.addEventListener('finished', done);
+    }
+    action.play();
   },
 
   _onModelReady() {
