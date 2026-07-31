@@ -679,6 +679,9 @@ function buildModel(mdlFile) {
     }
   }
   group.add(boneGroup);
+  boneGroup.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+    new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)));
+  group.updateMatrixWorld(true);
 
   var skeleton = new THREE.Skeleton(bones);
 
@@ -762,11 +765,22 @@ function buildModel(mdlFile) {
     animations.push(clip);
   });
 
-  boneGroup.rotateX(-1.570796);
-
   group.playClip = function(name, opts) {
     return playClip(group, name, opts);
   };
+
+  group.rebindSkeleton = function() {
+    group.updateMatrixWorld(true);
+    skeleton.calculateInverses();
+    bodyGroup.traverse(function(c) {
+      if (c.isSkinnedMesh) {
+        c.bindMatrix.copy(c.matrixWorld);
+        c.bindMatrixInverse.copy(c.matrixWorld).invert();
+      }
+    });
+  };
+
+  group.animations = animations;
 
   return {
     group: group,

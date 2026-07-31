@@ -49,9 +49,10 @@ plugin.register({
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
     model.rotation.order = 'YXZ';
-    model.rotation.set(Math.PI / 2 - 0.87, Math.PI, 0);
+    model.rotation.set(0, 0, 0);
     model.scale.set(0.06, 0.06, 0.06);
-    model.position.set(0, 0, 0);
+    model.position.set(0.15, -0.13, -0.7);
+    if (typeof model.rebindSkeleton === 'function') model.rebindSkeleton();
     if (this._mixer) this._playDraw();
   },
 
