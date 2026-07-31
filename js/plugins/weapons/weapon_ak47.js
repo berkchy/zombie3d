@@ -23,7 +23,6 @@ plugin.register({
   reloadTime: 2.5,
   _modelRef: null,
   _mixer: null,
-  _currentAction: null,
   _armsRef: null,
 
   init(game) {
@@ -32,7 +31,6 @@ plugin.register({
     this.ammo = this.clip;
     this._modelRef = null;
     this._mixer = null;
-    this._currentAction = null;
     this._armsRef = null;
     this.reserve = this.maxAmmo - this.ammo;
     var self = this;
@@ -87,8 +85,10 @@ plugin.register({
     this.ammo--;
     plugin.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.clip, clip: this.clip, reserve: this.reserve });
     var self = this;
-    this._playClip('shoot' + (1 + Math.floor(Math.random() * 3)), true, function() {
-      self._playClip('clip1');
+    this._playClip('shoot' + (1 + Math.floor(Math.random() * 3)), {
+      loop: false,
+      speed: 'default',
+      onComplete: function() { self._playClip('clip1'); }
     });
     plugin.emit('weapon:fire', { weapon: this, owner: owner });
   },
@@ -97,37 +97,19 @@ plugin.register({
     var self = this;
     var clips = this._modelRef ? this._modelRef.userData.clips : null;
     if (clips && clips['draw']) {
-      this._playClip('draw', true, function() { self._playClip('clip1'); });
+      this._playClip('draw', {
+        loop: false,
+        speed: 'default',
+        onComplete: function() { self._playClip('clip1'); }
+      });
     } else {
       this._playClip('clip1');
     }
   },
 
-  _playClip(name, oneShot, onComplete) {
-    if (!this._mixer || !this._modelRef) return;
-    var clips = this._modelRef.userData.clips;
-    if (!clips) return;
-    var clip = clips[name];
-    if (!clip) return;
-    if (this._currentAction) {
-      this._currentAction.stop();
-      this._currentAction = null;
-    }
-    var action = this._mixer.clipAction(clip);
-    this._currentAction = action;
-    if (oneShot) {
-      action.setLoop(THREE.LoopOnce, 1);
-      action.clampWhenFinished = true;
-      action.reset();
-      var self = this;
-      var done = function() {
-        action.removeEventListener('finished', done);
-        if (self._currentAction === action) self._currentAction = null;
-        if (onComplete) onComplete();
-      };
-      action.addEventListener('finished', done);
-    }
-    action.play();
+  _playClip(name, opts) {
+    if (!this._modelRef || typeof this._modelRef.playClip !== 'function') return null;
+    return this._modelRef.playClip(name, opts);
   },
 
   _onModelReady() {

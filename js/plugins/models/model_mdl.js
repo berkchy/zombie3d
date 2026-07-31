@@ -1,5 +1,53 @@
 var plugin = include('registry');
 
+function playClip(group, name, opts) {
+  opts = opts || {};
+  var THREE = window.THREE;
+  var userData = group.userData || {};
+  var mixer = userData.mixer;
+  var clips = userData.clips;
+  if (!mixer || !clips) return null;
+  var clip = clips[name];
+  if (!clip) return null;
+
+  // speed: 'default' = clip'in kendi fps'i, '40'/'40fps' = hedef fps
+  var timeScale = 1;
+  if (opts.speed && opts.speed !== 'default') {
+    var m = String(opts.speed).match(/(\d+(?:\.\d+)?)/);
+    var targetFps = m ? parseFloat(m[1]) : 0;
+    var nativeFps = clip._mdlFps || 30;
+    if (targetFps > 0) timeScale = targetFps / nativeFps;
+  }
+
+  if (userData._currentAction) {
+    userData._currentAction.stop();
+    userData._currentAction = null;
+  }
+
+  var loop = opts.loop !== undefined ? opts.loop : true;
+  var action = mixer.clipAction(clip);
+  action.timeScale = timeScale;
+  userData._currentAction = action;
+
+  if (loop) {
+    action.setLoop(THREE.LoopRepeat, Infinity);
+  } else {
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+    if (typeof opts.onComplete === 'function') {
+      var done = function() {
+        action.removeEventListener('finished', done);
+        if (userData._currentAction === action) userData._currentAction = null;
+        opts.onComplete(action);
+      };
+      action.addEventListener('finished', done);
+    }
+  }
+  action.reset();
+  action.play();
+  return action;
+}
+
 var Vec2 = function(x, y) { this.x = x; this.y = y; };
 Vec2.prototype.equal = function(o) { return this.x === o.x && this.y === o.y; };
 
@@ -709,10 +757,15 @@ function buildModel(mdlFile) {
       tracks.push(posTrack, rotTrack);
     }
     var clip = new THREE.AnimationClip(a.label, duration, tracks);
+    clip._mdlFps = a.fps;
     animations.push(clip);
   });
 
   boneGroup.rotateX(-1.570796);
+
+  group.playClip = function(name, opts) {
+    return playClip(group, name, opts);
+  };
 
   return {
     group: group,
@@ -763,6 +816,10 @@ plugin.register({
 
   build: function(mdlFile) {
     return buildModel(mdlFile);
+  },
+
+  playClip: function(model, name, opts) {
+    return playClip(model, name, opts);
   },
 
   loadAndBuild: function(url, callback) {
