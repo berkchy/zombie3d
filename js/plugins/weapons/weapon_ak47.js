@@ -27,7 +27,6 @@ plugin.register({
   _armsRef: null,
 
   init(game) {
-    console.log('[weapon_ak47] init');
     this.game = game;
     this.cooldown = 0;
     this.ammo = this.clip;
@@ -38,7 +37,6 @@ plugin.register({
     this.reserve = this.maxAmmo - this.ammo;
     var self = this;
     plugin.on('hotbar:select', this.id, function(data) {
-      console.log('[weapon_ak47] hotbar:select', data.slot ? data.slot.id : null);
       if (!data.slot || data.slot.id !== 'weapon_ak47') {
         if (self._armsRef) { self._armsRef.traverse(function(c) { if (c.isMesh) c.visible = true; }); self._armsRef = null; }
       }
@@ -50,12 +48,11 @@ plugin.register({
   },
 
   setModelRef(model) {
-    console.log('[weapon_ak47] setModelRef, children:', model.children.length, 'name:', model.name);
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
-    model.scale.set(1, 1, 1);
+    model.scale.set(0.08, 0.08, 0.08);
     model.position.set(0, 0, 0);
-    model.rotation.set(0, 0, 0);
+    model.rotation.set(-Math.PI / 2, 0, 0);
     if (this._mixer) this._playClip('clip1');
   },
 
