@@ -48,12 +48,9 @@ plugin.register({
   setModelRef(model) {
     this._modelRef = model;
     this._mixer = model.userData.mixer || null;
-    model.rotation.order = 'YXZ';
-    model.rotation.set(0, 0, 0);
     model.scale.set(0.06, 0.06, 0.06);
     model.position.set(0.15, -0.13, -0.7);
     if (typeof model.rebindSkeleton === 'function') model.rebindSkeleton();
-    if (this._mixer) this._playDraw();
   },
 
   setArmsRef(group) {
@@ -85,12 +82,6 @@ plugin.register({
     this.cooldown = this.cooldownTime;
     this.ammo--;
     plugin.emit('ammo:change', { ammo: this.ammo, maxAmmo: this.clip, clip: this.clip, reserve: this.reserve });
-    var self = this;
-    this._playClip('shoot' + (1 + Math.floor(Math.random() * 3)), {
-      loop: false,
-      speed: 'default',
-      onComplete: function() { self._playClip('clip1'); }
-    });
     plugin.emit('weapon:fire', { weapon: this, owner: owner });
   },
 

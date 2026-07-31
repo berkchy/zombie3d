@@ -652,6 +652,8 @@ function buildModel(mdlFile) {
   var THREE = window.THREE;
   var group = new THREE.Group();
   group.name = '[ROOT]';
+  group.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+    new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)));
 
   var srcbones = mdlFile.bones;
   var bones = [];
@@ -679,11 +681,9 @@ function buildModel(mdlFile) {
     }
   }
   group.add(boneGroup);
-  boneGroup.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
-    new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0)));
-  group.updateMatrixWorld(true);
 
   var skeleton = new THREE.Skeleton(bones);
+  group.updateMatrixWorld(true);
 
   var textures = [];
   mdlFile.textures.forEach(function(a) {
